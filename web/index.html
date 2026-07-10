@@ -29,6 +29,18 @@
 <div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;background:radial-gradient(120% 80% at 50% 0%,#E7E3D9,#D8D3C7);">
   <div style="width:400px;max-width:100%;height:844px;max-height:calc(100vh - 56px);background:#FBFAF7;border-radius:38px;overflow:hidden;box-shadow:0 40px 90px -40px rgba(18,48,63,.7),0 0 0 8px #12303F,0 0 0 9px #23414F;position:relative;display:flex;flex-direction:column;">
 
+    <!-- ===================== OVERLAYS GLOBAUX (busy / erreur) ===================== -->
+    <sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:50;background:rgba(251,250,247,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;">
+        <span style="width:42px;height:42px;border:4px solid #EAF1F5;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ errorMsg }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ dismissError }}" style="position:absolute;left:16px;right:16px;bottom:16px;z-index:60;background:#C43D2E;color:#fff;padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.4;box-shadow:0 12px 30px -12px rgba(18,48,63,.6);cursor:pointer;">
+        {{ errorMsg }}<div style="opacity:.75;font-size:11px;margin-top:5px;">Toucher pour fermer</div>
+      </div>
+    </sc-if>
+
     <!-- ===================== LANDING ===================== -->
     <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
     <div class="cc-scroll" data-screen-label="landing" style="flex:1;overflow-y:auto;">
@@ -285,12 +297,12 @@
         <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">Ajoutez votre bail <strong>et</strong> la formule officielle. On lit tout automatiquement — vous n'aurez qu'à vérifier.</p>
 
         <div onClick="{{ uploadBail }}" style="border:2px dashed #C9D5DB;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;margin-bottom:14px;background:#fff;">
-          <sc-if value="{{ bailFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>bail-2024.pdf</div></sc-if>
+          <sc-if value="{{ bailFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>{{ bailName }}</div></sc-if>
           <sc-if value="{{ bailNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-size:30px;margin-bottom:8px;">📄</div><div style="font-weight:700;color:#12303F;font-size:15px;">Votre contrat de bail</div><div style="font-size:13px;color:#8A979C;margin-top:4px;">Déposer ou choisir · PDF, JPG</div></div></sc-if>
         </div>
 
         <div onClick="{{ uploadFormule }}" style="border:2px dashed #C9D5DB;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;margin-bottom:12px;background:#fff;">
-          <sc-if value="{{ formuleFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>formule-officielle.pdf</div></sc-if>
+          <sc-if value="{{ formuleFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>{{ formuleName }}</div></sc-if>
           <sc-if value="{{ formuleNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-size:30px;margin-bottom:8px;">🟢</div><div style="font-weight:700;color:#12303F;font-size:15px;">La formule officielle</div><div style="font-size:13px;color:#8A979C;margin-top:4px;">Le formulaire (souvent vert) de fixation du loyer</div></div></sc-if>
         </div>
         <div style="background:#FFF3DF;border-radius:12px;padding:12px 14px;font-size:13px;color:#7A5406;line-height:1.4;">La formule officielle est nécessaire pour détecter une hausse par rapport à l'ancien locataire. Vous ne l'avez pas&nbsp;? C'est justement un motif fort — indiquez-le dans le questionnaire.</div>
@@ -455,6 +467,16 @@
 
       <!-- letter preview with watermark -->
       <div style="padding:16px 22px 8px;">
+        <!-- Aperçu réel (PNG filigrané côté serveur, servi par /generate-letter) -->
+        <sc-if value="{{ hasPreview }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;background:#fff;border-radius:10px;box-shadow:0 16px 40px -20px rgba(18,48,63,.5);overflow:hidden;border:1px solid #E4E2DB;">
+          <img src="{{ previewUrl }}" alt="Aperçu de votre lettre" style="width:100%;display:block;">
+          <div style="position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);pointer-events:none;"></div>
+          <div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;background:#12303F;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;box-shadow:0 6px 16px -6px rgba(18,48,63,.6);">🔒 Débloquez pour lire en entier</div>
+        </div>
+        </sc-if>
+        <!-- Fallback maquette si l'aperçu serveur n'est pas encore disponible -->
+        <sc-if value="{{ noPreview }}" hint-placeholder-val="{{ false }}">
         <div style="position:relative;background:#fff;border-radius:10px;box-shadow:0 16px 40px -20px rgba(18,48,63,.5);overflow:hidden;border:1px solid #E4E2DB;">
           <div style="padding:26px 24px;font-size:11px;color:#12303F;line-height:1.7;">
             <div style="font-weight:600;">{{ letterNom }}</div>
@@ -484,6 +506,7 @@
           <div style="position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);"></div>
           <div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;background:#12303F;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;box-shadow:0 6px 16px -6px rgba(18,48,63,.6);">🔒 Débloquez pour lire en entier</div>
         </div>
+        </sc-if>
       </div>
 
       <!-- offers -->
@@ -644,7 +667,7 @@
         </sc-if>
 
         <div style="margin-top:22px;">
-          <button style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:15px;border:none;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">⬇ Télécharger ma lettre (PDF)</button>
+          <button onClick="{{ downloadLetter }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:15px;border:none;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">⬇ Télécharger ma lettre (PDF)</button>
         </div>
         <p style="margin:18px 0 0;font-size:12px;color:#8A979C;line-height:1.5;text-align:center;">Vos données seront supprimées automatiquement 7 jours après la clôture du dossier.</p>
       </div>
@@ -700,6 +723,8 @@
 </div>
 </template>
 
+<script src="./config.js"></script>
+<script src="./api.js"></script>
 <script src="./support.js"></script>
 <script src="./app.js"></script>
 </body>

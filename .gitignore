@@ -5,3 +5,6 @@ dist/
 supabase/functions/.env
 supabase/.temp/
 *.log
+
+# Front-end runtime config (contient les clés du projet)
+web/config.js
