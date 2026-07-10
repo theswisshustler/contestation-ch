@@ -1,0 +1,35 @@
+Bravo, l'étape la plus pénible (importer le code) est faite. Maintenant, l'objectif immédiat : **voir ton site s'afficher dans Replit**. 3 étapes.
+
+## 1. Recréer `web/config.js` (obligatoire)
+Ce fichier contient tes clés, il est **volontairement exclu de Git** — il n'est donc **pas** venu avec l'import. Sans lui, l'app affiche « Back-end non configuré ».
+
+Dans Replit : crée un nouveau fichier **`web/config.js`** (dans le dossier `web`), et colle exactement ça :
+```js
+/* Config locale */
+window.CONTESTATION_CONFIG = {
+  SUPABASE_URL: 'https://xdyesbnjspixogzhnxrm.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_nxDs_m7JYXHjbvNbHmJZpA_0szaiTay',
+};
+```
+
+## 2. Lancer le site
+En bas de Replit, ouvre l'onglet **Shell** (le terminal) et tape :
+```bash
+python3 -m http.server 8000 --directory web
+```
+Replit va ouvrir un panneau **Webview** avec une URL. Si tu vois une liste de fichiers, clique sur **`index.html`**.
+
+## 3. Ce que tu verras (et ce qui est normal)
+- ✅ **La landing s'affiche** : le hero, le calculateur, tout le design. 🎉 → ça confirme que Replit + ton code fonctionnent.
+- ⚠️ **Les boutons qui appellent le serveur ne marcheront pas encore** (le calculateur, le diagnostic…) : rappelle-toi, le back-end Supabase **n'est pas encore déployé** (le fameux 404). C'est la prochaine étape.
+
+---
+
+## La suite logique
+Deux options pour la prochaine étape, dis-moi laquelle tu préfères :
+
+**A. Rendre les boutons fonctionnels tout de suite, sans déployer** — on pointe `config.js` sur le **mock** (le faux back-end `tools/mock-backend.mjs`) et je te montre comment le lancer dans Replit. Tu peux alors **cliquer tout le parcours** (avec des données de démo). Idéal pour valider que Replit te convient.
+
+**B. Déployer le vrai back-end** (au moins `evaluate-baisse`) pour que le **vrai calculateur** marche en live. Plus « produit réel », mais un peu plus de manip (installer l'outil Supabase).
+
+Commence par les étapes 1-2 ci-dessus et dis-moi : **est-ce que la landing s'affiche bien ?** Ensuite on choisit A ou B.
