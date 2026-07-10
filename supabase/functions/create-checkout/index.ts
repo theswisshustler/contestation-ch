@@ -52,8 +52,12 @@ Deno.serve(async (req) => {
       ],
       // Le webhook fait foi : ces métadonnées lient la session au dossier.
       metadata: { dossierId: body.dossierId, letterId: body.letterId, offer: body.offer },
-      success_url: `${appOrigin}/merci?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appOrigin}/apercu?dossier=${body.dossierId}`,
+      // Retour sur la racine avec l'info en paramètre de requête : l'app (SPA
+      // d'un seul fichier) lit le paramètre quel que soit le chemin, donc aucun
+      // routing SPA côté hébergeur n'est nécessaire (marche partout, y compris
+      // Lovable/Replit).
+      success_url: `${appOrigin}/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appOrigin}/?dossier=${body.dossierId}`,
     });
 
     await db.from('payments').insert({
