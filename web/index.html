@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>contestation.ch — Contestation de loyer initial (VD &amp; GE)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{font-family:'Instrument Sans',system-ui,sans-serif;color:#16242A;background:#DED9CE;-webkit-font-smoothing:antialiased;}
+  a{color:#1B4965;text-decoration:none;}
+  a:hover{color:#F4A73B;}
+  input,button,textarea,select{font-family:inherit;}
+  .cc-scroll::-webkit-scrollbar{width:0;background:transparent;}
+  details summary{list-style:none;cursor:pointer;}
+  details summary::-webkit-details-marker{display:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes pulseDot{0%,100%{opacity:.3;}50%{opacity:1;}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<template id="dc-template">
+<div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;background:radial-gradient(120% 80% at 50% 0%,#E7E3D9,#D8D3C7);">
+  <div style="width:400px;max-width:100%;height:844px;max-height:calc(100vh - 56px);background:#FBFAF7;border-radius:38px;overflow:hidden;box-shadow:0 40px 90px -40px rgba(18,48,63,.7),0 0 0 8px #12303F,0 0 0 9px #23414F;position:relative;display:flex;flex-direction:column;">
+
+    <!-- ===================== LANDING ===================== -->
+    <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+    <div class="cc-scroll" data-screen-label="landing" style="flex:1;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;position:sticky;top:0;background:rgba(251,250,247,.9);backdrop-filter:blur(8px);border-bottom:1px solid #EEEBE3;z-index:5;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="position:relative;width:24px;height:24px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:11px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:11px;background:#fff;border-radius:1px;"></span></span>
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#12303F;">contestation<span style="color:#F4A73B;">.ch</span></span>
+        </div>
+        <button onClick="{{ goChoix }}" style="background:#EAF1F5;color:#1B4965;font-weight:600;font-size:13px;padding:8px 14px;border:none;border-radius:999px;cursor:pointer;">Commencer</button>
+      </div>
+
+      <div style="padding:28px 22px 26px;background:linear-gradient(180deg,#F4F8FA,#FBFAF7);">
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#EAF1F5;color:#1B4965;font-size:12px;font-weight:600;margin-bottom:16px;">Vaud &amp; Genève · sans inscription</div>
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:31px;line-height:1.08;margin:0 0 12px;color:#12303F;letter-spacing:-.01em;">Votre loyer est-il trop élevé&nbsp;?</h1>
+        <p style="margin:0 0 22px;font-size:16px;line-height:1.5;color:#4A5A60;">Beaucoup de loyers en Suisse romande dépassent ce qui est admissible. Vérifiez gratuitement en 30&nbsp;secondes si vous avez droit à une baisse.</p>
+
+        <div style="background:#fff;border:1px solid #E4E2DB;border-radius:20px;padding:22px 20px;box-shadow:0 12px 30px -18px rgba(18,48,63,.4);">
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:18px;color:#12303F;margin-bottom:16px;">Ai-je droit à une baisse&nbsp;?</div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net mensuel</label>
+          <div style="position:relative;margin-bottom:14px;"><input type="text" inputmode="decimal" value="{{ loyer }}" onInput="{{ onLoyer }}" placeholder="1 850" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:17px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Taux de référence de votre bail</label>
+          <div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ taux }}" onInput="{{ onTaux }}" placeholder="1,75" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:17px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
+          <p style="margin:0 0 16px;font-size:12px;color:#8A979C;line-height:1.4;">Il figure sur votre bail. Taux actuel&nbsp;: {{ tauxActuel }}&nbsp;%.</p>
+          <button onClick="{{ checkCalc }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Vérifier gratuitement</button>
+
+          <sc-if value="{{ calcLoading }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:16px;color:#5A6A70;font-size:14px;"><span style="width:18px;height:18px;border:2.5px solid #E4E2DB;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;"></span>On vérifie votre situation…</div></sc-if>
+          <sc-if value="{{ calcElig }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:16px;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:16px;padding:18px;animation:fadeUp .4s ease;">
+              <div style="font-size:14px;font-weight:700;color:#0C5638;margin-bottom:6px;">✓ Bonne nouvelle</div>
+              <div style="font-size:15px;color:#0C5638;line-height:1.4;margin-bottom:12px;">Vous pourriez obtenir une baisse d'environ</div>
+              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:44px;color:#178A5B;line-height:1;">−{{ calcPct }}%</div>
+              <div style="font-size:16px;color:#0C5638;font-weight:600;margin:4px 0 16px;">soit ≈ {{ calcChf }} CHF par mois</div>
+              <button onClick="{{ goChoix }}" style="width:100%;background:#178A5B;color:#fff;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Générer ma demande →</button>
+              <p style="margin:10px 0 0;font-size:11px;color:#4C7C64;line-height:1.4;">Estimation indicative fondée sur le taux de référence actuel ({{ tauxActuel }}&nbsp;%).</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ calcNo }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:16px;background:#EAF1F5;border:1px solid #CBDCE4;border-radius:16px;padding:18px;animation:fadeUp .4s ease;">
+              <div style="font-size:15px;font-weight:700;color:#1B4965;margin-bottom:6px;">Pas de baisse via le taux de référence…</div>
+              <div style="font-size:14px;color:#3E5560;line-height:1.45;margin-bottom:14px;">…mais votre <strong>loyer initial</strong> est peut-être abusif. Sans formule officielle, ou moins de 30&nbsp;jours après la remise des clés, vous pouvez encore contester.</div>
+              <button onClick="{{ goChoix }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Vérifier mon loyer initial →</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ calcErr }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;font-size:13px;color:#C43D2E;text-align:center;">Renseignez le loyer et le taux pour lancer le calcul.</div></sc-if>
+        </div>
+      </div>
+
+      <div style="padding:30px 22px;background:#12303F;color:#fff;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;line-height:1.1;">Un loyer sur trois serait contestable en Suisse romande.</div>
+        <p style="margin:12px 0 0;font-size:15px;line-height:1.55;color:#B9C9D1;">Faute de temps ou par crainte, presque personne ne le fait. Pourtant la loi protège les locataires — et la procédure de conciliation est gratuite.</p>
+      </div>
+
+      <div style="padding:30px 22px;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:20px;">Comment ça marche</div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;gap:14px;align-items:flex-start;"><span style="flex:none;width:34px;height:34px;border-radius:10px;background:#EAF1F5;color:#1B4965;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">1</span><div><div style="font-weight:700;color:#12303F;font-size:16px;">Vous répondez, ou importez votre bail</div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Quelques questions simples, ou un import automatique. 5 minutes.</div></div></div>
+          <div style="display:flex;gap:14px;align-items:flex-start;"><span style="flex:none;width:34px;height:34px;border-radius:10px;background:#EAF1F5;color:#1B4965;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">2</span><div><div style="font-weight:700;color:#12303F;font-size:16px;">On prépare votre lettre</div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Adressée à la bonne autorité, avec les bons motifs juridiques.</div></div></div>
+          <div style="display:flex;gap:14px;align-items:flex-start;"><span style="flex:none;width:34px;height:34px;border-radius:10px;background:#EAF1F5;color:#1B4965;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">3</span><div><div style="font-weight:700;color:#12303F;font-size:16px;">Vous l'envoyez — ou on l'envoie</div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Imprimez-la, ou laissez-nous l'expédier en recommandé.</div></div></div>
+        </div>
+      </div>
+
+      <div style="padding:30px 22px;background:#F4F8FA;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:6px;">Pourquoi votre loyer pourrait être contesté</div>
+        <p style="margin:0 0 18px;font-size:14px;color:#5A6A70;">Trois motifs, classés du plus fort au plus subtil.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid #C43D2E;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Formule officielle manquante</span><span style="font-size:11px;font-weight:700;color:#C43D2E;background:#FBEAE7;padding:3px 8px;border-radius:999px;">TRÈS FORT</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Obligatoire à VD et GE. Sans elle, votre loyer initial peut être frappé de nullité — contestable en tout temps.</div></div>
+          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid #F4A73B;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Hausse de plus de 10 %</span><span style="font-size:11px;font-weight:700;color:#7A5406;background:#FFF3DF;padding:3px 8px;border-radius:999px;">FORT</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Par rapport au locataire précédent, sans travaux : un indice sérieux d'abus.</div></div>
+          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid #1B4965;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Rendement excessif</span><span style="font-size:11px;font-weight:700;color:#1B4965;background:#EAF1F5;padding:3px 8px;border-radius:999px;">MOYEN</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">On somme le bailleur de prouver que son rendement n'est pas excessif. À défaut, l'autorité tranche en votre faveur.</div></div>
+        </div>
+      </div>
+
+      <div style="padding:30px 22px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="background:#E3F3EB;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#0C5638;font-size:14px;margin-bottom:4px;">Gratuit pour vérifier</div><div style="font-size:12.5px;color:#4C7C64;line-height:1.4;">Le diagnostic ne coûte rien.</div></div>
+          <div style="background:#EAF1F5;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#1B4965;font-size:14px;margin-bottom:4px;">🇨🇭 Hébergé en Suisse</div><div style="font-size:12.5px;color:#3E5560;line-height:1.4;">Données supprimées après 7 jours.</div></div>
+          <div style="background:#EAF1F5;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#1B4965;font-size:14px;margin-bottom:4px;">Conciliation gratuite</div><div style="font-size:12.5px;color:#3E5560;line-height:1.4;">Aucun frais de tribunal.</div></div>
+          <div style="background:#F6F4EE;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#12303F;font-size:14px;margin-bottom:4px;">Outil d'aide</div><div style="font-size:12.5px;color:#5A6A70;line-height:1.4;">Pas un conseil juridique.</div></div>
+        </div>
+      </div>
+
+      <div style="padding:10px 22px 30px;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:16px;">Une lettre prête, dès 5 CHF</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:18px;"><div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-weight:700;color:#12303F;font-size:16px;">La lettre à imprimer</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#12303F;">5 CHF</span></div><div style="font-size:14px;color:#5A6A70;margin-top:4px;">PDF prêt à imprimer, vous l'envoyez vous-même.</div></div>
+          <div style="background:#12303F;border-radius:16px;padding:18px;position:relative;"><span style="position:absolute;top:-10px;right:16px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">RECOMMANDÉ · SANS EFFORT</span><div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-weight:700;color:#fff;font-size:16px;">On l'envoie pour vous</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#F4A73B;">35 CHF</span></div><div style="font-size:14px;color:#B9C9D1;margin-top:4px;">Impression + envoi en recommandé. Rien à faire.</div></div>
+        </div>
+      </div>
+
+      <div style="padding:6px 22px 30px;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:14px;">Questions fréquentes</div>
+        <details style="border-bottom:1px solid #EEEBE3;padding:14px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Est-ce vraiment légal&nbsp;?<span style="color:#F4A73B;">+</span></summary><p style="margin:10px 0 0;font-size:14px;color:#5A6A70;line-height:1.5;">Oui. Contester un loyer est un droit prévu par le Code des obligations. La procédure de conciliation est gratuite et confidentielle.</p></details>
+        <details style="border-bottom:1px solid #EEEBE3;padding:14px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Mon bailleur peut-il se venger&nbsp;?<span style="color:#F4A73B;">+</span></summary><p style="margin:10px 0 0;font-size:14px;color:#5A6A70;line-height:1.5;">La loi protège contre les résiliations de représailles pendant et après une contestation.</p></details>
+        <details style="border-bottom:1px solid #EEEBE3;padding:14px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Et mes données&nbsp;?<span style="color:#F4A73B;">+</span></summary><p style="margin:10px 0 0;font-size:14px;color:#5A6A70;line-height:1.5;">Hébergées en Suisse et supprimées automatiquement après 7 jours.</p></details>
+      </div>
+
+      <div style="padding:30px 22px;">
+        <button onClick="{{ goChoix }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:17px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Vérifier mon loyer maintenant →</button>
+      </div>
+
+      <div style="padding:26px 22px;background:#12303F;color:#8FA6B0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;"><span style="position:relative;width:22px;height:22px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:10px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:10px;background:#fff;border-radius:1px;"></span></span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#fff;">contestation.ch</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:13px;margin-bottom:14px;"><a onClick="{{ goCgv }}" style="color:#B9C9D1;cursor:pointer;">CGV</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Confidentialité</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Mentions légales</a></div>
+        <p style="margin:0;font-size:12px;line-height:1.5;">contestation.ch est un outil d'aide à la génération de courrier, pas un cabinet d'avocats et pas un conseil juridique. Pour les cas complexes, adressez-vous à l'ASLOCA.</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== CHOIX PARCOURS ===================== -->
+    <sc-if value="{{ isChoix }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="choix-parcours" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <button onClick="{{ goLanding }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Comment voulez-vous procéder&nbsp;?</span>
+      </div>
+      <div style="padding:26px 22px;flex:1;">
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">Deux façons d'obtenir votre lettre. Choisissez la plus simple pour vous.</p>
+
+        <button onClick="{{ goImport }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:20px;padding:22px;margin-bottom:16px;cursor:pointer;box-shadow:0 8px 22px -16px rgba(18,48,63,.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="width:46px;height:46px;border-radius:14px;background:#EAF1F5;color:#1B4965;display:flex;align-items:center;justify-content:center;font-size:22px;">📄</span><span style="background:#E3F3EB;color:#0C5638;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">LE PLUS RAPIDE</span></div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">Importer mon bail</div>
+          <div style="font-size:14px;color:#5A6A70;line-height:1.45;">On lit tout automatiquement (bail + formule officielle). Vous n'avez plus qu'à vérifier.</div>
+        </button>
+
+        <button onClick="{{ goManuel }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:20px;padding:22px;cursor:pointer;box-shadow:0 8px 22px -16px rgba(18,48,63,.4);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="width:46px;height:46px;border-radius:14px;background:#FFF3DF;color:#7A5406;display:flex;align-items:center;justify-content:center;font-size:22px;">✍️</span><span style="background:#EAF1F5;color:#1B4965;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">≈ 5 MIN</span></div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">Répondre à quelques questions</div>
+          <div style="font-size:14px;color:#5A6A70;line-height:1.45;">Pas de document sous la main&nbsp;? On vous guide, une question à la fois.</div>
+        </button>
+      </div>
+      <div style="padding:0 22px 26px;">
+        <div style="background:#F4F8FA;border-radius:16px;padding:16px;display:flex;gap:12px;align-items:flex-start;">
+          <span style="color:#178A5B;font-size:18px;">🔒</span>
+          <div style="font-size:13px;color:#3E5560;line-height:1.45;">Vos données sont hébergées en Suisse et <strong style="color:#12303F;">supprimées automatiquement après 7 jours</strong>. Aucun compte requis pour vérifier.</div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== FLUX MANUEL ===================== -->
+    <sc-if value="{{ isManuel }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="flux-manuel" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px 14px;border-bottom:1px solid #EEEBE3;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <button onClick="{{ prev }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+          <div style="flex:1;height:8px;border-radius:999px;background:#EAE7DF;overflow:hidden;"><div style="height:100%;width:{{ progress }};background:#178A5B;border-radius:999px;transition:width .3s ease;"></div></div>
+          <span style="font-size:13px;font-weight:600;color:#8A979C;white-space:nowrap;">{{ stepLabel }}</span>
+        </div>
+      </div>
+
+      <div class="cc-scroll" style="flex:1;overflow-y:auto;padding:26px 22px 20px;">
+
+        <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Dans quel canton se trouve votre logement&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Nous couvrons Vaud et Genève.</p>
+            <button onClick="{{ chooseCantonVD }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:20px;margin-bottom:12px;cursor:pointer;font-size:18px;font-weight:700;color:#12303F;display:flex;justify-content:space-between;align-items:center;">Vaud <span style="color:#8A979C;font-size:16px;">→</span></button>
+            <button onClick="{{ chooseCantonGE }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:20px;cursor:pointer;font-size:18px;font-weight:700;color:#12303F;display:flex;justify-content:space-between;align-items:center;">Genève <span style="color:#8A979C;font-size:16px;">→</span></button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Dans quelle commune&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Celle de l'immeuble — elle détermine l'autorité compétente.</p>
+            <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Commune</label>
+            <input type="text" value="{{ d.commune }}" onInput="{{ onCommune }}" placeholder="Lausanne" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:14px;">
+            <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">NPA</label>
+            <input type="text" inputmode="numeric" value="{{ d.npa }}" onInput="{{ onNpa }}" placeholder="1004" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Quelle est l'adresse de l'immeuble&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Rue et numéro du logement concerné.</p>
+            <input type="text" value="{{ d.adresse }}" onInput="{{ onAdresse }}" placeholder="Avenue de la Gare 12" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Quand avez-vous reçu les clés&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">La date d'entrée dans le logement — pas celle du 1<sup>er</sup> versement. Le délai de 30 jours part de là.</p>
+            <input type="date" value="{{ d.dateCles }}" onInput="{{ onDateCles }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Votre loyer mensuel&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Tel qu'il figure sur votre bail.</p>
+            <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net (hors charges)</label>
+            <div style="position:relative;margin-bottom:14px;"><input type="text" inputmode="decimal" value="{{ d.loyerNet }}" onInput="{{ onLoyerNet }}" placeholder="1 850" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Charges mensuelles</label>
+            <div style="position:relative;"><input type="text" inputmode="decimal" value="{{ d.charges }}" onInput="{{ onCharges }}" placeholder="150" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep5 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Avez-vous reçu la formule officielle&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Le formulaire officiel (souvent vert) de fixation du loyer initial, remis à la signature du bail. C'est le point le plus important.</p>
+            <button onClick="{{ chooseFormuleOui }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;font-size:16px;font-weight:700;color:#12303F;">Oui, je l'ai reçue</button>
+            <button onClick="{{ chooseFormuleNon }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;font-size:16px;font-weight:700;color:#12303F;">Non, jamais reçue</button>
+            <button onClick="{{ chooseFormuleInconnu }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:18px;cursor:pointer;font-size:16px;font-weight:600;color:#5A6A70;">Je ne sais pas</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep6 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Connaissez-vous le loyer de l'ancien locataire&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Il figure sur la formule officielle. Une hausse de plus de 10 % est un motif fort.</p>
+            <button onClick="{{ choosePrecOui }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;font-size:16px;font-weight:700;color:#12303F;">Oui, je le connais</button>
+            <button onClick="{{ choosePrecNon }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:18px;cursor:pointer;font-size:16px;font-weight:600;color:#5A6A70;">Non / je ne l'ai pas</button>
+            <sc-if value="{{ precOui }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:18px;"><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net de l'ancien locataire</label><div style="position:relative;"><input type="text" inputmode="decimal" value="{{ d.loyerPrec }}" onInput="{{ onLoyerPrec }}" placeholder="1 500" style="width:100%;box-sizing:border-box;border:1.5px solid #178A5B;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;box-shadow:0 0 0 3px #E3F3EB;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div></div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep7 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Le taux de référence de votre bail&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Il figure sur le bail ou la dernière notification. Taux actuel&nbsp;: {{ tauxActuel }}&nbsp;%.</p>
+            <div style="position:relative;margin-bottom:14px;"><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onInput="{{ onTauxRef }}" placeholder="1,75" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
+            <button onClick="{{ toggleTauxInconnu }}" style="background:#F4F8FA;border:1px solid #E4E2DB;border-radius:10px;padding:10px 14px;font-size:14px;color:#1B4965;font-weight:600;cursor:pointer;">Je ne le connais pas</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep8 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Année de construction de l'immeuble&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Facultatif — cela affine l'argumentaire. Laissez vide si vous ne savez pas.</p>
+            <input type="text" inputmode="numeric" value="{{ d.annee }}" onInput="{{ onAnnee }}" placeholder="1985" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep9 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Vos coordonnées</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Elles figureront comme expéditeur sur la lettre.</p>
+            <div style="display:flex;gap:10px;"><input type="text" value="{{ d.locPrenom }}" onInput="{{ onLocPrenom }}" placeholder="Prénom" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"><input type="text" value="{{ d.locNom }}" onInput="{{ onLocNom }}" placeholder="Nom" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"></div>
+            <input type="text" value="{{ d.locAdresse }}" onInput="{{ onLocAdresse }}" placeholder="Votre adresse" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
+            <div style="display:flex;gap:10px;"><input type="text" value="{{ d.locNpa }}" onInput="{{ onLocNpa }}" placeholder="NPA" style="width:110px;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"><input type="text" value="{{ d.locVille }}" onInput="{{ onLocVille }}" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"></div>
+            <input type="email" value="{{ d.locEmail }}" onInput="{{ onLocEmail }}" placeholder="E-mail (pour le suivi)" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isStep10 }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">La régie ou le propriétaire</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Le destinataire de la copie. La requête, elle, part à l'autorité.</p>
+            <input type="text" value="{{ d.regNom }}" onInput="{{ onRegNom }}" placeholder="Nom de la régie / du propriétaire" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
+            <input type="text" value="{{ d.regAdresse }}" onInput="{{ onRegAdresse }}" placeholder="Adresse" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
+            <div style="display:flex;gap:10px;"><input type="text" value="{{ d.regNpa }}" onInput="{{ onRegNpa }}" placeholder="NPA" style="width:110px;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"><input type="text" value="{{ d.regVille }}" onInput="{{ onRegVille }}" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"></div>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ showManuelCta }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">
+        <button onClick="{{ next }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">{{ ctaLabel }}</button>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===================== FLUX IMPORT ===================== -->
+    <sc-if value="{{ importUpload }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="import-upload" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <button onClick="{{ goChoix }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Importer vos documents</span>
+      </div>
+      <div style="padding:26px 22px;flex:1;">
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">Ajoutez votre bail <strong>et</strong> la formule officielle. On lit tout automatiquement — vous n'aurez qu'à vérifier.</p>
+
+        <div onClick="{{ uploadBail }}" style="border:2px dashed #C9D5DB;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;margin-bottom:14px;background:#fff;">
+          <sc-if value="{{ bailFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>bail-2024.pdf</div></sc-if>
+          <sc-if value="{{ bailNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-size:30px;margin-bottom:8px;">📄</div><div style="font-weight:700;color:#12303F;font-size:15px;">Votre contrat de bail</div><div style="font-size:13px;color:#8A979C;margin-top:4px;">Déposer ou choisir · PDF, JPG</div></div></sc-if>
+        </div>
+
+        <div onClick="{{ uploadFormule }}" style="border:2px dashed #C9D5DB;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;margin-bottom:12px;background:#fff;">
+          <sc-if value="{{ formuleFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>formule-officielle.pdf</div></sc-if>
+          <sc-if value="{{ formuleNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-size:30px;margin-bottom:8px;">🟢</div><div style="font-weight:700;color:#12303F;font-size:15px;">La formule officielle</div><div style="font-size:13px;color:#8A979C;margin-top:4px;">Le formulaire (souvent vert) de fixation du loyer</div></div></sc-if>
+        </div>
+        <div style="background:#FFF3DF;border-radius:12px;padding:12px 14px;font-size:13px;color:#7A5406;line-height:1.4;">La formule officielle est nécessaire pour détecter une hausse par rapport à l'ancien locataire. Vous ne l'avez pas&nbsp;? C'est justement un motif fort — indiquez-le dans le questionnaire.</div>
+      </div>
+      <div style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">
+        <button onClick="{{ startAnalyse }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Lancer l'analyse</button>
+        <p style="margin:10px 0 0;text-align:center;font-size:12px;color:#8A979C;">🔒 Documents hébergés en Suisse, supprimés après 7 jours.</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ importAnalyse }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="import-analyse" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;text-align:center;">
+      <span style="width:56px;height:56px;border:4px solid #EAF1F5;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;margin-bottom:24px;"></span>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;margin-bottom:8px;">On lit votre bail…</div>
+      <p style="margin:0 0 28px;font-size:15px;color:#5A6A70;line-height:1.5;">Quelques secondes. On repère les montants, les dates et la formule officielle.</p>
+      <div style="width:100%;max-width:280px;text-align:left;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:12px;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Documents reçus</span></div>
+        <sc-if value="{{ an0 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Adresse et parties identifiées</span></div></sc-if>
+        <sc-if value="{{ an1 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Loyer et charges extraits</span></div></sc-if>
+        <sc-if value="{{ an2 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Vérification de la formule officielle</span></div></sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ importValidation }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="import-validation" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <button onClick="{{ goChoix }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Vérifiez les informations</span>
+      </div>
+      <div style="padding:22px 22px 20px;flex:1;">
+        <div style="background:#E3F3EB;border-radius:14px;padding:14px 16px;font-size:14px;color:#0C5638;line-height:1.45;margin-bottom:20px;">✓ Lecture terminée. Vérifiez les champs ci-dessous — surtout ceux marqués <strong>à vérifier</strong> — puis lancez le diagnostic.</div>
+
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Le logement</div>
+        <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Commune</label>
+        <input type="text" value="{{ d.commune }}" onInput="{{ onCommune }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Adresse</label>
+        <input type="text" value="{{ d.adresse }}" onInput="{{ onAdresse }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Date de remise des clés <span style="background:#FFF3DF;color:#7A5406;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;">À VÉRIFIER</span></label>
+        <input type="date" value="{{ d.dateCles }}" onInput="{{ onDateCles }}" style="width:100%;box-sizing:border-box;border:1.5px solid #F0C77A;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#FFFDF8;margin-bottom:18px;">
+
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Les montants</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <div style="flex:1;"><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net</label><input type="text" value="{{ d.loyerNet }}" onInput="{{ onLoyerNet }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#fff;"></div>
+          <div style="flex:1;"><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Charges</label><input type="text" value="{{ d.charges }}" onInput="{{ onCharges }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#fff;"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer de l'ancien locataire <span style="background:#FFF3DF;color:#7A5406;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;">À VÉRIFIER</span></label>
+        <input type="text" value="{{ d.loyerPrec }}" onInput="{{ onLoyerPrec }}" style="width:100%;box-sizing:border-box;border:1.5px solid #F0C77A;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#FFFDF8;margin-bottom:18px;">
+
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Le point clé</div>
+        <div style="background:#FBEAE7;border:1px solid #F1B8AE;border-radius:14px;padding:16px;margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Formule officielle</span><span style="background:#C43D2E;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">NON DÉTECTÉE</span></div>
+          <p style="margin:0;font-size:13px;color:#7A2A20;line-height:1.45;">Aucune formule officielle n'a été trouvée dans vos documents. Si vous ne l'avez jamais reçue, c'est un motif de contestation très fort.</p>
+        </div>
+      </div>
+      <div style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">
+        <button onClick="{{ goDiagnostic }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Voir mon diagnostic →</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== DIAGNOSTIC ===================== -->
+    <sc-if value="{{ isDiagnostic }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="diagnostic" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;position:sticky;top:0;background:rgba(251,250,247,.92);backdrop-filter:blur(8px);z-index:5;">
+        <button onClick="{{ goChoix }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Votre diagnostic</span>
+      </div>
+
+      <div style="padding:24px 22px 20px;">
+        <sc-if value="{{ diagEligible }}" hint-placeholder-val="{{ true }}">
+          <div style="background:linear-gradient(150deg,#178A5B,#0C5638);border-radius:22px;padding:26px 22px;color:#fff;animation:fadeUp .4s ease;">
+            <div style="width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:16px;">✓</div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:27px;line-height:1.1;margin-bottom:8px;">Votre dossier tient la route.</div>
+            <p style="margin:0;font-size:15px;line-height:1.5;color:#CDEBDC;">Nous avons identifié <strong style="color:#fff;">{{ diagMotifsCount }} motifs</strong> de contestation. Votre loyer initial peut être contesté auprès de l'autorité de conciliation.</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ diagHorsDelai }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#FFF3DF;border:1px solid #F0C77A;border-radius:22px;padding:24px 22px;animation:fadeUp .4s ease;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#7A5406;line-height:1.15;margin-bottom:8px;">Le délai de 30 jours semble dépassé</div>
+            <p style="margin:0 0 4px;font-size:15px;line-height:1.5;color:#7A5406;">Contester le loyer initial n'est probablement plus recevable. Mais tout n'est pas perdu&nbsp;: vous pourriez avoir droit à une baisse fondée sur le taux de référence.</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ diagManuel }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#EAF1F5;border:1px solid #CBDCE4;border-radius:22px;padding:24px 22px;animation:fadeUp .4s ease;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#1B4965;line-height:1.15;margin-bottom:8px;">On étudie votre cas à la main</div>
+            <p style="margin:0;font-size:15px;line-height:1.5;color:#3E5560;">Votre situation demande une vérification humaine. Laissez-nous votre e-mail, on revient vers vous rapidement.</p>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="padding:6px 22px 8px;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">Vos motifs de contestation</div>
+        <p style="margin:0 0 16px;font-size:14px;color:#5A6A70;">Classés du plus fort au plus subtil.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <sc-for list="{{ motifs }}" as="m" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid {{ m.bar }};">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
+                <span style="font-weight:700;color:#12303F;font-size:15px;line-height:1.3;">{{ m.libelle }}</span>
+                <span style="flex:none;font-size:10px;font-weight:700;color:{{ m.color }};background:{{ m.bg }};padding:3px 8px;border-radius:999px;white-space:nowrap;">{{ m.label }}</span>
+              </div>
+              <div style="font-size:13.5px;color:#5A6A70;line-height:1.5;">{{ m.explication }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ autPresent }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:22px;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:12px;">À qui la demande sera adressée</div>
+        <div style="background:#F4F8FA;border:1px solid #E4E2DB;border-radius:16px;padding:18px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:#1B4965;text-transform:uppercase;margin-bottom:8px;">{{ autType }}</div>
+          <div style="font-size:15px;color:#12303F;font-weight:600;line-height:1.5;">{{ autNom }}</div>
+          <div style="font-size:14px;color:#5A6A70;line-height:1.5;margin-top:4px;">{{ autAdresse }}<br>{{ autCase }}<br>{{ autVille }}</div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ hasAvert }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:0 22px 8px;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <sc-for list="{{ avertissements }}" as="a" hint-placeholder-count="1">
+            <div style="background:#FFF3DF;border-radius:12px;padding:13px 15px;font-size:13px;color:#7A5406;line-height:1.45;display:flex;gap:10px;"><span>⚠️</span><span>{{ a }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <div style="padding:18px 22px 8px;">
+        <details style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;">
+          <summary style="font-weight:700;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Ce que la lettre demandera<span style="color:#F4A73B;">+</span></summary>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ conclusions }}" as="c" hint-placeholder-count="4">
+              <div style="display:flex;gap:10px;font-size:13.5px;color:#5A6A70;line-height:1.4;"><span style="color:#178A5B;font-weight:800;">•</span><span>{{ c }}</span></div>
+            </sc-for>
+          </div>
+        </details>
+      </div>
+
+      <div style="padding:20px 22px 10px;">
+        <sc-if value="{{ diagEligible }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goApercu }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:17px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Voir ma lettre →</button></sc-if>
+        <sc-if value="{{ diagHorsDelai }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goLanding }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:16px;border:none;border-radius:14px;cursor:pointer;">Calculer ma baisse de loyer →</button></sc-if>
+        <sc-if value="{{ diagManuel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goLanding }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:16px;border:none;border-radius:14px;cursor:pointer;">Être recontacté par e-mail →</button></sc-if>
+      </div>
+      <div style="padding:0 22px 26px;"><p style="margin:0;font-size:12px;color:#8A979C;line-height:1.5;text-align:center;">Ce diagnostic est un outil d'aide, pas un conseil juridique. Vous restez responsable du suivi de votre démarche.</p></div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== APERÇU LETTRE + OFFRES ===================== -->
+    <sc-if value="{{ isApercu }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="apercu-offres" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;background:#F4F2EC;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #E4E2DB;position:sticky;top:0;background:rgba(244,242,236,.94);backdrop-filter:blur(8px);z-index:5;">
+        <button onClick="{{ goDiagnostic }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Votre lettre est prête</span>
+      </div>
+
+      <div style="padding:22px 22px 8px;text-align:center;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;line-height:1.15;margin-bottom:6px;">Votre lettre est rédigée et personnalisée.</div>
+        <p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.5;">Débloquez-la pour la lire en entier, l'imprimer et l'envoyer.</p>
+      </div>
+
+      <!-- letter preview with watermark -->
+      <div style="padding:16px 22px 8px;">
+        <div style="position:relative;background:#fff;border-radius:10px;box-shadow:0 16px 40px -20px rgba(18,48,63,.5);overflow:hidden;border:1px solid #E4E2DB;">
+          <div style="padding:26px 24px;font-size:11px;color:#12303F;line-height:1.7;">
+            <div style="font-weight:600;">{{ letterNom }}</div>
+            <div>{{ letterAdr }}</div>
+            <div style="margin-bottom:18px;">{{ letterVille }}</div>
+            <div style="text-align:right;font-weight:600;">{{ letterAutNom }}</div>
+            <div style="text-align:right;">{{ letterAutAdr }}</div>
+            <div style="text-align:right;margin-bottom:18px;">{{ letterAutVille }}</div>
+            <div style="text-align:right;margin-bottom:16px;color:#5A6A70;">{{ lieuDate }}</div>
+            <div style="font-weight:700;margin-bottom:14px;">Objet : Contestation du loyer initial — {{ letterAdr }}</div>
+            <div style="filter:blur(3.5px);user-select:none;">
+              <p style="margin:0 0 10px;">Madame, Monsieur, Par la présente et dans le délai légal, je conteste le loyer initial fixé pour le logement susmentionné, dont j'ai pris possession récemment, pour les motifs exposés ci-après.</p>
+              <p style="margin:0 0 10px;">En premier lieu, la formule officielle de fixation du loyer initial, obligatoire dans le canton, ne m'a pas été remise à la conclusion du bail. Cette omission entraîne la nullité de la fixation du loyer initial, lequel demeure contestable en tout temps conformément à la jurisprudence constante du Tribunal fédéral.</p>
+              <p style="margin:0 0 10px;">En second lieu, le loyer net a connu une hausse supérieure à dix pour cent par rapport au précédent locataire, sans travaux à plus-value, ce qui constitue un indice sérieux du caractère abusif au sens de l'article 270 CO.</p>
+              <p style="margin:0 0 10px;">Enfin, le loyer paraît procurer au bailleur un rendement net excessif. Ne disposant pas de la comptabilité de l'immeuble, je somme le bailleur de produire son décompte de rendement net, à défaut de quoi l'autorité statuera en équité. Par ces motifs, je conclus respectueusement à ce qu'il plaise à l'autorité de conciliation de constater le caractère abusif du loyer initial et de le fixer à un montant non abusif.</p>
+            </div>
+            <div style="margin-top:16px;">Veuillez agréer, Madame, Monsieur, mes salutations distinguées.</div>
+            <div style="margin-top:10px;font-style:italic;color:#8A979C;filter:blur(2px);">{{ letterNom }}</div>
+          </div>
+          <!-- watermark overlay -->
+          <div style="position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:6px 18px;transform:rotate(-24deg) scale(1.4);pointer-events:none;overflow:hidden;">
+            <sc-for list="{{ wmTiles }}" as="w" hint-placeholder-count="40">
+              <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:12px;color:rgba(27,73,101,.16);white-space:nowrap;letter-spacing:.02em;">APERÇU · contestation.ch</span>
+            </sc-for>
+          </div>
+          <!-- fade + lock badge -->
+          <div style="position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);"></div>
+          <div style="position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;background:#12303F;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;box-shadow:0 6px 16px -6px rgba(18,48,63,.6);">🔒 Débloquez pour lire en entier</div>
+        </div>
+      </div>
+
+      <!-- offers -->
+      <div style="padding:20px 22px 26px;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:16px;">Choisissez votre formule</div>
+
+        <div style="background:#fff;border:1.5px solid #E4E2DB;border-radius:20px;padding:20px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#12303F;">La lettre prête à imprimer</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;white-space:nowrap;">5 CHF</span></div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px;">
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>PDF final, prêt à imprimer</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>Vous l'envoyez vous-même</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>Suivi de votre dossier en ligne</div>
+          </div>
+          <button onClick="{{ selectOffre5 }}" style="width:100%;background:#EAF1F5;color:#1B4965;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Choisir — 5 CHF</button>
+        </div>
+
+        <div style="background:#12303F;border-radius:20px;padding:20px;position:relative;">
+          <span style="position:absolute;top:-11px;left:20px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;">RECOMMANDÉ · SANS EFFORT</span>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#fff;">On l'envoie pour vous</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#F4A73B;white-space:nowrap;">35 CHF</span></div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px;">
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>On imprime et postons en recommandé</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>Preuve d'envoi + numéro de suivi</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>Vous n'avez rien à faire</div>
+          </div>
+          <button onClick="{{ selectOffre35 }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:16px;padding:14px;border:none;border-radius:12px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Choisir — 35 CHF</button>
+        </div>
+
+        <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5A6A70;font-weight:600;">🔒 Paiement sécurisé</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5A6A70;font-weight:600;">TWINT &amp; carte</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5A6A70;font-weight:600;">🇨🇭 Suisse</span>
+        </div>
+        <p style="margin:16px 0 0;font-size:12px;color:#8A979C;line-height:1.5;text-align:center;">Rappel : contestation.ch est un outil d'aide, pas un conseil juridique. La procédure de conciliation reste gratuite.</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== SIGNATURE (offre 35) ===================== -->
+    <sc-if value="{{ isSignature }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="signature" style="flex:1;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <button onClick="{{ goApercu }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Votre signature</span>
+      </div>
+      <div style="padding:26px 22px;flex:1;display:flex;flex-direction:column;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;line-height:1.15;margin-bottom:8px;">Signez votre lettre</div>
+        <p style="margin:0 0 22px;font-size:15px;color:#5A6A70;line-height:1.5;">Dessinez votre signature avec le doigt. Elle sera apposée sur la lettre envoyée en recommandé.</p>
+        <div style="background:#fff;border:1.5px solid #E4E2DB;border-radius:18px;padding:16px;">
+          <canvas ref="{{ sigRef }}" width="330" height="180" style="width:100%;height:180px;display:block;touch-action:none;border-bottom:2px dashed #D8DEE1;cursor:crosshair;"></canvas>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;"><span style="font-size:12px;color:#8A979C;">Signez au-dessus de la ligne</span><span style="font-size:12px;color:#8A979C;">✕ {{ letterNom }}</span></div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="display:flex;gap:12px;">
+          <button onClick="{{ clearSig }}" style="flex:none;background:#fff;color:#1B4965;font-weight:600;font-size:15px;padding:15px 20px;border:1.5px solid #C9D5DB;border-radius:14px;cursor:pointer;">Recommencer</button>
+          <button onClick="{{ validateSig }}" style="flex:1;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:16px;padding:15px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Valider ma signature →</button>
+        </div>
+        <sc-if value="{{ sigDrawn }}" hint-placeholder-val="{{ false }}"><p style="margin:12px 0 0;font-size:12px;color:#178A5B;text-align:center;">✓ Signature détectée</p></sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== CHECKOUT ===================== -->
+    <sc-if value="{{ isCheckout }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="checkout" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <button onClick="{{ goApercu }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Paiement</span>
+      </div>
+      <div style="padding:24px 22px;flex:1;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Votre commande</div>
+        <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:18px;margin-bottom:22px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;"><div><div style="font-weight:700;color:#12303F;font-size:16px;">{{ offreTitle }}</div><div style="font-size:13.5px;color:#5A6A70;margin-top:2px;">{{ offreDesc }}</div></div><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;white-space:nowrap;">{{ offrePrice }}</span></div>
+          <div style="border-top:1px solid #EEEBE3;margin-top:14px;padding-top:14px;display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:700;color:#12303F;font-size:15px;">Total</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#12303F;">{{ offrePrice }} CHF</span></div>
+        </div>
+
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Moyen de paiement</div>
+        <div style="display:flex;gap:12px;margin-bottom:18px;">
+          <button onClick="{{ setTwint }}" style="flex:1;background:{{ twintBg }};border:2px solid {{ twintBorder }};border-radius:14px;padding:16px;cursor:pointer;font-weight:700;color:#12303F;font-size:15px;">TWINT</button>
+          <button onClick="{{ setCarte }}" style="flex:1;background:{{ carteBg }};border:2px solid {{ carteBorder }};border-radius:14px;padding:16px;cursor:pointer;font-weight:700;color:#12303F;font-size:15px;">Carte</button>
+        </div>
+
+        <sc-if value="{{ isCarte }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeUp .3s ease;margin-bottom:18px;">
+            <input type="text" placeholder="Numéro de carte" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
+            <div style="display:flex;gap:12px;"><input type="text" placeholder="MM / AA" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"><input type="text" placeholder="CVC" style="width:110px;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isTwint }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:fadeUp .3s ease;background:#F4F8FA;border-radius:14px;padding:16px;margin-bottom:18px;display:flex;gap:12px;align-items:center;"><span style="font-size:22px;">📱</span><span style="font-size:14px;color:#3E5560;line-height:1.4;">Vous confirmerez le paiement dans l'application TWINT sur votre téléphone.</span></div>
+        </sc-if>
+
+        <div style="background:#FBFAF7;border:1px solid #EEEBE3;border-radius:12px;padding:14px;font-size:12.5px;color:#5A6A70;line-height:1.5;margin-bottom:6px;">En payant, vous confirmez avoir compris que contestation.ch est un <strong style="color:#12303F;">outil d'aide</strong> et non un conseil juridique, et que le suivi de votre démarche vous incombe.</div>
+      </div>
+      <div style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">
+        <button onClick="{{ payNow }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+          <sc-if value="{{ payLoading }}" hint-placeholder-val="{{ false }}"><span style="width:18px;height:18px;border:2.5px solid rgba(58,42,6,.3);border-top-color:#3A2A06;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;"></span></sc-if>
+          Payer {{ offrePrice }} CHF
+        </button>
+        <p style="margin:10px 0 0;text-align:center;font-size:12px;color:#8A979C;">🔒 Paiement sécurisé via Stripe · 🇨🇭</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== SUCCÈS + COMPTE ===================== -->
+    <sc-if value="{{ isSucces }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="succes" style="flex:1;overflow-y:auto;">
+      <div style="padding:44px 24px 24px;text-align:center;">
+        <div style="width:72px;height:72px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;">✓</div>
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#12303F;line-height:1.15;margin-bottom:8px;">Paiement confirmé&nbsp;!</div>
+        <sc-if value="{{ is5 }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:15px;color:#5A6A70;line-height:1.5;">Votre lettre est débloquée. Téléchargez-la, imprimez-la et envoyez-la à l'autorité de conciliation.</p></sc-if>
+        <sc-if value="{{ is35 }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:15px;color:#5A6A70;line-height:1.5;">On s'occupe de tout. Votre lettre signée part en recommandé sous 1 à 2 jours ouvrés. Vous suivrez son envoi ici.</p></sc-if>
+      </div>
+      <div style="padding:0 22px 20px;">
+        <div style="background:#12303F;border-radius:18px;padding:22px;color:#fff;">
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;margin-bottom:6px;">Créez votre compte</div>
+          <p style="margin:0 0 16px;font-size:13.5px;color:#B9C9D1;line-height:1.45;">Pour suivre votre dossier et retrouver votre lettre à tout moment.</p>
+          <input type="email" placeholder="Votre e-mail" value="{{ d.locEmail }}" style="width:100%;box-sizing:border-box;border:none;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:10px;">
+          <input type="password" placeholder="Créez un mot de passe" style="width:100%;box-sizing:border-box;border:none;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:14px;">
+          <button onClick="{{ goDashboard }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:16px;padding:15px;border:none;border-radius:12px;cursor:pointer;">Créer mon compte et suivre →</button>
+        </div>
+        <button onClick="{{ goDashboard }}" style="width:100%;background:transparent;color:#5A6A70;font-weight:600;font-size:14px;padding:16px;border:none;cursor:pointer;margin-top:6px;">Plus tard, voir mon dossier</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== DASHBOARD SUIVI ===================== -->
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="dashboard" style="flex:1;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <div style="display:flex;align-items:center;gap:8px;"><span style="position:relative;width:24px;height:24px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:11px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:11px;background:#fff;border-radius:1px;"></span></span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#12303F;">Mon dossier</span></div>
+        <button onClick="{{ goLanding }}" style="background:transparent;border:none;color:#8A979C;font-size:13px;cursor:pointer;">Déconnexion</button>
+      </div>
+      <div style="padding:24px 22px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#12303F;">Contestation loyer initial</span></div>
+        <div style="font-size:14px;color:#5A6A70;margin-bottom:20px;">{{ letterAdr }} · {{ letterVille }}</div>
+
+        <div style="background:#E3F3EB;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px;margin-bottom:24px;"><span style="width:10px;height:10px;border-radius:50%;background:#178A5B;"></span><span style="font-size:14px;font-weight:600;color:#0C5638;">Dossier actif</span></div>
+
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:14px;">Suivi</div>
+        <div style="display:flex;flex-direction:column;">
+          <div style="display:flex;gap:14px;padding-bottom:20px;border-left:2px solid #178A5B;margin-left:9px;padding-left:22px;position:relative;"><span style="position:absolute;left:-9px;top:0;width:16px;height:16px;border-radius:50%;background:#178A5B;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;">✓</span><div><div style="font-weight:700;color:#12303F;font-size:15px;">Paiement confirmé</div><div style="font-size:13px;color:#8A979C;">Aujourd'hui</div></div></div>
+          <div style="display:flex;gap:14px;padding-bottom:20px;border-left:2px solid #178A5B;margin-left:9px;padding-left:22px;position:relative;"><span style="position:absolute;left:-9px;top:0;width:16px;height:16px;border-radius:50%;background:#178A5B;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;">✓</span><div><div style="font-weight:700;color:#12303F;font-size:15px;">Lettre générée</div><div style="font-size:13px;color:#8A979C;">Personnalisée et prête</div></div></div>
+          <sc-if value="{{ is35 }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:14px;padding-bottom:20px;border-left:2px solid #E4E2DB;margin-left:9px;padding-left:22px;position:relative;"><span style="position:absolute;left:-9px;top:0;width:16px;height:16px;border-radius:50%;background:#F4A73B;"></span><div><div style="font-weight:700;color:#12303F;font-size:15px;">Envoi en recommandé</div><div style="font-size:13px;color:#8A979C;">En préparation · sous 1-2 jours</div></div></div>
+            <div style="display:flex;gap:14px;margin-left:9px;padding-left:22px;position:relative;"><span style="position:absolute;left:-9px;top:0;width:16px;height:16px;border-radius:50%;background:#E4E2DB;"></span><div><div style="font-weight:700;color:#8A979C;font-size:15px;">Remis à la conciliation</div><div style="font-size:13px;color:#8A979C;">À venir</div></div></div>
+          </sc-if>
+          <sc-if value="{{ is5 }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:14px;margin-left:9px;padding-left:22px;position:relative;"><span style="position:absolute;left:-9px;top:0;width:16px;height:16px;border-radius:50%;background:#E4E2DB;"></span><div><div style="font-weight:700;color:#8A979C;font-size:15px;">À vous d'envoyer</div><div style="font-size:13px;color:#8A979C;">Imprimez et postez la lettre</div></div></div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ is35 }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:22px;background:#F4F8FA;border:1px solid #E4E2DB;border-radius:16px;padding:18px;">
+            <div style="font-size:13px;color:#5A6A70;margin-bottom:4px;">Numéro de suivi recommandé</div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#12303F;letter-spacing:.02em;">{{ trackNum }}</div>
+            <div style="font-size:12px;color:#8A979C;margin-top:6px;">Disponible dès le dépôt à la poste.</div>
+          </div>
+        </sc-if>
+
+        <div style="margin-top:22px;">
+          <button style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:15px;border:none;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">⬇ Télécharger ma lettre (PDF)</button>
+        </div>
+        <p style="margin:18px 0 0;font-size:12px;color:#8A979C;line-height:1.5;text-align:center;">Vos données seront supprimées automatiquement 7 jours après la clôture du dossier.</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== CGV ===================== -->
+    <sc-if value="{{ isCgv }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="cgv" style="flex:1;overflow-y:auto;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;position:sticky;top:0;background:rgba(251,250,247,.94);backdrop-filter:blur(8px);z-index:5;">
+        <button onClick="{{ goLanding }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Conditions générales</span>
+      </div>
+      <div style="padding:26px 22px;">
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;margin:0 0 6px;">Conditions générales de vente</h1>
+        <p style="margin:0 0 24px;font-size:13px;color:#8A979C;">Dernière mise à jour&nbsp;: {{ lieuDate }}</p>
+        <div style="background:#FBEAE7;border:1px solid #F1B8AE;border-radius:14px;padding:16px;margin-bottom:24px;"><div style="font-weight:700;color:#12303F;font-size:14px;margin-bottom:4px;">Nature du service</div><p style="margin:0;font-size:13.5px;color:#7A2A20;line-height:1.5;">contestation.ch est un outil d'aide à la rédaction de courriers. Ce n'est <strong>ni un cabinet d'avocats, ni un conseil juridique</strong>. Aucune garantie de résultat n'est donnée.</p></div>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">1. Objet</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Le service génère une lettre de contestation de loyer initial personnalisée, à partir des informations que vous fournissez, pour les cantons de Vaud et Genève.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">2. Prix et prestations</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Formule à 5 CHF&nbsp;: lettre au format PDF à imprimer et envoyer soi-même. Formule à 35 CHF&nbsp;: impression et envoi en recommandé par nos soins, expéditeur étant le locataire.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">3. Responsabilité</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Vous restez seul responsable du suivi de votre démarche&nbsp;: respect des délais, réception par l'autorité, suites de la procédure. Pour tout cas complexe, adressez-vous à l'<strong>ASLOCA</strong>.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">4. Rétractation et remboursement</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">La lettre étant générée sur mesure, le droit de rétractation ne s'applique pas une fois le document débloqué. En cas d'échec de génération, vous êtes intégralement remboursé.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">5. Données</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Vos données et documents sont hébergés en Suisse et supprimés automatiquement 7 jours après la clôture du dossier. Voir la politique de confidentialité.</p></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== CONFIDENTIALITÉ ===================== -->
+    <sc-if value="{{ isPrivacy }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll" data-screen-label="confidentialite" style="flex:1;overflow-y:auto;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;position:sticky;top:0;background:rgba(251,250,247,.94);backdrop-filter:blur(8px);z-index:5;">
+        <button onClick="{{ goLanding }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Confidentialité</span>
+      </div>
+      <div style="padding:26px 22px;">
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;margin:0 0 20px;">Politique de confidentialité</h1>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+          <div style="background:#EAF1F5;border-radius:14px;padding:16px;"><div style="font-size:22px;margin-bottom:6px;">🇨🇭</div><div style="font-weight:700;color:#1B4965;font-size:14px;">Hébergé en Suisse</div><div style="font-size:12.5px;color:#3E5560;line-height:1.4;margin-top:4px;">Vos documents sensibles restent sur des serveurs suisses.</div></div>
+          <div style="background:#E3F3EB;border-radius:14px;padding:16px;"><div style="font-size:22px;margin-bottom:6px;">🗑️</div><div style="font-weight:700;color:#0C5638;font-size:14px;">Effacé à J+7</div><div style="font-size:12.5px;color:#4C7C64;line-height:1.4;margin-top:4px;">Suppression automatique 7 jours après clôture.</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">Données collectées</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Les informations de votre dossier (loyer, adresse, coordonnées) et, le cas échéant, votre bail et la formule officielle. Elles servent uniquement à générer et acheminer votre lettre.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">Sous-traitants</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Paiement via Stripe, envoi recommandé via Pingen, extraction via un modèle d'IA en mode <strong>sans rétention</strong>. Chacun est encadré par un accord de traitement des données.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">Conservation</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Toutes vos données — base de données et documents — sont purgées automatiquement 7 jours après la clôture du dossier.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">Cas complexes</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Pour un accompagnement juridique complet, nous vous renvoyons vers l'<strong>ASLOCA</strong>, association suisse des locataires.</p></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</template>
+
+<script src="./support.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
