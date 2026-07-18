@@ -29,6 +29,8 @@ class Component extends DCLogic {
     offre: null,
     // UI transverse
     busy: false, errorMsg: '',
+    // validation flux manuel
+    stepErrors: {},
   };
 
   constructor() {
@@ -45,7 +47,7 @@ class Component extends DCLogic {
   fmt(n) { return Math.round(n).toLocaleString('fr-CH').replace(/[\u202f\u00a0,]/g, '\u2019'); }
 
   go(screen) { this.setState({ screen }); }
-  setD(key, val) { this.setState(s => ({ data: { ...s.data, [key]: val } })); }
+  setD(key, val) { this.setState(s => ({ data: { ...s.data, [key]: val }, stepErrors: {} })); }
   fail(e) {
     console.error(e);
     this.setState({ busy: false, calcLoading: false, payLoading: false, errorMsg: (e && e.message) || 'Une erreur est survenue.' });
@@ -115,9 +117,46 @@ class Component extends DCLogic {
     } catch (e) { this.fail(e); }
   }
 
+  // ── validation flux manuel ────────────────────────────────────────────
+  validateCurrentStep() {
+    const d = this.state.data;
+    const step = this.state.step;
+    const errors = {};
+    if (step === 1) {
+      if (!d.commune.trim()) errors.commune = 'Veuillez indiquer la commune.';
+      if (!d.npa.trim()) errors.npa = 'Veuillez indiquer le NPA.';
+    }
+    if (step === 2) {
+      if (!d.adresse.trim()) errors.adresse = "Veuillez indiquer l'adresse de l'immeuble.";
+    }
+    if (step === 3) {
+      if (!d.dateCles) errors.dateCles = 'Veuillez indiquer la date de remise des clés.';
+    }
+    if (step === 4) {
+      if (!d.loyerNet || !this.num(d.loyerNet)) errors.loyerNet = 'Veuillez indiquer le loyer net mensuel.';
+    }
+    if (step === 6 && d.loyerPrecConnu === true) {
+      if (!d.loyerPrec || !this.num(d.loyerPrec)) errors.loyerPrec = "Veuillez indiquer le loyer de l'ancien locataire.";
+    }
+    if (step === 7 && !d.tauxRefInconnu) {
+      if (!d.tauxRef || !this.num(d.tauxRef)) errors.tauxRef = 'Veuillez indiquer le taux ou cochez « Je ne le connais pas ».';
+    }
+    if (step === 9) {
+      if (!d.locPrenom.trim()) errors.locPrenom = 'Prénom requis.';
+      if (!d.locNom.trim()) errors.locNom = 'Nom requis.';
+      if (!d.locAdresse.trim()) errors.locAdresse = 'Adresse requise.';
+      if (!d.locNpa.trim()) errors.locNpa = 'NPA requis.';
+      if (!d.locVille.trim()) errors.locVille = 'Ville requise.';
+    }
+    if (step === 10) {
+      if (!d.regNom.trim()) errors.regNom = 'Veuillez indiquer le nom de la régie ou du propriétaire.';
+    }
+    return errors;
+  }
+
   // ── flux manuel : soumission du dossier (POST /evaluate) ────────────
   async submitDossier() {
-    this.setState({ busy: true, errorMsg: '' });
+    this.setState({ busy: true, errorMsg: '', stepErrors: {} });
     try {
       const { dossierId, evaluation } = await API.evaluate(this.buildDossier());
       evaluation.manuel = evaluation.requiertTraitementManuel; // alias attendu par l'UI
@@ -125,8 +164,13 @@ class Component extends DCLogic {
       this.setState({ busy: false, screen: 'diagnostic', result: evaluation, dossierId });
     } catch (e) { this.fail(e); }
   }
-  next() { if (this.state.step >= 10) this.submitDossier(); else this.setState(s => ({ step: s.step + 1 })); }
-  prev() { this.setState(s => (s.step <= 0 ? { screen: 'choix' } : { step: s.step - 1 })); }
+  next() {
+    const errors = this.validateCurrentStep();
+    if (Object.keys(errors).length > 0) { this.setState({ stepErrors: errors }); return; }
+    this.setState({ stepErrors: {} });
+    if (this.state.step >= 10) this.submitDossier(); else this.setState(s => ({ step: s.step + 1 }));
+  }
+  prev() { this.setState(s => (s.step <= 0 ? { screen: 'choix', stepErrors: {} } : { step: s.step - 1, stepErrors: {} })); }
 
   // ── flux import : upload réel + extraction (POST /extract-bail) ─────
   pickFile(kind) {
@@ -356,6 +400,8 @@ class Component extends DCLogic {
       goPrivacy: () => this.go('privacy'),
       isCgv: st.screen === 'cgv',
       isPrivacy: st.screen === 'privacy',
+      // manual flow — validation
+      stepErr: st.stepErrors || {},
       // manual flow
       d: st.data,
       step: st.step,

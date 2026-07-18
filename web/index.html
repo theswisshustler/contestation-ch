@@ -10,7 +10,7 @@
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
-  body{font-family:'Instrument Sans',system-ui,sans-serif;color:#16242A;background:#DED9CE;-webkit-font-smoothing:antialiased;}
+  body{font-family:'Instrument Sans',system-ui,sans-serif;color:#16242A;background:#FBFAF7;-webkit-font-smoothing:antialiased;}
   a{color:#1B4965;text-decoration:none;}
   a:hover{color:#F4A73B;}
   input,button,textarea,select{font-family:inherit;}
@@ -21,9 +21,9 @@
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   @keyframes pulseDot{0%,100%{opacity:.3;}50%{opacity:1;}}
 
-  /* ===== MOBILE : phone frame ===== */
-  .cc-outer{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;background:radial-gradient(120% 80% at 50% 0%,#E7E3D9,#D8D3C7);}
-  .cc-phone{width:400px;max-width:100%;height:844px;max-height:calc(100vh - 56px);background:#FBFAF7;border-radius:38px;overflow:hidden;box-shadow:0 40px 90px -40px rgba(18,48,63,.7),0 0 0 8px #12303F,0 0 0 9px #23414F;position:relative;display:flex;flex-direction:column;}
+  /* ===== BASE : site responsive plein écran — aucun mockup téléphone ===== */
+  .cc-outer{display:block;min-height:100vh;background:#FBFAF7;}
+  .cc-phone{width:100%;min-height:100vh;background:#FBFAF7;display:flex;flex-direction:column;}
 
   /* Classes partagées mobile+desktop */
   .cc-inner{padding-left:22px;padding-right:22px;}
@@ -33,8 +33,8 @@
   @media(min-width:768px){
     html,body{height:auto;min-height:100%;}
     body{background:#FBFAF7;}
-    .cc-outer{display:block;padding:0;min-height:100vh;background:none;}
-    .cc-phone{width:100%;max-width:none;height:auto;min-height:100vh;max-height:none;border-radius:0;box-shadow:none;background:#FBFAF7;overflow:visible;}
+    .cc-outer{display:block;min-height:100vh;background:none;}
+    .cc-phone{width:100%;min-height:100vh;display:flex;flex-direction:column;background:#FBFAF7;}
 
     /* Nav */
     .cc-nav{position:sticky;top:0;z-index:100;}
@@ -87,12 +87,12 @@
 
     <!-- ===================== OVERLAYS GLOBAUX (busy / erreur) ===================== -->
     <sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}">
-      <div style="position:absolute;inset:0;z-index:50;background:rgba(251,250,247,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;">
+      <div style="position:fixed;inset:0;z-index:50;background:rgba(251,250,247,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;">
         <span style="width:42px;height:42px;border:4px solid #EAF1F5;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span>
       </div>
     </sc-if>
     <sc-if value="{{ errorMsg }}" hint-placeholder-val="{{ false }}">
-      <div onClick="{{ dismissError }}" style="position:absolute;left:16px;right:16px;bottom:16px;z-index:60;background:#C43D2E;color:#fff;padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.4;box-shadow:0 12px 30px -12px rgba(18,48,63,.6);cursor:pointer;">
+      <div onClick="{{ dismissError }}" style="position:fixed;left:16px;right:16px;bottom:24px;z-index:60;background:#C43D2E;color:#fff;padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.4;box-shadow:0 12px 30px -12px rgba(18,48,63,.6);cursor:pointer;max-width:680px;margin:0 auto;">
         {{ errorMsg }}<div style="opacity:.75;font-size:11px;margin-top:5px;">Toucher pour fermer</div>
       </div>
     </sc-if>
@@ -285,7 +285,7 @@
 
     <!-- ===================== FLUX MANUEL ===================== -->
     <sc-if value="{{ isManuel }}" hint-placeholder-val="{{ false }}">
-    <div class="cc-screen" data-screen-label="flux-manuel" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="cc-screen" data-screen-label="flux-manuel" style="flex:1;display:flex;flex-direction:column;">
       <div style="padding:16px 20px 14px;border-bottom:1px solid #EEEBE3;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
           <button onClick="{{ prev }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
@@ -306,28 +306,33 @@
         <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Dans quelle commune&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Celle de l'immeuble — elle détermine l'autorité compétente.</p>
             <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Commune</label>
-            <input type="text" value="{{ d.commune }}" onInput="{{ onCommune }}" placeholder="Lausanne" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:14px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">NPA</label>
-            <input type="text" inputmode="numeric" value="{{ d.npa }}" onInput="{{ onNpa }}" placeholder="1004" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+            <input type="text" value="{{ d.commune }}" onInput="{{ onCommune }}" placeholder="Lausanne" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:6px;">
+            <sc-if value="{{ stepErr.commune }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:10px;">⚠ {{ stepErr.commune }}</div></sc-if>
+            <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;margin-top:8px;">NPA</label>
+            <input type="text" inputmode="numeric" value="{{ d.npa }}" onInput="{{ onNpa }}" placeholder="1004" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:6px;">
+            <sc-if value="{{ stepErr.npa }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:4px;">⚠ {{ stepErr.npa }}</div></sc-if>
           </div>
         </sc-if>
 
         <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Quelle est l'adresse de l'immeuble&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Rue et numéro du logement concerné.</p>
-            <input type="text" value="{{ d.adresse }}" onInput="{{ onAdresse }}" placeholder="Avenue de la Gare 12" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+            <input type="text" value="{{ d.adresse }}" onInput="{{ onAdresse }}" placeholder="Avenue de la Gare 12" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:6px;">
+            <sc-if value="{{ stepErr.adresse }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:4px;">⚠ {{ stepErr.adresse }}</div></sc-if>
           </div>
         </sc-if>
 
         <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Quand avez-vous reçu les clés&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">La date d'entrée dans le logement — pas celle du 1<sup>er</sup> versement. Le délai de 30 jours part de là.</p>
-            <input type="date" value="{{ d.dateCles }}" onInput="{{ onDateCles }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+            <input type="date" value="{{ d.dateCles }}" onInput="{{ onDateCles }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:6px;">
+            <sc-if value="{{ stepErr.dateCles }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:4px;">⚠ {{ stepErr.dateCles }}</div></sc-if>
           </div>
         </sc-if>
 
         <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Votre loyer mensuel&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Tel qu'il figure sur votre bail.</p>
             <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net (hors charges)</label>
-            <div style="position:relative;margin-bottom:14px;"><input type="text" inputmode="decimal" value="{{ d.loyerNet }}" onInput="{{ onLoyerNet }}" placeholder="1 850" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
+            <div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ d.loyerNet }}" onInput="{{ onLoyerNet }}" placeholder="1 850" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
+            <sc-if value="{{ stepErr.loyerNet }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:10px;">⚠ {{ stepErr.loyerNet }}</div></sc-if>
             <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Charges mensuelles</label>
             <div style="position:relative;"><input type="text" inputmode="decimal" value="{{ d.charges }}" onInput="{{ onCharges }}" placeholder="150" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
           </div>
@@ -346,14 +351,16 @@
             <button onClick="{{ choosePrecOui }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;font-size:16px;font-weight:700;color:#12303F;">Oui, je le connais</button>
             <button onClick="{{ choosePrecNon }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:16px;padding:18px;cursor:pointer;font-size:16px;font-weight:600;color:#5A6A70;">Non / je ne l'ai pas</button>
             <sc-if value="{{ precOui }}" hint-placeholder-val="{{ false }}">
-              <div style="margin-top:18px;"><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net de l'ancien locataire</label><div style="position:relative;"><input type="text" inputmode="decimal" value="{{ d.loyerPrec }}" onInput="{{ onLoyerPrec }}" placeholder="1 500" style="width:100%;box-sizing:border-box;border:1.5px solid #178A5B;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;box-shadow:0 0 0 3px #E3F3EB;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div></div>
+              <div style="margin-top:18px;"><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net de l'ancien locataire</label><div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ d.loyerPrec }}" onInput="{{ onLoyerPrec }}" placeholder="1 500" style="width:100%;box-sizing:border-box;border:1.5px solid #178A5B;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;box-shadow:0 0 0 3px #E3F3EB;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
+              <sc-if value="{{ stepErr.loyerPrec }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:4px;">⚠ {{ stepErr.loyerPrec }}</div></sc-if></div>
             </sc-if>
           </div>
         </sc-if>
 
         <sc-if value="{{ isStep7 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Le taux de référence de votre bail&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Il figure sur le bail ou la dernière notification. Taux actuel&nbsp;: {{ tauxActuel }}&nbsp;%.</p>
-            <div style="position:relative;margin-bottom:14px;"><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onInput="{{ onTauxRef }}" placeholder="1,75" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
+            <div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onInput="{{ onTauxRef }}" placeholder="1,75" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
+            <sc-if value="{{ stepErr.tauxRef }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:10px;">⚠ {{ stepErr.tauxRef }}</div></sc-if>
             <button onClick="{{ toggleTauxInconnu }}" style="background:#F4F8FA;border:1px solid #E4E2DB;border-radius:10px;padding:10px 14px;font-size:14px;color:#1B4965;font-weight:600;cursor:pointer;">Je ne le connais pas</button>
           </div>
         </sc-if>
@@ -366,16 +373,22 @@
 
         <sc-if value="{{ isStep9 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Vos coordonnées</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Elles figureront comme expéditeur sur la lettre.</p>
-            <div style="display:flex;gap:10px;"><input type="text" value="{{ d.locPrenom }}" onInput="{{ onLocPrenom }}" placeholder="Prénom" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"><input type="text" value="{{ d.locNom }}" onInput="{{ onLocNom }}" placeholder="Nom" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"></div>
-            <input type="text" value="{{ d.locAdresse }}" onInput="{{ onLocAdresse }}" placeholder="Votre adresse" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
-            <div style="display:flex;gap:10px;"><input type="text" value="{{ d.locNpa }}" onInput="{{ onLocNpa }}" placeholder="NPA" style="width:110px;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"><input type="text" value="{{ d.locVille }}" onInput="{{ onLocVille }}" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;"></div>
-            <input type="email" value="{{ d.locEmail }}" onInput="{{ onLocEmail }}" placeholder="E-mail (pour le suivi)" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
+            <div style="display:flex;gap:10px;margin-bottom:6px;"><input type="text" value="{{ d.locPrenom }}" onInput="{{ onLocPrenom }}" placeholder="Prénom" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"><input type="text" value="{{ d.locNom }}" onInput="{{ onLocNom }}" placeholder="Nom" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"></div>
+            <sc-if value="{{ stepErr.locPrenom }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:6px;">⚠ {{ stepErr.locPrenom }}</div></sc-if>
+            <sc-if value="{{ stepErr.locNom }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:6px;">⚠ {{ stepErr.locNom }}</div></sc-if>
+            <input type="text" value="{{ d.locAdresse }}" onInput="{{ onLocAdresse }}" placeholder="Votre adresse" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:6px;">
+            <sc-if value="{{ stepErr.locAdresse }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:6px;">⚠ {{ stepErr.locAdresse }}</div></sc-if>
+            <div style="display:flex;gap:10px;margin-bottom:6px;"><input type="text" value="{{ d.locNpa }}" onInput="{{ onLocNpa }}" placeholder="NPA" style="width:110px;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"><input type="text" value="{{ d.locVille }}" onInput="{{ onLocVille }}" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"></div>
+            <sc-if value="{{ stepErr.locNpa }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:6px;">⚠ {{ stepErr.locNpa }}</div></sc-if>
+            <sc-if value="{{ stepErr.locVille }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:10px;">⚠ {{ stepErr.locVille }}</div></sc-if>
+            <input type="email" value="{{ d.locEmail }}" onInput="{{ onLocEmail }}" placeholder="E-mail (pour le suivi, facultatif)" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;">
           </div>
         </sc-if>
 
         <sc-if value="{{ isStep10 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">La régie ou le propriétaire</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Le destinataire de la copie. La requête, elle, part à l'autorité.</p>
-            <input type="text" value="{{ d.regNom }}" onInput="{{ onRegNom }}" placeholder="Nom de la régie / du propriétaire" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
+            <input type="text" value="{{ d.regNom }}" onInput="{{ onRegNom }}" placeholder="Nom de la régie / du propriétaire" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:6px;">
+            <sc-if value="{{ stepErr.regNom }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:10px;">⚠ {{ stepErr.regNom }}</div></sc-if>
             <input type="text" value="{{ d.regAdresse }}" onInput="{{ onRegAdresse }}" placeholder="Adresse" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
             <div style="display:flex;gap:10px;"><input type="text" value="{{ d.regNpa }}" onInput="{{ onRegNpa }}" placeholder="NPA" style="width:110px;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"><input type="text" value="{{ d.regVille }}" onInput="{{ onRegVille }}" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"></div>
           </div>
