@@ -424,6 +424,7 @@ class Component extends DCLogic {
       ctaLabel: st.step === 10 ? 'Voir mon diagnostic →' : 'Continuer',
       toggleTauxInconnu: () => this.setState(s => ({ data: { ...s.data, tauxRefInconnu: !s.data.tauxRefInconnu, tauxRef: !s.data.tauxRefInconnu ? '' : s.data.tauxRef } })),
       tauxInconnu: st.data.tauxRefInconnu,
+      tauxConnu: !st.data.tauxRefInconnu,
       onCommune: (e) => this.setD('commune', e.target.value),
       onNpa: (e) => this.setD('npa', e.target.value),
       onAdresse: (e) => this.setD('adresse', e.target.value),

@@ -359,9 +359,19 @@
 
         <sc-if value="{{ isStep7 }}" hint-placeholder-val="{{ false }}">
           <div style="animation:fadeUp .3s ease;"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:25px;color:#12303F;line-height:1.15;margin-bottom:8px;">Le taux de référence de votre bail&nbsp;?</div><p style="margin:0 0 22px;font-size:15px;color:#5A6A70;">Il figure sur le bail ou la dernière notification. Taux actuel&nbsp;: {{ tauxActuel }}&nbsp;%.</p>
-            <div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onChange="{{ onTauxRef }}" placeholder="1,75" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
-            <sc-if value="{{ stepErr.tauxRef }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:10px;">⚠ {{ stepErr.tauxRef }}</div></sc-if>
-            <button onClick="{{ toggleTauxInconnu }}" style="background:#F4F8FA;border:1px solid #E4E2DB;border-radius:10px;padding:10px 14px;font-size:14px;color:#1B4965;font-weight:600;cursor:pointer;">Je ne le connais pas</button>
+            <sc-if value="{{ tauxConnu }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onChange="{{ onTauxRef }}" placeholder="1,75" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
+              <sc-if value="{{ stepErr.tauxRef }}" hint-placeholder-val="{{ false }}"><div style="color:#C43D2E;font-size:12px;font-weight:600;margin-bottom:10px;">⚠ {{ stepErr.tauxRef }}</div></sc-if>
+            </sc-if>
+            <sc-if value="{{ tauxInconnu }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#F0F7F4;border:1.5px solid #178A5B;border-radius:12px;padding:14px;margin-bottom:12px;font-size:15px;color:#178A5B;font-weight:600;">✓ Le taux actuel ({{ tauxActuel }}&nbsp;%) sera utilisé</div>
+            </sc-if>
+            <sc-if value="{{ tauxConnu }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ toggleTauxInconnu }}" style="background:#F4F8FA;border:1px solid #E4E2DB;border-radius:10px;padding:10px 14px;font-size:14px;color:#1B4965;font-weight:600;cursor:pointer;">Je ne le connais pas</button>
+            </sc-if>
+            <sc-if value="{{ tauxInconnu }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ toggleTauxInconnu }}" style="background:#E3F3EB;border:1px solid #178A5B;border-radius:10px;padding:10px 14px;font-size:14px;color:#178A5B;font-weight:600;cursor:pointer;">✓ Je ne le connais pas</button>
+            </sc-if>
           </div>
         </sc-if>
 
