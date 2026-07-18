@@ -1,5 +1,5 @@
 app = "contestation-gotenberg"
-primary_region = "cdg"  # Paris — le plus proche de la Suisse
+primary_region = "cdg"
 
 [build]
   image = "gotenberg/gotenberg:8"
@@ -13,4 +13,4 @@ primary_region = "cdg"  # Paris — le plus proche de la Suisse
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "512mb"
+  memory = "1gb"
