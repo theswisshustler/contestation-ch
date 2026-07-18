@@ -21,32 +21,75 @@
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   @keyframes pulseDot{0%,100%{opacity:.3;}50%{opacity:1;}}
 
-  /* ===== Layout responsive ===== */
+  /* ===== MOBILE : phone frame ===== */
   .cc-outer{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;background:radial-gradient(120% 80% at 50% 0%,#E7E3D9,#D8D3C7);}
   .cc-phone{width:400px;max-width:100%;height:844px;max-height:calc(100vh - 56px);background:#FBFAF7;border-radius:38px;overflow:hidden;box-shadow:0 40px 90px -40px rgba(18,48,63,.7),0 0 0 8px #12303F,0 0 0 9px #23414F;position:relative;display:flex;flex-direction:column;}
 
+  /* ===== DESKTOP ≥ 768 px : vrai site plein écran ===== */
   @media(min-width:768px){
-    body{background:#C8C3B7;}
-    .cc-outer{padding:0;align-items:stretch;justify-content:center;background:radial-gradient(140% 60% at 50% 0%,#E7E3D9,#C8C3B7);}
-    .cc-phone{width:100%;max-width:900px;height:auto;min-height:100vh;max-height:none;border-radius:0;box-shadow:0 0 0 1px rgba(18,48,63,.08);background:#FBFAF7;}
+    html,body{height:auto;min-height:100%;}
+    body{background:#FBFAF7;}
 
-    /* Nav desktop */
-    .cc-nav{border-radius:0 !important;}
+    /* Outer : bloc plein écran, aucun padding ni couleur propre */
+    .cc-outer{display:block;padding:0;min-height:100vh;background:none;}
 
-    /* Landing : contenu centré avec max-width */
-    .cc-landing-screen .cc-nav{max-width:860px;margin:0 auto;border-radius:0 !important;}
-    .cc-landing-body{max-width:860px;margin:0 auto;}
+    /* Shell : 100 % largeur, aucun cadre téléphone */
+    .cc-phone{
+      width:100%;max-width:none;
+      height:auto;min-height:100vh;max-height:none;
+      border-radius:0;box-shadow:none;
+      background:#FBFAF7;
+      overflow:visible;
+    }
 
-    /* Écrans formulaire : centré horizontalement */
-    .cc-screen{max-width:860px;margin-left:auto;margin-right:auto;width:100%;}
+    /* ---- NAV landing : sticky plein écran ---- */
+    .cc-nav{position:sticky;top:0;z-index:100;}
 
-    /* Améliore les titres hero sur grand écran */
-    .cc-landing-body h1{font-size:clamp(31px,4vw,52px);}
-    .cc-landing-body .cc-hero-p{font-size:clamp(15px,1.5vw,18px);}
-  }
+    /* ---- LANDING : grille 2 colonnes ---- */
+    .cc-landing-body{
+      display:grid;
+      grid-template-columns:1fr 420px;
+      grid-template-rows:auto 1fr;
+      max-width:none;
+      min-height:calc(100vh - 57px);
+    }
 
-  @media(min-width:900px){
-    .cc-phone{border-left:1px solid rgba(18,48,63,.1);border-right:1px solid rgba(18,48,63,.1);}
+    /* Colonne gauche — texte héro */
+    .cc-hero-text{
+      grid-column:1;grid-row:1;
+      padding:64px 56px 40px !important;
+      background:none !important;
+    }
+    .cc-hero-text h1{
+      font-size:clamp(38px,4.5vw,62px) !important;
+      line-height:1.04 !important;
+      margin-bottom:18px !important;
+    }
+    .cc-hero-text>p{font-size:17px !important;max-width:480px;}
+
+    /* Colonne gauche — sections éditoriales sous le héro */
+    .cc-landing-sections{grid-column:1;grid-row:2;}
+
+    /* Colonne droite — calculateur sticky */
+    .cc-calc-panel{
+      grid-column:2;grid-row:1/3;
+      padding:28px 28px;
+      background:#F4F2EC;
+      border-left:1px solid #E4E2DB;
+      position:sticky;
+      top:57px;
+      max-height:calc(100vh - 57px);
+      overflow-y:auto;
+      align-self:start;
+    }
+    /* Sur mobile le calculateur est dans le flux normal */
+
+    /* ---- ÉCRANS FORMULAIRE : centré sur fond plein écran ---- */
+    .cc-screen{
+      max-width:720px;
+      margin-left:auto;margin-right:auto;
+      width:100%;
+    }
   }
 </style>
 </head>
@@ -81,11 +124,14 @@
       </div>
 
       <div class="cc-landing-body">
-      <div style="padding:28px 22px 26px;background:linear-gradient(180deg,#F4F8FA,#FBFAF7);">
+      <!-- LEFT col / row 1 : texte héro -->
+      <div class="cc-hero-text" style="padding:28px 22px 26px;background:linear-gradient(180deg,#F4F8FA,#FBFAF7);">
         <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#EAF1F5;color:#1B4965;font-size:12px;font-weight:600;margin-bottom:16px;">Vaud &amp; Genève · sans inscription</div>
         <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:31px;line-height:1.08;margin:0 0 12px;color:#12303F;letter-spacing:-.01em;">Votre loyer est-il trop élevé&nbsp;?</h1>
         <p style="margin:0 0 22px;font-size:16px;line-height:1.5;color:#4A5A60;">Beaucoup de loyers en Suisse romande dépassent ce qui est admissible. Vérifiez gratuitement en 30&nbsp;secondes si vous avez droit à une baisse.</p>
-
+      </div>
+      <!-- RIGHT col / rows 1+2 : calculateur sticky -->
+      <div class="cc-calc-panel">
         <div style="background:#fff;border:1px solid #E4E2DB;border-radius:20px;padding:22px 20px;box-shadow:0 12px 30px -18px rgba(18,48,63,.4);">
           <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:18px;color:#12303F;margin-bottom:16px;">Ai-je droit à une baisse&nbsp;?</div>
           <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net mensuel</label>
@@ -115,8 +161,10 @@
           </sc-if>
           <sc-if value="{{ calcErr }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;font-size:13px;color:#C43D2E;text-align:center;">Renseignez le loyer et le taux pour lancer le calcul.</div></sc-if>
         </div>
-      </div>
+      </div><!-- /cc-calc-panel -->
 
+      <!-- LEFT col / row 2 : sections éditoriales -->
+      <div class="cc-landing-sections">
       <div style="padding:30px 22px;background:#12303F;color:#fff;">
         <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;line-height:1.1;">Un loyer sur trois serait contestable en Suisse romande.</div>
         <p style="margin:12px 0 0;font-size:15px;line-height:1.55;color:#B9C9D1;">Faute de temps ou par crainte, presque personne ne le fait. Pourtant la loi protège les locataires — et la procédure de conciliation est gratuite.</p>
@@ -174,6 +222,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:13px;margin-bottom:14px;"><a onClick="{{ goCgv }}" style="color:#B9C9D1;cursor:pointer;">CGV</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Confidentialité</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Mentions légales</a></div>
         <p style="margin:0;font-size:12px;line-height:1.5;">contestation.ch est un outil d'aide à la génération de courrier, pas un cabinet d'avocats et pas un conseil juridique. Pour les cas complexes, adressez-vous à l'ASLOCA.</p>
       </div>
+      </div><!-- /cc-landing-sections -->
       </div><!-- /cc-landing-body -->
     </div>
     </sc-if>
