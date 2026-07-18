@@ -25,71 +25,56 @@
   .cc-outer{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;background:radial-gradient(120% 80% at 50% 0%,#E7E3D9,#D8D3C7);}
   .cc-phone{width:400px;max-width:100%;height:844px;max-height:calc(100vh - 56px);background:#FBFAF7;border-radius:38px;overflow:hidden;box-shadow:0 40px 90px -40px rgba(18,48,63,.7),0 0 0 8px #12303F,0 0 0 9px #23414F;position:relative;display:flex;flex-direction:column;}
 
+  /* Classes partagées mobile+desktop */
+  .cc-inner{padding-left:22px;padding-right:22px;}
+  .cc-hero-row{padding:28px 0 32px;}
+
   /* ===== DESKTOP ≥ 768 px : vrai site plein écran ===== */
   @media(min-width:768px){
     html,body{height:auto;min-height:100%;}
     body{background:#FBFAF7;}
-
-    /* Outer : bloc plein écran, aucun padding ni couleur propre */
     .cc-outer{display:block;padding:0;min-height:100vh;background:none;}
+    .cc-phone{width:100%;max-width:none;height:auto;min-height:100vh;max-height:none;border-radius:0;box-shadow:none;background:#FBFAF7;overflow:visible;}
 
-    /* Shell : 100 % largeur, aucun cadre téléphone */
-    .cc-phone{
-      width:100%;max-width:none;
-      height:auto;min-height:100vh;max-height:none;
-      border-radius:0;box-shadow:none;
-      background:#FBFAF7;
-      overflow:visible;
-    }
-
-    /* ---- NAV landing : sticky plein écran ---- */
+    /* Nav */
     .cc-nav{position:sticky;top:0;z-index:100;}
 
-    /* ---- LANDING : grille 2 colonnes ---- */
-    .cc-landing-body{
-      display:grid;
-      grid-template-columns:1fr 420px;
-      grid-template-rows:auto 1fr;
-      max-width:none;
-      min-height:calc(100vh - 57px);
-    }
+    /* Conteneur intérieur centré pour toutes les sections */
+    .cc-inner{max-width:1140px;margin:0 auto;padding-left:48px;padding-right:48px;}
 
-    /* Colonne gauche — texte héro */
-    .cc-hero-text{
-      grid-column:1;grid-row:1;
-      padding:64px 56px 40px !important;
-      background:none !important;
+    /* ---- HERO : flex row ---- */
+    .cc-hero-row{
+      display:flex;align-items:center;
+      gap:56px;
+      padding:72px 0 80px;
     }
-    .cc-hero-text h1{
-      font-size:clamp(38px,4.5vw,62px) !important;
-      line-height:1.04 !important;
-      margin-bottom:18px !important;
-    }
-    .cc-hero-text>p{font-size:17px !important;max-width:480px;}
+    .cc-hero-left{flex:1;min-width:0;}
+    .cc-hero-left h1{font-size:clamp(40px,4.8vw,66px) !important;line-height:1.03 !important;margin:0 0 20px !important;}
+    .cc-hero-left>p{font-size:17px !important;line-height:1.6 !important;max-width:460px;margin:0 0 28px !important;color:#4A5A60;}
+    .cc-hero-right{width:440px;flex:none;}
 
-    /* Colonne gauche — sections éditoriales sous le héro */
-    .cc-landing-sections{grid-column:1;grid-row:2;}
+    /* ---- STEPS : row ---- */
+    .cc-steps-list{flex-direction:row !important;gap:24px !important;}
+    .cc-steps-list>div{flex:1;}
 
-    /* Colonne droite — calculateur sticky */
-    .cc-calc-panel{
-      grid-column:2;grid-row:1/3;
-      padding:28px 28px;
-      background:#F4F2EC;
-      border-left:1px solid #E4E2DB;
-      position:sticky;
-      top:57px;
-      max-height:calc(100vh - 57px);
-      overflow-y:auto;
-      align-self:start;
-    }
-    /* Sur mobile le calculateur est dans le flux normal */
+    /* ---- MOTIFS : row ---- */
+    .cc-motifs-list{flex-direction:row !important;gap:20px !important;}
+    .cc-motifs-list>div{flex:1;}
 
-    /* ---- ÉCRANS FORMULAIRE : centré sur fond plein écran ---- */
-    .cc-screen{
-      max-width:720px;
-      margin-left:auto;margin-right:auto;
-      width:100%;
-    }
+    /* ---- STATS : 4 colonnes ---- */
+    .cc-stats-grid{grid-template-columns:repeat(4,1fr) !important;}
+
+    /* ---- PRICING : row ---- */
+    .cc-pricing-row{flex-direction:row !important;max-width:800px;margin:0 auto !important;}
+    .cc-pricing-row>div{flex:1;}
+
+    /* ---- FAQ & CTA : centrés ---- */
+    .cc-faq-inner{max-width:720px;margin:0 auto;}
+    .cc-cta-wrap{text-align:center;}
+    .cc-cta-wrap button{max-width:520px;}
+
+    /* ---- ÉCRANS FORMULAIRE ---- */
+    .cc-screen{max-width:720px;margin-left:auto;margin-right:auto;width:100%;}
   }
 </style>
 </head>
@@ -124,105 +109,145 @@
       </div>
 
       <div class="cc-landing-body">
-      <!-- LEFT col / row 1 : texte héro -->
-      <div class="cc-hero-text" style="padding:28px 22px 26px;background:linear-gradient(180deg,#F4F8FA,#FBFAF7);">
-        <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#EAF1F5;color:#1B4965;font-size:12px;font-weight:600;margin-bottom:16px;">Vaud &amp; Genève · sans inscription</div>
-        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:31px;line-height:1.08;margin:0 0 12px;color:#12303F;letter-spacing:-.01em;">Votre loyer est-il trop élevé&nbsp;?</h1>
-        <p style="margin:0 0 22px;font-size:16px;line-height:1.5;color:#4A5A60;">Beaucoup de loyers en Suisse romande dépassent ce qui est admissible. Vérifiez gratuitement en 30&nbsp;secondes si vous avez droit à une baisse.</p>
-      </div>
-      <!-- RIGHT col / rows 1+2 : calculateur sticky -->
-      <div class="cc-calc-panel">
-        <div style="background:#fff;border:1px solid #E4E2DB;border-radius:20px;padding:22px 20px;box-shadow:0 12px 30px -18px rgba(18,48,63,.4);">
-          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:18px;color:#12303F;margin-bottom:16px;">Ai-je droit à une baisse&nbsp;?</div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net mensuel</label>
-          <div style="position:relative;margin-bottom:14px;"><input type="text" inputmode="decimal" value="{{ loyer }}" onInput="{{ onLoyer }}" placeholder="1 850" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:17px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Taux de référence de votre bail</label>
-          <div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ taux }}" onInput="{{ onTaux }}" placeholder="1,75" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:17px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
-          <p style="margin:0 0 16px;font-size:12px;color:#8A979C;line-height:1.4;">Il figure sur votre bail. Taux actuel&nbsp;: {{ tauxActuel }}&nbsp;%.</p>
-          <button onClick="{{ checkCalc }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Vérifier gratuitement</button>
 
-          <sc-if value="{{ calcLoading }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:16px;color:#5A6A70;font-size:14px;"><span style="width:18px;height:18px;border:2.5px solid #E4E2DB;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;"></span>On vérifie votre situation…</div></sc-if>
-          <sc-if value="{{ calcElig }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:16px;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:16px;padding:18px;animation:fadeUp .4s ease;">
-              <div style="font-size:14px;font-weight:700;color:#0C5638;margin-bottom:6px;">✓ Bonne nouvelle</div>
-              <div style="font-size:15px;color:#0C5638;line-height:1.4;margin-bottom:12px;">Vous pourriez obtenir une baisse d'environ</div>
-              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:44px;color:#178A5B;line-height:1;">−{{ calcPct }}%</div>
-              <div style="font-size:16px;color:#0C5638;font-weight:600;margin:4px 0 16px;">soit ≈ {{ calcChf }} CHF par mois</div>
-              <button onClick="{{ goChoix }}" style="width:100%;background:#178A5B;color:#fff;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Générer ma demande →</button>
-              <p style="margin:10px 0 0;font-size:11px;color:#4C7C64;line-height:1.4;">Estimation indicative fondée sur le taux de référence actuel ({{ tauxActuel }}&nbsp;%).</p>
+        <!-- ===== HERO ===== -->
+        <div style="background:linear-gradient(160deg,#EEF4F9 0%,#F5F3EE 55%,#FBFAF7 100%);">
+          <div class="cc-inner">
+            <div class="cc-hero-row">
+              <!-- Texte gauche -->
+              <div class="cc-hero-left">
+                <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:#EAF1F5;color:#1B4965;font-size:12px;font-weight:600;margin-bottom:20px;">Vaud &amp; Genève · sans inscription</div>
+                <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:31px;line-height:1.08;margin:0 0 14px;color:#12303F;letter-spacing:-.01em;">Votre loyer est-il trop élevé&nbsp;?</h1>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.5;color:#4A5A60;">Beaucoup de loyers en Suisse romande dépassent ce qui est admissible. Vérifiez gratuitement en 30&nbsp;secondes si vous avez droit à une baisse.</p>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Diagnostic gratuit</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Conciliation gratuite</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Données hébergées en Suisse</span>
+                </div>
+              </div>
+              <!-- Calculateur droit -->
+              <div class="cc-hero-right">
+                <div style="background:#fff;border:1px solid #E4E2DB;border-radius:20px;padding:28px 24px;box-shadow:0 20px 50px -20px rgba(18,48,63,.35),0 2px 8px rgba(18,48,63,.06);">
+                  <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:19px;color:#12303F;margin-bottom:18px;">Ai-je droit à une baisse&nbsp;?</div>
+                  <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net mensuel</label>
+                  <div style="position:relative;margin-bottom:14px;"><input type="text" inputmode="decimal" value="{{ loyer }}" onInput="{{ onLoyer }}" placeholder="1 850" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:17px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">CHF</span></div>
+                  <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Taux de référence de votre bail</label>
+                  <div style="position:relative;margin-bottom:6px;"><input type="text" inputmode="decimal" value="{{ taux }}" onInput="{{ onTaux }}" placeholder="1,75" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 46px 14px 14px;font-size:17px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:600;">%</span></div>
+                  <p style="margin:0 0 16px;font-size:12px;color:#8A979C;line-height:1.4;">Il figure sur votre bail. Taux actuel&nbsp;: {{ tauxActuel }}&nbsp;%.</p>
+                  <button onClick="{{ checkCalc }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Vérifier gratuitement</button>
+                  <sc-if value="{{ calcLoading }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:16px;color:#5A6A70;font-size:14px;"><span style="width:18px;height:18px;border:2.5px solid #E4E2DB;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;"></span>On vérifie votre situation…</div></sc-if>
+                  <sc-if value="{{ calcElig }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:16px;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:16px;padding:18px;animation:fadeUp .4s ease;">
+                      <div style="font-size:14px;font-weight:700;color:#0C5638;margin-bottom:6px;">✓ Bonne nouvelle</div>
+                      <div style="font-size:15px;color:#0C5638;line-height:1.4;margin-bottom:12px;">Vous pourriez obtenir une baisse d'environ</div>
+                      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:44px;color:#178A5B;line-height:1;">−{{ calcPct }}%</div>
+                      <div style="font-size:16px;color:#0C5638;font-weight:600;margin:4px 0 16px;">soit ≈ {{ calcChf }} CHF par mois</div>
+                      <button onClick="{{ goChoix }}" style="width:100%;background:#178A5B;color:#fff;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Générer ma demande →</button>
+                      <p style="margin:10px 0 0;font-size:11px;color:#4C7C64;line-height:1.4;">Estimation indicative fondée sur le taux de référence actuel ({{ tauxActuel }}&nbsp;%).</p>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ calcNo }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:16px;background:#EAF1F5;border:1px solid #CBDCE4;border-radius:16px;padding:18px;animation:fadeUp .4s ease;">
+                      <div style="font-size:15px;font-weight:700;color:#1B4965;margin-bottom:6px;">Pas de baisse via le taux de référence…</div>
+                      <div style="font-size:14px;color:#3E5560;line-height:1.45;margin-bottom:14px;">…mais votre <strong>loyer initial</strong> est peut-être abusif. Sans formule officielle, ou moins de 30&nbsp;jours après la remise des clés, vous pouvez encore contester.</div>
+                      <button onClick="{{ goChoix }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Vérifier mon loyer initial →</button>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ calcErr }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;font-size:13px;color:#C43D2E;text-align:center;">Renseignez le loyer et le taux pour lancer le calcul.</div></sc-if>
+                </div>
+              </div>
             </div>
-          </sc-if>
-          <sc-if value="{{ calcNo }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:16px;background:#EAF1F5;border:1px solid #CBDCE4;border-radius:16px;padding:18px;animation:fadeUp .4s ease;">
-              <div style="font-size:15px;font-weight:700;color:#1B4965;margin-bottom:6px;">Pas de baisse via le taux de référence…</div>
-              <div style="font-size:14px;color:#3E5560;line-height:1.45;margin-bottom:14px;">…mais votre <strong>loyer initial</strong> est peut-être abusif. Sans formule officielle, ou moins de 30&nbsp;jours après la remise des clés, vous pouvez encore contester.</div>
-              <button onClick="{{ goChoix }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Vérifier mon loyer initial →</button>
+          </div>
+        </div>
+
+        <!-- ===== BANDEAU STAT ===== -->
+        <div style="background:#12303F;color:#fff;">
+          <div class="cc-inner" style="padding-top:56px;padding-bottom:56px;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(22px,3vw,34px);line-height:1.15;max-width:700px;">Un loyer sur trois serait contestable en Suisse romande.</div>
+            <p style="margin:14px 0 0;font-size:16px;line-height:1.6;color:#B9C9D1;max-width:620px;">Faute de temps ou par crainte, presque personne ne le fait. Pourtant la loi protège les locataires — et la procédure de conciliation est gratuite.</p>
+          </div>
+        </div>
+
+        <!-- ===== COMMENT ÇA MARCHE ===== -->
+        <div>
+          <div class="cc-inner" style="padding-top:72px;padding-bottom:72px;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(22px,2.5vw,30px);color:#12303F;margin-bottom:36px;">Comment ça marche</div>
+            <div class="cc-steps-list" style="display:flex;flex-direction:column;gap:16px;">
+              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">1</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">Vous répondez, ou importez votre bail</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Quelques questions simples, ou un import automatique. 5 minutes.</div></div></div>
+              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">2</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">On prépare votre lettre</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Adressée à la bonne autorité, avec les bons motifs juridiques.</div></div></div>
+              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">3</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">Vous l'envoyez — ou on l'envoie</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Imprimez-la, ou laissez-nous l'expédier en recommandé.</div></div></div>
             </div>
-          </sc-if>
-          <sc-if value="{{ calcErr }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;font-size:13px;color:#C43D2E;text-align:center;">Renseignez le loyer et le taux pour lancer le calcul.</div></sc-if>
+          </div>
         </div>
-      </div><!-- /cc-calc-panel -->
 
-      <!-- LEFT col / row 2 : sections éditoriales -->
-      <div class="cc-landing-sections">
-      <div style="padding:30px 22px;background:#12303F;color:#fff;">
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;line-height:1.1;">Un loyer sur trois serait contestable en Suisse romande.</div>
-        <p style="margin:12px 0 0;font-size:15px;line-height:1.55;color:#B9C9D1;">Faute de temps ou par crainte, presque personne ne le fait. Pourtant la loi protège les locataires — et la procédure de conciliation est gratuite.</p>
-      </div>
-
-      <div style="padding:30px 22px;">
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:20px;">Comment ça marche</div>
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div style="display:flex;gap:14px;align-items:flex-start;"><span style="flex:none;width:34px;height:34px;border-radius:10px;background:#EAF1F5;color:#1B4965;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">1</span><div><div style="font-weight:700;color:#12303F;font-size:16px;">Vous répondez, ou importez votre bail</div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Quelques questions simples, ou un import automatique. 5 minutes.</div></div></div>
-          <div style="display:flex;gap:14px;align-items:flex-start;"><span style="flex:none;width:34px;height:34px;border-radius:10px;background:#EAF1F5;color:#1B4965;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">2</span><div><div style="font-weight:700;color:#12303F;font-size:16px;">On prépare votre lettre</div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Adressée à la bonne autorité, avec les bons motifs juridiques.</div></div></div>
-          <div style="display:flex;gap:14px;align-items:flex-start;"><span style="flex:none;width:34px;height:34px;border-radius:10px;background:#EAF1F5;color:#1B4965;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">3</span><div><div style="font-weight:700;color:#12303F;font-size:16px;">Vous l'envoyez — ou on l'envoie</div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Imprimez-la, ou laissez-nous l'expédier en recommandé.</div></div></div>
+        <!-- ===== MOTIFS ===== -->
+        <div style="background:#F4F8FA;">
+          <div class="cc-inner" style="padding-top:72px;padding-bottom:72px;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(22px,2.5vw,30px);color:#12303F;margin-bottom:8px;">Pourquoi votre loyer pourrait être contesté</div>
+            <p style="margin:0 0 28px;font-size:15px;color:#5A6A70;">Trois motifs, classés du plus fort au plus subtil.</p>
+            <div class="cc-motifs-list" style="display:flex;flex-direction:column;gap:14px;">
+              <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:20px;border-left:4px solid #C43D2E;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Formule officielle manquante</span><span style="font-size:11px;font-weight:700;color:#C43D2E;background:#FBEAE7;padding:3px 8px;border-radius:999px;">TRÈS FORT</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Obligatoire à VD et GE. Sans elle, votre loyer initial peut être frappé de nullité — contestable en tout temps.</div></div>
+              <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:20px;border-left:4px solid #F4A73B;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Hausse de plus de 10 %</span><span style="font-size:11px;font-weight:700;color:#7A5406;background:#FFF3DF;padding:3px 8px;border-radius:999px;">FORT</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Par rapport au locataire précédent, sans travaux : un indice sérieux d'abus.</div></div>
+              <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:20px;border-left:4px solid #1B4965;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Rendement excessif</span><span style="font-size:11px;font-weight:700;color:#1B4965;background:#EAF1F5;padding:3px 8px;border-radius:999px;">MOYEN</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">On somme le bailleur de prouver que son rendement n'est pas excessif. À défaut, l'autorité tranche en votre faveur.</div></div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div style="padding:30px 22px;background:#F4F8FA;">
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:6px;">Pourquoi votre loyer pourrait être contesté</div>
-        <p style="margin:0 0 18px;font-size:14px;color:#5A6A70;">Trois motifs, classés du plus fort au plus subtil.</p>
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid #C43D2E;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Formule officielle manquante</span><span style="font-size:11px;font-weight:700;color:#C43D2E;background:#FBEAE7;padding:3px 8px;border-radius:999px;">TRÈS FORT</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Obligatoire à VD et GE. Sans elle, votre loyer initial peut être frappé de nullité — contestable en tout temps.</div></div>
-          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid #F4A73B;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Hausse de plus de 10 %</span><span style="font-size:11px;font-weight:700;color:#7A5406;background:#FFF3DF;padding:3px 8px;border-radius:999px;">FORT</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">Par rapport au locataire précédent, sans travaux : un indice sérieux d'abus.</div></div>
-          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid #1B4965;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Rendement excessif</span><span style="font-size:11px;font-weight:700;color:#1B4965;background:#EAF1F5;padding:3px 8px;border-radius:999px;">MOYEN</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.45;">On somme le bailleur de prouver que son rendement n'est pas excessif. À défaut, l'autorité tranche en votre faveur.</div></div>
+        <!-- ===== STATS GRILLE ===== -->
+        <div>
+          <div class="cc-inner" style="padding-top:56px;padding-bottom:56px;">
+            <div class="cc-stats-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div style="background:#E3F3EB;border-radius:14px;padding:20px;"><div style="font-weight:700;color:#0C5638;font-size:15px;margin-bottom:5px;">Gratuit pour vérifier</div><div style="font-size:13px;color:#4C7C64;line-height:1.4;">Le diagnostic ne coûte rien.</div></div>
+              <div style="background:#EAF1F5;border-radius:14px;padding:20px;"><div style="font-weight:700;color:#1B4965;font-size:15px;margin-bottom:5px;">🇨🇭 Hébergé en Suisse</div><div style="font-size:13px;color:#3E5560;line-height:1.4;">Données supprimées après 7 jours.</div></div>
+              <div style="background:#EAF1F5;border-radius:14px;padding:20px;"><div style="font-weight:700;color:#1B4965;font-size:15px;margin-bottom:5px;">Conciliation gratuite</div><div style="font-size:13px;color:#3E5560;line-height:1.4;">Aucun frais de tribunal.</div></div>
+              <div style="background:#F6F4EE;border-radius:14px;padding:20px;"><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:5px;">Outil d'aide</div><div style="font-size:13px;color:#5A6A70;line-height:1.4;">Pas un conseil juridique.</div></div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div style="padding:30px 22px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div style="background:#E3F3EB;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#0C5638;font-size:14px;margin-bottom:4px;">Gratuit pour vérifier</div><div style="font-size:12.5px;color:#4C7C64;line-height:1.4;">Le diagnostic ne coûte rien.</div></div>
-          <div style="background:#EAF1F5;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#1B4965;font-size:14px;margin-bottom:4px;">🇨🇭 Hébergé en Suisse</div><div style="font-size:12.5px;color:#3E5560;line-height:1.4;">Données supprimées après 7 jours.</div></div>
-          <div style="background:#EAF1F5;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#1B4965;font-size:14px;margin-bottom:4px;">Conciliation gratuite</div><div style="font-size:12.5px;color:#3E5560;line-height:1.4;">Aucun frais de tribunal.</div></div>
-          <div style="background:#F6F4EE;border-radius:14px;padding:16px;"><div style="font-weight:700;color:#12303F;font-size:14px;margin-bottom:4px;">Outil d'aide</div><div style="font-size:12.5px;color:#5A6A70;line-height:1.4;">Pas un conseil juridique.</div></div>
+        <!-- ===== TARIFS ===== -->
+        <div style="background:#F4F8FA;">
+          <div class="cc-inner" style="padding-top:72px;padding-bottom:72px;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(22px,2.5vw,30px);color:#12303F;margin-bottom:28px;">Une lettre prête, dès 5 CHF</div>
+            <div class="cc-pricing-row" style="display:flex;flex-direction:column;gap:14px;">
+              <div style="background:#fff;border:1px solid #E4E2DB;border-radius:18px;padding:24px;"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:17px;">La lettre à imprimer</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#12303F;">5 CHF</span></div><div style="font-size:14px;color:#5A6A70;">PDF prêt à imprimer, vous l'envoyez vous-même.</div></div>
+              <div style="background:#12303F;border-radius:18px;padding:24px;position:relative;"><span style="position:absolute;top:-11px;right:18px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">RECOMMANDÉ · SANS EFFORT</span><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-weight:700;color:#fff;font-size:17px;">On l'envoie pour vous</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#F4A73B;">35 CHF</span></div><div style="font-size:14px;color:#B9C9D1;">Impression + envoi en recommandé. Rien à faire.</div></div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div style="padding:10px 22px 30px;">
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:16px;">Une lettre prête, dès 5 CHF</div>
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:18px;"><div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-weight:700;color:#12303F;font-size:16px;">La lettre à imprimer</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#12303F;">5 CHF</span></div><div style="font-size:14px;color:#5A6A70;margin-top:4px;">PDF prêt à imprimer, vous l'envoyez vous-même.</div></div>
-          <div style="background:#12303F;border-radius:16px;padding:18px;position:relative;"><span style="position:absolute;top:-10px;right:16px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">RECOMMANDÉ · SANS EFFORT</span><div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-weight:700;color:#fff;font-size:16px;">On l'envoie pour vous</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#F4A73B;">35 CHF</span></div><div style="font-size:14px;color:#B9C9D1;margin-top:4px;">Impression + envoi en recommandé. Rien à faire.</div></div>
+        <!-- ===== FAQ ===== -->
+        <div>
+          <div class="cc-inner" style="padding-top:72px;padding-bottom:72px;">
+            <div class="cc-faq-inner">
+              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(22px,2.5vw,30px);color:#12303F;margin-bottom:20px;">Questions fréquentes</div>
+              <details style="border-bottom:1px solid #EEEBE3;padding:16px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;gap:12px;">Est-ce vraiment légal&nbsp;?<span style="color:#F4A73B;flex:none;">+</span></summary><p style="margin:12px 0 0;font-size:14px;color:#5A6A70;line-height:1.6;">Oui. Contester un loyer est un droit prévu par le Code des obligations. La procédure de conciliation est gratuite et confidentielle.</p></details>
+              <details style="border-bottom:1px solid #EEEBE3;padding:16px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;gap:12px;">Mon bailleur peut-il se venger&nbsp;?<span style="color:#F4A73B;flex:none;">+</span></summary><p style="margin:12px 0 0;font-size:14px;color:#5A6A70;line-height:1.6;">La loi protège contre les résiliations de représailles pendant et après une contestation.</p></details>
+              <details style="border-bottom:1px solid #EEEBE3;padding:16px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;gap:12px;">Et mes données&nbsp;?<span style="color:#F4A73B;flex:none;">+</span></summary><p style="margin:12px 0 0;font-size:14px;color:#5A6A70;line-height:1.6;">Hébergées en Suisse et supprimées automatiquement après 7 jours.</p></details>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div style="padding:6px 22px 30px;">
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:23px;color:#12303F;margin-bottom:14px;">Questions fréquentes</div>
-        <details style="border-bottom:1px solid #EEEBE3;padding:14px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Est-ce vraiment légal&nbsp;?<span style="color:#F4A73B;">+</span></summary><p style="margin:10px 0 0;font-size:14px;color:#5A6A70;line-height:1.5;">Oui. Contester un loyer est un droit prévu par le Code des obligations. La procédure de conciliation est gratuite et confidentielle.</p></details>
-        <details style="border-bottom:1px solid #EEEBE3;padding:14px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Mon bailleur peut-il se venger&nbsp;?<span style="color:#F4A73B;">+</span></summary><p style="margin:10px 0 0;font-size:14px;color:#5A6A70;line-height:1.5;">La loi protège contre les résiliations de représailles pendant et après une contestation.</p></details>
-        <details style="border-bottom:1px solid #EEEBE3;padding:14px 0;"><summary style="font-weight:600;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Et mes données&nbsp;?<span style="color:#F4A73B;">+</span></summary><p style="margin:10px 0 0;font-size:14px;color:#5A6A70;line-height:1.5;">Hébergées en Suisse et supprimées automatiquement après 7 jours.</p></details>
-      </div>
+        <!-- ===== CTA FINAL ===== -->
+        <div style="background:linear-gradient(135deg,#F4F8FA 0%,#EAF1F5 100%);border-top:1px solid #E4E2DB;">
+          <div class="cc-inner" style="padding-top:72px;padding-bottom:72px;">
+            <div class="cc-cta-wrap">
+              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,3vw,38px);color:#12303F;margin-bottom:12px;line-height:1.1;">Vérifiez votre loyer maintenant.</div>
+              <p style="font-size:15px;color:#5A6A70;margin:0 0 28px;line-height:1.5;">Gratuit, sans inscription. 30 secondes suffisent.</p>
+              <button onClick="{{ goChoix }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:18px 32px;border:none;border-radius:14px;box-shadow:0 10px 24px -8px rgba(244,167,59,.8);cursor:pointer;">Commencer gratuitement →</button>
+            </div>
+          </div>
+        </div>
 
-      <div style="padding:30px 22px;">
-        <button onClick="{{ goChoix }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:17px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Vérifier mon loyer maintenant →</button>
-      </div>
+        <!-- ===== FOOTER ===== -->
+        <div style="background:#12303F;color:#8FA6B0;">
+          <div class="cc-inner" style="padding-top:36px;padding-bottom:36px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;"><span style="position:relative;width:22px;height:22px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:10px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:10px;background:#fff;border-radius:1px;"></span></span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#fff;">contestation.ch</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;margin-bottom:16px;"><a onClick="{{ goCgv }}" style="color:#B9C9D1;cursor:pointer;">CGV</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Confidentialité</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Mentions légales</a></div>
+            <p style="margin:0;font-size:12px;line-height:1.6;">contestation.ch est un outil d'aide à la génération de courrier, pas un cabinet d'avocats et pas un conseil juridique. Pour les cas complexes, adressez-vous à l'ASLOCA.</p>
+          </div>
+        </div>
 
-      <div style="padding:26px 22px;background:#12303F;color:#8FA6B0;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;"><span style="position:relative;width:22px;height:22px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:10px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:10px;background:#fff;border-radius:1px;"></span></span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#fff;">contestation.ch</span></div>
-        <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:13px;margin-bottom:14px;"><a onClick="{{ goCgv }}" style="color:#B9C9D1;cursor:pointer;">CGV</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Confidentialité</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Mentions légales</a></div>
-        <p style="margin:0;font-size:12px;line-height:1.5;">contestation.ch est un outil d'aide à la génération de courrier, pas un cabinet d'avocats et pas un conseil juridique. Pour les cas complexes, adressez-vous à l'ASLOCA.</p>
-      </div>
-      </div><!-- /cc-landing-sections -->
       </div><!-- /cc-landing-body -->
     </div>
     </sc-if>
