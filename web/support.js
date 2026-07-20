@@ -46,6 +46,15 @@
   }
   function cssEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
 
+  // ── touch-safe render guard ───────────────────────────────────────────
+  // Problem: on mobile, touchstart → blur → change → setState triggers a RAF.
+  // If that RAF fires between touchend and the synthetic click, replaceChildren
+  // removes the tapped button from the DOM before click fires → click swallowed.
+  // Solution: hold any RAF scheduled during a touch; release it after touchend,
+  // in the same task as the synthetic click so the DOM stays intact.
+  var _isTouching = false;
+  var _heldRender = false;
+
   // ── base class exposed to the component ──────────────────────────────
   function DCLogic() {}
   DCLogic.prototype.setState = function (patch) {
@@ -74,6 +83,9 @@
     },
 
     scheduleRender: function () {
+      // Hold the render if the user is mid-touch so that replaceChildren
+      // never removes the tapped element before the synthetic click fires.
+      if (_isTouching) { _heldRender = true; return; }
       if (this._pending) return;
       this._pending = true;
       var self = this;
@@ -225,6 +237,24 @@
       }
     }
   };
+
+  // Wire up the touch-guard listeners (capture phase, passive — zero overhead).
+  document.addEventListener('touchstart', function () {
+    _isTouching = true;
+  }, { capture: true, passive: true });
+
+  document.addEventListener('touchend', function () {
+    _isTouching = false;
+    if (_heldRender) {
+      _heldRender = false;
+      DC.scheduleRender(); // release the held re-render after click can fire
+    }
+  }, { capture: true, passive: true });
+
+  document.addEventListener('touchcancel', function () {
+    _isTouching = false;
+    _heldRender = false; // discard held render on cancelled touch
+  }, { capture: true, passive: true });
 
   window.__DC = DC;
   window.__bootDC = function (ComponentClass) {
