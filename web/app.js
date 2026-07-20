@@ -47,7 +47,10 @@ class Component extends DCLogic {
   fmt(n) { return Math.round(n).toLocaleString('fr-CH').replace(/[\u202f\u00a0,]/g, '\u2019'); }
 
   go(screen) { this.setState({ screen }); }
-  setD(key, val) { this.setState(s => ({ data: { ...s.data, [key]: val }, stepErrors: {} })); }
+  setD(key, val) {
+    if (this.state.data[key] === val) return; // valeur inchangée → pas de re-render
+    this.setState(s => ({ data: { ...s.data, [key]: val }, stepErrors: {} }));
+  }
   fail(e) {
     console.error(e);
     this.setState({ busy: false, calcLoading: false, payLoading: false, errorMsg: (e && e.message) || 'Une erreur est survenue.' });

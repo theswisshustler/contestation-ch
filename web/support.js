@@ -68,6 +68,8 @@
       this.mount = mount;
       this.template = Array.prototype.slice.call(templateContent.childNodes);
       this.component = component;
+      this._lastStep = null;
+      this._lastScreen = null;
       this.render();
     },
 
@@ -88,12 +90,41 @@
         try { selS = act.selectionStart; selE = act.selectionEnd; } catch (e) {}
       }
 
+      // Preserve scroll positions of all scrollable containers.
+      var scrollSave = [];
+      var scrollEls = this.mount.querySelectorAll('.cc-scroll');
+      for (var j = 0; j < scrollEls.length; j++) {
+        scrollSave.push(scrollEls[j].scrollTop);
+      }
+
+      // Detect whether the step or screen actually changed.
+      var curStep = this.component.state.step;
+      var curScreen = this.component.state.screen;
+      var stepChanged = this._lastStep !== curStep || this._lastScreen !== curScreen;
+      this._lastStep = curStep;
+      this._lastScreen = curScreen;
+
       var frag = document.createDocumentFragment();
       for (var i = 0; i < this.template.length; i++) {
         var built = this.build(this.template[i], {});
         if (built) frag.appendChild(built);
       }
       this.mount.replaceChildren(frag);
+
+      // Restore scroll positions (prevents the "page reload" jump on field blur).
+      var newScrollEls = this.mount.querySelectorAll('.cc-scroll');
+      for (var m = 0; m < scrollSave.length && m < newScrollEls.length; m++) {
+        newScrollEls[m].scrollTop = scrollSave[m];
+      }
+
+      // If only data changed (no step/screen transition), instantly complete any
+      // enter-animations so they don't re-play on every field update.
+      if (!stepChanged) {
+        var animated = this.mount.querySelectorAll('[style*="fadeUp"]');
+        for (var q = 0; q < animated.length; q++) {
+          animated[q].style.animationDuration = '0.001s';
+        }
+      }
 
       if (focusKey) {
         var el = this.mount.querySelector('[data-k="' + cssEscape(focusKey) + '"]');
