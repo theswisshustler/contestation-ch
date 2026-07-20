@@ -104,6 +104,10 @@
       this._lastStep = curStep;
       this._lastScreen = curScreen;
 
+      // When only data changed (typing / blur inside the same step), strip the
+      // enter animation AT BUILD TIME so it can never replay and cause jitter.
+      this._suppressEnterAnim = !stepChanged;
+
       var frag = document.createDocumentFragment();
       for (var i = 0; i < this.template.length; i++) {
         var built = this.build(this.template[i], {});
@@ -117,19 +121,10 @@
         newScrollEls[m].scrollTop = scrollSave[m];
       }
 
-      // If only data changed (no step/screen transition), instantly complete any
-      // enter-animations so they don't re-play on every field update.
-      if (!stepChanged) {
-        var animated = this.mount.querySelectorAll('[style*="fadeUp"]');
-        for (var q = 0; q < animated.length; q++) {
-          animated[q].style.animationDuration = '0.001s';
-        }
-      }
-
       if (focusKey) {
         var el = this.mount.querySelector('[data-k="' + cssEscape(focusKey) + '"]');
         if (el) {
-          el.focus();
+          try { el.focus({ preventScroll: true }); } catch (e3) { el.focus(); }
           if (selS != null) { try { el.setSelectionRange(selS, selE); } catch (e2) {} }
         }
       }
@@ -212,6 +207,17 @@
           // "defaultValue" et certains navigateurs mobiles l'utilisent pour
           // réinitialiser la valeur affichée au moment du focus → jitter.
           el.dataset.k = exprOf(raw);
+          continue;
+        }
+
+        if (name === 'style') {
+          var sv = interp(raw, scope, this.vals);
+          // Data-only re-render: remove enter animations (fadeUp) so they never
+          // replay mid-typing / on blur — the visible "jitter".
+          if (this._suppressEnterAnim && sv.indexOf('fadeUp') !== -1) {
+            sv = sv.replace(/animation\s*:[^;]*fadeUp[^;]*;?/g, '');
+          }
+          el.setAttribute('style', sv);
           continue;
         }
 

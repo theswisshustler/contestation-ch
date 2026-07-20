@@ -1,1 +1,2 @@
 - [Mobile UX conventions](mobile-ux-conventions.md) — back buttons need flex centering; CTA bars need cc-cta-bar safe-area; inputs need focus ring via !important; sections use cc-section-pad.
+- [Template re-render jitter](template-rerender-jitter.md) — full-rebuild engine replays CSS enter-animations on every render; strip them at build time, post-insertion patches fail.
