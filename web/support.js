@@ -208,7 +208,9 @@
         if (name === 'value') {
           var v = interp(raw, scope, this.vals);
           el.value = v;
-          el.setAttribute('value', v);
+          // Ne pas appeler setAttribute('value') : l'attribut HTML définit la
+          // "defaultValue" et certains navigateurs mobiles l'utilisent pour
+          // réinitialiser la valeur affichée au moment du focus → jitter.
           el.dataset.k = exprOf(raw);
           continue;
         }
