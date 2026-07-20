@@ -583,6 +583,7 @@
       </div>
       </sc-if>
 
+      <sc-if value="{{ diagEligible }}" hint-placeholder-val="{{ true }}">
       <div style="padding:18px 22px 8px;">
         <details style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;">
           <summary style="font-weight:700;color:#12303F;font-size:15px;display:flex;justify-content:space-between;">Ce que la lettre demandera<span style="color:#F4A73B;">+</span></summary>
@@ -593,6 +594,7 @@
           </div>
         </details>
       </div>
+      </sc-if>
 
       <div style="padding:20px 22px 0;">
         <sc-if value="{{ diagEligible }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goApercu }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:17px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Voir ma lettre →</button></sc-if>
