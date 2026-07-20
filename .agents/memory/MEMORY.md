@@ -1,0 +1,1 @@
+- [Mobile UX conventions](mobile-ux-conventions.md) — back buttons need flex centering; CTA bars need cc-cta-bar safe-area; inputs need focus ring via !important; sections use cc-section-pad.
