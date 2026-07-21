@@ -190,12 +190,22 @@ SINON:
 ```
 
 ### 4.4 Conclusions-type de la requête (à intégrer aux templates)
-- Constater le caractère abusif du loyer initial.
-- (Si formule manquante) Constater la nullité de la fixation du loyer initial.
-- Fixer le loyer à un montant non abusif.
-- Ordonner la restitution du trop-perçu (le cas échéant, jusqu'à 10 ans).
-- Adapter en conséquence la garantie de loyer.
-- Sommer le bailleur de produire le décompte de rendement net.
+Les conclusions sont présentées dans leur ordre procédural, sans laisser entendre que
+l'abus est établi avant l'accès aux données détenues par le bailleur :
+
+1. **Préalablement** : requérir la production des pièces permettant de déterminer la
+   méthode applicable et de contrôler le loyer (rendement net ou brut ; subsidiairement,
+   objets comparables si les loyers usuels sont invoqués).
+2. **Au fond, après examen des pièces** :
+   - (si formule manquante) constater la nullité de la fixation du loyer initial ;
+   - fixer le loyer initial net à un montant non abusif, sous réserve de préciser la
+     conclusion une fois les données disponibles ;
+   - restituer la différence payée en trop depuis l'entrée en jouissance ;
+   - adapter la garantie de loyer au montant finalement fixé.
+
+La conclusion autonome « constater le caractère abusif » est supprimée : elle était
+redondante avec la fixation judiciaire et donnait à tort l'impression que l'abus était
+déjà prouvé.
 
 > **Modèles à suivre** : les requêtes-type officielles de la Commission de conciliation GE (baisse de loyer / contestation) et l'esprit des requêtes préfectorales VD. Ne pas recopier verbatim ; s'en inspirer pour la structure et les conclusions.
 

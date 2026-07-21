@@ -174,7 +174,9 @@ describe('evaluateLoyerInitial — formule officielle manquante', () => {
   it('formule inconnue → avertissement, pas de motif tueur', () => {
     const r = evaluateLoyerInitial(makeDossier({ formuleOfficielleRecue: 'inconnu' }), TODAY);
     expect(r.motifs.find((m) => m.code === 'formule_manquante')).toBeUndefined();
-    expect(r.avertissements.join(' ')).toMatch(/non confirmée/i);
+    expect(r.avertissements.join(' ')).toMatch(/chercher avec le bail/i);
+    expect(r.avertissements.join(' ')).toMatch(/régie ou au propriétaire/i);
+    expect(r.avertissements.join(' ')).toMatch(/délai de contestation/i);
   });
 });
 
@@ -310,9 +312,11 @@ describe('evaluateLoyerInitial — conclusions', () => {
     expect(avecFormule.conclusions.join(' ')).not.toMatch(/nullité/i);
   });
 
-  it('inclut toujours la sommation de produire le décompte de rendement', () => {
+  it('demande d’abord les pièces nécessaires avant les conclusions au fond', () => {
     const r = evaluateLoyerInitial(makeDossier(), TODAY);
-    expect(r.conclusions.join(' ')).toMatch(/rendement net/i);
+    expect(r.conclusions[0]).toMatch(/production des pièces nécessaires/i);
+    expect(r.conclusions[0]).toMatch(/méthode applicable/i);
+    expect(r.conclusions.join(' ')).toMatch(/après examen des pièces/i);
   });
 
   it('motifs triés par force décroissante', () => {

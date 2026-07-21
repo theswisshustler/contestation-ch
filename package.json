@@ -5,6 +5,7 @@
   "type": "module",
   "description": "contestation.ch — génération de requêtes en contestation de loyer initial (VD + GE)",
   "scripts": {
+    "dev": "node tools/dev-server.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

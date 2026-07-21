@@ -402,8 +402,8 @@ export function evaluateLoyerInitial(
     });
   } else if (d.formuleOfficielleRecue === 'inconnu') {
     res.avertissements.push(
-      "Réception de la formule officielle non confirmée : à clarifier avec le locataire " +
-      "(motif potentiel de nullité, court-circuite le délai de 30 jours).",
+      "Formule officielle à vérifier : chercher avec le bail, ses annexes et les documents reçus à la remise des clés. " +
+      "Si elle reste introuvable, demander une copie écrite à la régie ou au propriétaire sans attendre leur réponse pour respecter un éventuel délai de contestation.",
     );
   }
 
@@ -498,14 +498,19 @@ function buildConclusions(
   formuleManquante: boolean,
 ): string[] {
   const c: string[] = [];
+  c.push(
+    "Requérir de la partie bailleresse la production des pièces nécessaires à la détermination de la méthode applicable et à la vérification du caractère non abusif du loyer initial.",
+  );
   if (formuleManquante) {
     c.push("Constater la nullité de la fixation du loyer initial (formule officielle non remise).");
   }
-  c.push("Constater le caractère abusif du loyer initial.");
-  c.push("Fixer le loyer initial à un montant non abusif.");
-  c.push("Ordonner au bailleur de produire le décompte de rendement net de l'immeuble.");
-  c.push("Condamner le bailleur à restituer le trop-perçu depuis l'entrée en jouissance.");
-  c.push("Adapter en conséquence la garantie de loyer.");
+  c.push(
+    "Après examen des pièces, fixer le loyer initial net à un montant non abusif, sous réserve de préciser cette conclusion lorsque les données nécessaires seront disponibles.",
+  );
+  c.push(
+    "Ordonner à la partie bailleresse de restituer la différence entre le loyer payé et le loyer ainsi fixé, depuis l'entrée en jouissance.",
+  );
+  c.push("Adapter la garantie de loyer au montant du loyer ainsi fixé.");
   return c;
 }
 

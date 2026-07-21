@@ -9,7 +9,7 @@ import { EXTRACTION_SYSTEM_PROMPT } from '../_shared/ruleset.ts';
 import { badRequest, json, preflight, serverError } from '../_shared/http.ts';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-5';
+const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-4-6';
 
 function docBlock(b64: string) {
   return {
@@ -63,11 +63,22 @@ Deno.serve(async (req) => {
       .join('')
       .trim();
 
-    let extracted: unknown;
+    let extracted: Record<string, unknown>;
     try {
-      extracted = JSON.parse(text);
+      const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      extracted = JSON.parse(cleaned);
     } catch {
       return serverError('Réponse Claude non-JSON', text.slice(0, 500));
+    }
+
+    // Ne jamais déduire « non reçue » du seul fait que l'utilisateur n'a pas
+    // téléversé de formule. Cette réponse doit être confirmée par l'utilisateur.
+    if (!body.formuleB64) {
+      extracted.formuleOfficielleRecue = 'inconnu';
+      extracted.loyerPrecedentConnu = false;
+      extracted.loyerPrecedentNet = null;
+    } else if (extracted.formuleOfficielleRecue !== 'oui') {
+      extracted.formuleOfficielleRecue = 'inconnu';
     }
 
     return json({ extracted });

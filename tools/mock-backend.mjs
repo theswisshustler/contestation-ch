@@ -8,6 +8,7 @@
  * Pointez web/config.js sur http://localhost:<port> pour l'utiliser.
  */
 import http from 'node:http';
+import { extractBailDocuments } from './extract-bail.mjs';
 
 const PORT = Number(process.argv[2] || 8787);
 const letters = new Map(); // letterId -> { unlocked }
@@ -20,8 +21,8 @@ const CORS = {
 const send = (res, status, body) =>
   res.writeHead(status, { ...CORS, 'content-type': 'application/json' }).end(JSON.stringify(body));
 
-// 1x1 PNG transparent (aperçu factice) et PDF minimal (téléchargement factice).
-const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+// En local, le front affiche sa maquette de lettre filigranée. Le vrai
+// back-end renvoie, lui, un PNG filigrané et rastérisé par Gotenberg.
 const PDF = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCg==';
 
 const handlers = {
@@ -38,26 +39,17 @@ const handlers = {
     return [200, { result: { eligible: false, tauxActuel, tauxBail: t, deltaPts: null, baisseEstimeePct: null, baisseEstimeeChf: null, procedure: [], avertissements: [] } }];
   },
 
-  'extract-bail': (b) => {
-    if (!b.bailB64) return [400, { error: 'bailB64 requis' }];
-    return [200, { extracted: {
-      canton: 'VD', npa: '1004', commune: 'Lausanne', adresseImmeuble: 'Avenue de la Gare 12',
-      dateRemiseCles: new Date(Date.now() - 16 * 86400000).toISOString().slice(0, 10),
-      loyerNetMensuel: 1980, chargesMensuelles: 160,
-      formuleOfficielleRecue: 'non', loyerPrecedentConnu: true, loyerPrecedentNet: 1650,
-      tauxReferenceBail: 1.75, anneeConstruction: 1972,
-      locataire: { nom: 'Rochat', prenom: 'Camille', adresse: 'Avenue de la Gare 12', npa: '1004', ville: 'Lausanne' },
-      bailleur: { nom: 'Régie Lémanique SA', adresse: 'Rue du Midi 3', npa: '1003', ville: 'Lausanne' },
-      champs_incertains: ['dateRemiseCles', 'loyerPrecedentNet'],
-    } }];
-  },
+  'extract-bail': (b) => extractBailDocuments(b),
 
   'evaluate': (b) => {
     const d = b.dossier;
     if (!d || !d.canton || !d.commune || !d.npa || !d.dateRemiseCles) return [400, { error: 'Champs obligatoires manquants' }];
     const motifs = [];
-    if (d.formuleOfficielleRecue === 'non')
+    const formuleManquante = d.formuleOfficielleRecue === 'non';
+    const joursEcoules = Math.floor((Date.now() - new Date(d.dateRemiseCles).getTime()) / 86400000);
+    if (formuleManquante)
       motifs.push({ code: 'formule_manquante', libelle: 'Formule officielle de fixation du loyer initial manquante', force: 'tres_forte', explication: "L'usage de la formule officielle est obligatoire à VD et GE. Son absence entraîne la nullité de la fixation du loyer initial." });
+    const horsDelai = !formuleManquante && joursEcoules > 30;
     if (d.loyerPrecedentConnu && d.loyerPrecedentNet && d.loyerNetMensuel > d.loyerPrecedentNet * 1.1) {
       const h = ((d.loyerNetMensuel - d.loyerPrecedentNet) / d.loyerPrecedentNet * 100).toFixed(1);
       motifs.push({ code: 'hausse_sensible', libelle: `Hausse sensible de ${h} % par rapport au locataire précédent`, force: 'forte', explication: `Le loyer net passe de ${d.loyerPrecedentNet} à ${d.loyerNetMensuel} CHF (+${h} %).` });
@@ -66,11 +58,24 @@ const handlers = {
     const autorite = d.canton === 'GE'
       ? { nom: 'Commission de conciliation en matière de baux et loyers', adresse: "Rue de l'Athénée 6-8", casePostale: 'Case postale 3120', npa: '1211', ville: 'Genève 3', canton: 'GE' }
       : { nom: 'Préfecture du district de Lausanne', adresse: 'Place du Château 1', npa: '1014', ville: 'Lausanne', canton: 'VD' };
+    const conclusions = horsDelai ? [] : [
+      'Requérir de la partie bailleresse la production des pièces nécessaires à la détermination de la méthode applicable et à la vérification du caractère non abusif du loyer initial.',
+      ...(formuleManquante ? ['Constater la nullité de la fixation du loyer initial (formule officielle non remise).'] : []),
+      'Après examen des pièces, fixer le loyer initial net à un montant non abusif, sous réserve de préciser cette conclusion lorsque les données nécessaires seront disponibles.',
+      "Ordonner à la partie bailleresse de restituer la différence entre le loyer payé et le loyer ainsi fixé, depuis l'entrée en jouissance.",
+      'Adapter la garantie de loyer au montant du loyer ainsi fixé.',
+    ];
+    const avertissements = formuleManquante
+      ? ['Formule manquante : contestation recevable en tout temps (délai de 30 jours inapplicable).']
+      : horsDelai
+        ? [`Délai de 30 jours dépassé (${joursEcoules} jours depuis la remise des clés).`]
+        : d.formuleOfficielleRecue === 'inconnu'
+          ? ["Formule officielle à vérifier : cherchez avec le bail et ses annexes. Si elle reste introuvable, demandez une copie écrite à la régie ou au propriétaire sans attendre leur réponse pour respecter un éventuel délai de contestation."]
+          : [];
     const evaluation = {
-      eligible: true, horsDelai: false, requiertTraitementManuel: false, autorite,
-      joursEcoules: 16, motifs, axeArgumentaire: 'rendement_net',
-      conclusions: ['Constater la nullité de la fixation du loyer initial.', 'Fixer le loyer initial à un montant non abusif.', 'Ordonner la production du décompte de rendement net.'],
-      avertissements: ['Formule manquante : contestation recevable en tout temps.'], rendementAdmissiblePct: 3.25,
+      eligible: !horsDelai, horsDelai, requiertTraitementManuel: false, autorite,
+      joursEcoules, motifs: horsDelai ? motifs.filter((m) => m.code === 'formule_manquante') : motifs, axeArgumentaire: horsDelai ? null : 'rendement_net',
+      conclusions, avertissements, rendementAdmissiblePct: horsDelai ? null : 3.25,
     };
     return [200, { dossierId: 'mock-dossier-1', evaluation }];
   },
@@ -79,7 +84,7 @@ const handlers = {
     if (!b.dossierId) return [400, { error: 'dossierId requis' }];
     const letterId = 'mock-letter-1';
     letters.set(letterId, { unlocked: false });
-    return [200, { letterId, previews: [PNG] }];
+    return [200, { letterId, previews: [] }];
   },
 
   'create-checkout': (b) => {
@@ -104,10 +109,10 @@ http.createServer((req, res) => {
   if (!m || !handlers[m[1]]) return send(res, 404, { error: 'not found' });
   let raw = '';
   req.on('data', (c) => (raw += c));
-  req.on('end', () => {
+  req.on('end', async () => {
     let body = {};
     try { body = raw ? JSON.parse(raw) : {}; } catch { return send(res, 400, { error: 'JSON invalide' }); }
-    const [status, payload] = handlers[m[1]](body);
+    const [status, payload] = await handlers[m[1]](body);
     send(res, status, payload);
   });
 }).listen(PORT, () => console.log(`mock backend on http://localhost:${PORT}`));
