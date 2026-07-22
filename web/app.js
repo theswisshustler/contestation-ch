@@ -27,11 +27,12 @@ class Component extends DCLogic {
       motifHausse: 'inconnu', tauxRefNouveau: '',
     },
     // dossier serveur
-    dossierId: null, letterId: null, previewUrl: '',
+    dossierId: null, letterId: null, previewUrl: '', previewSavedAt: 0, result: null,
     // upload import
     bailB64: null, formuleB64: null, bailName: '', formuleName: '',
+    bailFilled: false, formuleFilled: false, analyseStep: 0,
     // offre / paiement
-    offre: null,
+    offre: null, payLoading: false, sigDrawn: false,
     // UI transverse
     busy: false, busyKind: '', errorMsg: '',
     letterGenerationStep: 0,
@@ -45,14 +46,196 @@ class Component extends DCLogic {
 
   constructor() {
     super();
-    if (window.CONTESTATION_START_SCREEN === 'choix') this.state.screen = 'choix';
+    this._draftReady = false;
+    const restored = this.restoreDraft();
+    if (!restored && window.CONTESTATION_START_SCREEN === 'choix') this.state.screen = 'choix';
     this.applyRequestedFlow();
-    this.track(this.state.screen === 'landing' ? 'landing_view' : 'diagnostic_entry_view');
     this.resumeFromReturn();
+    this.track(this.state.screen === 'landing' ? 'landing_view' : 'diagnostic_entry_view');
     if (!API.isConfigured()) {
       this.state.errorMsg =
         'Back-end non configuré : renseignez web/config.js (SUPABASE_URL, SUPABASE_ANON_KEY).';
     }
+    this._draftReady = true;
+    this.saveDraftNow();
+  }
+
+  // ── brouillon local : reprise fiable sur le même appareil ────────────
+  restoreDraft() {
+    const store = window.ContestationDraftStore;
+    const draft = store && store.load();
+    if (!draft || !draft.state) return false;
+
+    const saved = draft.state;
+    const allowedScreens = [
+      'landing', 'choix', 'mode', 'baisseSim', 'altForm', 'manuel', 'import',
+      'diagnostic', 'apercu', 'signature', 'checkout', 'succes', 'dashboard',
+      'cgv', 'privacy',
+    ];
+    const keys = [
+      'loyer', 'taux', 'calcRes', 'tauxActuel', 'baisseSimRes', 'parcours',
+      'flowKind', 'step', 'importState', 'dossierId', 'letterId', 'previewUrl',
+      'previewSavedAt', 'result', 'bailName', 'formuleName', 'bailFilled',
+      'formuleFilled', 'offre', 'sigDrawn', 'extractionUncertain',
+      'extractionProvider', 'extractionFormuleDetected', 'extractionFormuleSource',
+    ];
+    const restored = {};
+    keys.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(saved, key)) restored[key] = saved[key];
+    });
+    if (allowedScreens.includes(saved.screen)) restored.screen = saved.screen;
+    if (!['loyer_initial', 'hausse_loyer', 'demande_baisse', null].includes(restored.flowKind)) {
+      restored.flowKind = null;
+    }
+    if (!Number.isInteger(restored.step) || restored.step < 0 || restored.step > 8) restored.step = 0;
+    if (restored.importState === 'analyse') restored.importState = 'upload';
+    if (saved.data && typeof saved.data === 'object' && !Array.isArray(saved.data)) {
+      restored.data = { ...this.state.data, ...saved.data };
+    }
+
+    // Une URL signée de preview expire. Le PDF reste associé au dossier et une
+    // nouvelle URL sera demandée silencieusement après le montage.
+    if (!restored.previewSavedAt || Date.now() - restored.previewSavedAt > 20 * 60 * 1000) {
+      restored.previewUrl = '';
+      restored.previewSavedAt = 0;
+    }
+    this.state = {
+      ...this.state,
+      ...restored,
+      busy: false,
+      busyKind: '',
+      calcLoading: false,
+      baisseSimLoading: false,
+      payLoading: false,
+      addressSuggestions: [],
+      addressLoading: false,
+      stepErrors: {},
+      errorMsg: '',
+    };
+    return true;
+  }
+
+  draftSnapshot() {
+    const st = this.state;
+    return {
+      screen: st.screen,
+      loyer: st.loyer,
+      taux: st.taux,
+      calcRes: st.calcRes,
+      tauxActuel: st.tauxActuel,
+      baisseSimRes: st.baisseSimRes,
+      parcours: st.parcours,
+      flowKind: st.flowKind,
+      step: st.step,
+      importState: st.importState === 'analyse' ? 'upload' : st.importState,
+      data: st.data,
+      dossierId: st.dossierId,
+      letterId: st.letterId,
+      previewUrl: st.previewUrl,
+      previewSavedAt: st.previewSavedAt || 0,
+      result: st.result,
+      bailName: st.bailName,
+      formuleName: st.formuleName,
+      bailFilled: !!st.bailFilled,
+      formuleFilled: !!st.formuleFilled,
+      offre: st.offre,
+      sigDrawn: !!st.sigDrawn,
+      extractionUncertain: st.extractionUncertain,
+      extractionProvider: st.extractionProvider,
+      extractionFormuleDetected: !!st.extractionFormuleDetected,
+      extractionFormuleSource: st.extractionFormuleSource,
+    };
+  }
+
+  saveDraftNow() {
+    if (!this._draftReady || !window.ContestationDraftStore) return;
+    clearTimeout(this._draftSaveTimer);
+    this._draftSaveTimer = null;
+    const snapshot = this.draftSnapshot();
+    let serialized;
+    try { serialized = JSON.stringify(snapshot); } catch (_) { return; }
+    if (serialized === this._lastDraftSerialized) return;
+    const completed = snapshot.screen === 'succes' || snapshot.screen === 'dashboard';
+    if (window.ContestationDraftStore.save(snapshot, completed)) {
+      this._lastDraftSerialized = serialized;
+    }
+  }
+
+  stateDidChange(previous, next) {
+    if (!this._draftReady) return;
+    const navigationChanged = previous.screen !== next.screen || previous.step !== next.step;
+    if (navigationChanged) {
+      this.saveDraftNow();
+      return;
+    }
+    clearTimeout(this._draftSaveTimer);
+    this._draftSaveTimer = setTimeout(() => this.saveDraftNow(), 120);
+  }
+
+  fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+      reader.onerror = () => reject(reader.error || new Error('Lecture du PDF impossible'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async restoreDraftFiles() {
+    const store = window.ContestationDraftStore;
+    if (!store || (!this.state.bailFilled && !this.state.formuleFilled)) return;
+    const files = await store.loadFiles();
+    const patch = {};
+    if (this.state.bailFilled && files.bail?.blob) {
+      try {
+        patch.bailB64 = await this.fileToBase64(files.bail.blob);
+        patch.bailName = files.bail.name || this.state.bailName;
+      } catch (_) {
+        patch.bailFilled = false;
+        patch.bailName = '';
+      }
+    } else if (this.state.bailFilled) {
+      patch.bailFilled = false;
+      patch.bailName = '';
+    }
+    if (this.state.formuleFilled && files.formule?.blob) {
+      try {
+        patch.formuleB64 = await this.fileToBase64(files.formule.blob);
+        patch.formuleName = files.formule.name || this.state.formuleName;
+      } catch (_) {
+        patch.formuleFilled = false;
+        patch.formuleName = '';
+      }
+    } else if (this.state.formuleFilled) {
+      patch.formuleFilled = false;
+      patch.formuleName = '';
+    }
+    if (Object.keys(patch).length) this.setState(patch);
+  }
+
+  async refreshRestoredPreview() {
+    if (this.state.screen !== 'apercu' || !this.state.dossierId || this.state.previewUrl) return;
+    try {
+      const { letterId, previews } = await API.generateLetter(this.state.dossierId);
+      this.setState({
+        letterId,
+        previewUrl: (previews && previews[0]) || '',
+        previewSavedAt: Date.now(),
+      });
+    } catch (error) {
+      console.warn('preview_restore_failed', error);
+    }
+  }
+
+  async afterMount() {
+    this._flushDraft = () => this.saveDraftNow();
+    window.addEventListener('pagehide', this._flushDraft);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.saveDraftNow();
+    });
+    try { await navigator.storage?.persist?.(); } catch (_) { /* facultatif */ }
+    await this.restoreDraftFiles();
+    await this.refreshRestoredPreview();
   }
 
   // ── helpers de format (UI uniquement) ──────────────────────────────
@@ -75,8 +258,14 @@ class Component extends DCLogic {
   }
 
   applyRequestedFlow() {
-    let flow;
-    try { flow = new URLSearchParams(location.search).get('flow'); } catch (_) { return; }
+    let params;
+    try { params = new URLSearchParams(location.search); } catch (_) { return; }
+    const legal = params.get('legal');
+    if (legal === 'cgv' || legal === 'privacy') {
+      this.state.screen = legal;
+      return;
+    }
+    const flow = params.get('flow');
     if (!['loyer_initial', 'hausse_loyer', 'demande_baisse'].includes(flow)) return;
     this.state.flowKind = flow;
     this.state.parcours = flow;
@@ -101,13 +290,6 @@ class Component extends DCLogic {
   }
   correctDetectedFormule() {
     this.setImportFormule('inconnu');
-  }
-  setDateWithoutRender(value) {
-    // Un <input type="date"> natif peut émettre `change` pendant la saisie de
-    // chaque segment (jour/mois/année). Un setState reconstruirait alors le DOM
-    // et ferait perdre à Chrome le segment actif. La valeur reste bien dans
-    // l'état, mais le rendu attend l'action suivante du wizard.
-    this.state.data.dateCles = value;
   }
   fail(e) {
     console.error(e);
@@ -176,6 +358,9 @@ class Component extends DCLogic {
     this.state.dossierId = s.dossierId || null;
     this.state.letterId = s.letterId || null;
     this.state.flowKind = s.flowKind || null;
+    this.state.bailB64 = null;
+    this.state.formuleB64 = null;
+    if (window.ContestationDraftStore) window.ContestationDraftStore.clearFiles();
     try { history.replaceState({}, '', location.pathname); } catch (_) {}
   }
 
@@ -300,6 +485,7 @@ class Component extends DCLogic {
 
   // ── calculateur landing (POST /evaluate-baisse) ────────────────────
   async checkCalc() {
+    if (this.state.calcLoading) return;
     this.track('rate_calculator_started');
     const loyer = this.num(this.state.loyer), taux = this.num(this.state.taux);
     if (!loyer) { this.setState({ calcRes: { error: true } }); return; }
@@ -355,6 +541,7 @@ class Component extends DCLogic {
 
   // ── flux manuel : soumission du dossier (POST /evaluate) ────────────
   async submitDossier() {
+    if (this.state.busy) return;
     this.track('diagnostic_started', { parcours: this.state.parcours || 'unknown' });
     this.setState({ busy: true, errorMsg: '', stepErrors: {} });
     try {
@@ -372,12 +559,16 @@ class Component extends DCLogic {
   async confirmerFormuleDepuisDiagnostic(valeur) {
     // La réponse change la recevabilité et les motifs : le serveur doit donc
     // recalculer entièrement le diagnostic, comme lors de la soumission.
-    this.state.data.formule = valeur;
+    this.setState(s => ({ data: { ...s.data, formule: valeur } }));
     await this.submitDossier();
   }
   next() {
     const errors = this.validateCurrentStep();
     if (Object.keys(errors).length > 0) { this.setState({ stepErrors: errors }); return; }
+    if (this._navigationLocked) return;
+    this._navigationLocked = true;
+    clearTimeout(this._navigationUnlockTimer);
+    this._navigationUnlockTimer = setTimeout(() => { this._navigationLocked = false; }, 350);
     this.setState({ stepErrors: {} });
     if (this.state.step >= 8) {
       this.submitDossier();
@@ -472,7 +663,13 @@ class Component extends DCLogic {
       dossierId: null, letterId: null, previewUrl: '', result: null,
     });
   }
-  prev() { this.setState(s => (s.step <= 0 ? { screen: 'mode', stepErrors: {} } : { step: s.step - 1, stepErrors: {} })); }
+  prev() {
+    if (this._navigationLocked) return;
+    this._navigationLocked = true;
+    clearTimeout(this._navigationUnlockTimer);
+    this._navigationUnlockTimer = setTimeout(() => { this._navigationLocked = false; }, 350);
+    this.setState(s => (s.step <= 0 ? { screen: 'mode', stepErrors: {} } : { step: s.step - 1, stepErrors: {} }));
+  }
 
   // ── autocomplétion d'adresse (service officiel geo.admin.ch) ────────
   onBuildingAddressInput(value) {
@@ -568,11 +765,17 @@ class Component extends DCLogic {
         if (kind === 'bail') this.setState({ bailFilled: true, bailName: f.name, bailB64: b64 });
         else this.setState({ formuleFilled: true, formuleName: f.name, formuleB64: b64 });
       };
+      if (window.ContestationDraftStore) {
+        window.ContestationDraftStore.saveFile(kind, f).catch((error) => {
+          console.warn('draft_file_save_failed', error);
+        });
+      }
       reader.readAsDataURL(f);
     };
     input.click();
   }
   async startAnalyse() {
+    if (this.state.importState === 'analyse') return;
     if (!this.state.bailB64) { this.setState({ errorMsg: 'Ajoutez au moins votre contrat de bail (PDF).' }); return; }
     this.track('import_started', { formule_jointe: !!this.state.formuleB64 });
     this.setState({ importState: 'analyse', analyseStep: 1, errorMsg: '' });
@@ -665,7 +868,14 @@ class Component extends DCLogic {
       const { letterId, previews } = await API.generateLetter(this.state.dossierId);
       this.stopLetterGeneration();
       this.persist({ letterId });
-      this.setState({ busy: false, busyKind: '', screen: 'apercu', letterId, previewUrl: (previews && previews[0]) || '' });
+      this.setState({
+        busy: false,
+        busyKind: '',
+        screen: 'apercu',
+        letterId,
+        previewUrl: (previews && previews[0]) || '',
+        previewSavedAt: Date.now(),
+      });
     } catch (e) {
       this.stopLetterGeneration();
       this.fail(e);
@@ -678,32 +888,55 @@ class Component extends DCLogic {
     ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#12303F';
     let drawing = false, last = null;
     const pos = (e) => { const r = node.getBoundingClientRect(); return { x: (e.clientX - r.left) * (node.width / r.width), y: (e.clientY - r.top) * (node.height / r.height) }; };
+    const finishDrawing = () => {
+      if (!drawing) return;
+      drawing = false;
+      if (this.state.sigDrawn) {
+        const signatureData = node.toDataURL('image/png');
+        this.setState(s => ({ data: { ...s.data, signatureData } }));
+      }
+    };
     node.addEventListener('pointerdown', (e) => { drawing = true; last = pos(e); node.setPointerCapture(e.pointerId); if (!this.state.sigDrawn) this.setState({ sigDrawn: true }); e.preventDefault(); });
     node.addEventListener('pointermove', (e) => { if (!drawing) return; const p = pos(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; e.preventDefault(); });
-    node.addEventListener('pointerup', () => { drawing = false; });
-    node.addEventListener('pointerleave', () => { drawing = false; });
+    node.addEventListener('pointerup', finishDrawing);
+    node.addEventListener('pointercancel', finishDrawing);
+    node.addEventListener('pointerleave', finishDrawing);
     this._sigNode = node; this._sigCtx = ctx;
+    if (this.state.data.signatureData) {
+      const image = new Image();
+      image.onload = () => ctx.drawImage(image, 0, 0, node.width, node.height);
+      image.src = this.state.data.signatureData;
+    }
   }
-  clearSig() { if (this._sigNode) this._sigCtx.clearRect(0, 0, this._sigNode.width, this._sigNode.height); this.setState({ sigDrawn: false }); }
+  clearSig() {
+    if (this._sigNode) this._sigCtx.clearRect(0, 0, this._sigNode.width, this._sigNode.height);
+    this.setState(s => ({ sigDrawn: false, data: { ...s.data, signatureData: null } }));
+  }
   async validateSig() {
+    if (this.state.busy) return;
     if (!this._sigNode || !this.state.sigDrawn) { this.setState({ errorMsg: 'Dessinez votre signature avant de continuer.' }); return; }
     const signatureDataUrl = this._sigNode.toDataURL('image/png');
     if (!this.state.dossierId || !this.state.letterId) { this.setState({ errorMsg: 'Lettre non générée.' }); return; }
     this.setState({ busy: true, errorMsg: '' });
     try {
       await API.signLetter({ dossierId: this.state.dossierId, letterId: this.state.letterId, signatureDataUrl });
-      this.state.data.signatureData = signatureDataUrl;
-      this.setState({ busy: false, screen: 'checkout' });
+      this.setState(s => ({
+        busy: false,
+        screen: 'checkout',
+        data: { ...s.data, signatureData: signatureDataUrl },
+      }));
     } catch (e) { this.fail(e); }
   }
 
   // ── paiement : Stripe Checkout (POST /create-checkout) ─────────────
   async payNow() {
+    if (this.state.payLoading) return;
     if (!this.state.dossierId || !this.state.letterId) { this.setState({ errorMsg: 'Lettre non générée.' }); return; }
     const offer = this.state.offre === '4990' ? 'recommande_4990' : 'imprimer_1490';
     this.setState({ payLoading: true, errorMsg: '' });
     try {
       this.persist({ offre: this.state.offre, dossierId: this.state.dossierId, letterId: this.state.letterId, flowKind: this.state.flowKind || 'loyer_initial' });
+      this.saveDraftNow();
       const { url } = await API.createCheckout({ dossierId: this.state.dossierId, letterId: this.state.letterId, offer });
       if (!url) throw new Error('URL de paiement absente.');
       window.location.href = url; // redirection vers Stripe Checkout
@@ -712,13 +945,18 @@ class Component extends DCLogic {
 
   // ── téléchargement du PDF propre après paiement (POST /download-letter) ──
   async downloadLetter() {
+    if (this.state.busy) return;
     if (!this.state.letterId) { this.setState({ errorMsg: 'Aucune lettre à télécharger.' }); return; }
+    const downloadWindow = window.open('about:blank', '_blank');
     this.setState({ busy: true, errorMsg: '' });
     try {
       const { url } = await API.downloadLetter(this.state.letterId);
       this.setState({ busy: false });
-      if (url) window.open(url, '_blank');
+      if (url && downloadWindow) downloadWindow.location.replace(url);
+      else if (url) window.location.assign(url);
+      else if (downloadWindow) downloadWindow.close();
     } catch (e) {
+      if (downloadWindow) downloadWindow.close();
       if (e && e.status === 402) this.setState({ busy: false, errorMsg: 'Paiement non confirmé : le PDF n’est pas encore débloqué.' });
       else this.fail(e);
     }
@@ -1024,7 +1262,7 @@ class Component extends DCLogic {
       onNpa: (e) => this.setD('npa', e.target.value),
       onAdresse: (e) => this.onBuildingAddressInput(e.target.value),
       onAdresseSimple: (e) => this.setD('adresse', e.target.value),
-      onDateCles: (e) => this.setDateWithoutRender(e.target.value),
+      onDateCles: (e) => this.setD('dateCles', e.target.value),
       onLoyerNet: (e) => this.setD('loyerNet', e.target.value),
       onCharges: (e) => this.setD('charges', e.target.value),
       onLoyerPrec: (e) => this.setD('loyerPrec', e.target.value),

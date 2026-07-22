@@ -3,14 +3,18 @@
 Front-end de `Contestation.dc.html` (importé depuis Claude Design), **câblé aux
 Edge Functions Supabase**. Sans build ni framework.
 
+La description des choix de rendu, d'état et de persistance se trouve dans
+[`docs/front-architecture.md`](../docs/front-architecture.md).
+
 ## Fichiers
 
 | Fichier            | Rôle |
 |--------------------|------|
 | `index.html`       | Coquille de page + markup du design embarqué dans `<template id="dc-template">`. |
-| `support.js`       | Runtime du format `.dc` (`sc-if`, `sc-for`, `{{ }}`, `onClick`/`onInput`/`ref`). |
+| `support.js`       | Runtime différentiel du format `.dc` (`sc-if`, `sc-for`, bindings et refs). Il réconcilie le DOM sans remplacer les champs actifs. |
 | `api.js`           | Client des Edge Functions (`window.API`). |
 | `app.js`           | Logique d'écran + mapping état→`DossierContestation`. **Aucune règle métier** : tout est recalculé côté serveur. |
+| `draft-store.js`   | Brouillon local : champs/navigation dans `localStorage`, PDF dans `IndexedDB`. |
 | `config.example.js`| Modèle de configuration à copier en `config.js`. |
 | `config.js`        | Config runtime (URL + clé anon). **Gitignoré.** |
 | `runtime-config.js`| Config publique de production, versionnée et prioritaire hors localhost. |
@@ -34,10 +38,25 @@ d'erreur (plus de mode démo hors-ligne, plus de ruleset dupliqué côté front)
 | Diagnostic                  | `evaluate`           |
 | Aperçu (image filigranée)   | `generate-letter`    |
 | Paiement                    | `create-checkout` (redirection Stripe) |
-| Retour paiement `?session_id`/`?paid` | reprise via `localStorage` |
+| Retour paiement `?session_id` | reprise via le brouillon local et `cc_session` |
 | Téléchargement (dashboard)  | `download-letter` (402 tant que non payé) |
 
 L'upload d'import lit le PDF → base64 côté navigateur avant l'appel `extract-bail`.
+
+## Stabilité du rendu et reprise
+
+Le template historique reste la source du look & feel, mais `support.js` ne fait
+plus de reconstruction globale avec `replaceChildren`. Il construit le rendu
+souhaité hors écran puis met à jour uniquement les nœuds qui ont changé. Les
+inputs, boutons, accordéons, zones de scroll et le canvas de signature gardent
+donc leur identité pendant une saisie.
+
+Chaque modification de champ est recopiée immédiatement dans l'état et le
+brouillon est écrit de façon débouncée, puis synchronisé sans délai lors d'une
+navigation, d'un `pagehide` ou du passage de l'onglet en arrière-plan. Les PDF ne
+sont jamais placés dans `localStorage` (quota trop faible) : les `File`/`Blob`
+sont enregistrés dans `IndexedDB` et rechargés au retour sur le même appareil.
+Les états transitoires (`busy`, loaders, erreurs réseau) ne sont pas restaurés.
 
 ## Lancer en local
 
@@ -64,11 +83,6 @@ projet live. Il n'implémente pas la logique juridique réelle.
 
 ## Limites connues / suite
 
-- **Signature (offre recommandée à 49,90 CHF)** : la signature est capturée côté client et incluse
-  dans `DossierContestation.signatureDataUrl`, mais `generate-letter` lit le
-  dossier déjà persisté (sans signature) et s'exécute à l'aperçu, avant la
-  signature. Faire signer *avant* la génération, ou étendre `generate-letter`
-  pour ré-injecter la signature, est un correctif back-end à part.
 - **Numéro de suivi recommandé** (dashboard) : encore une valeur de maquette ;
   il faudra un endpoint de statut de dossier/envoi (Pingen) pour l'afficher.
 - **Compte / connexion** (écran succès) : formulaire décoratif, pas encore

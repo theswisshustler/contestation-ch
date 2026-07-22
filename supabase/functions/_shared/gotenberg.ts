@@ -8,6 +8,14 @@ declare const Deno: { env: { get(name: string): string | undefined } };
 const TRANSIENT_STATUSES = new Set([500, 502, 503, 504]);
 const MAX_ATTEMPTS = 3;
 const RETRY_DELAYS_MS = [1_500, 3_000];
+const HEALTH_MAX_WAIT_MS = 30_000;
+const HEALTH_POLL_MS = 750;
+const HEALTH_REQUEST_TIMEOUT_MS = 5_000;
+const CONVERSION_TIMEOUT_MS = 30_000;
+const READY_CACHE_MS = 60_000;
+
+let readyUntil = 0;
+let readinessPromise: Promise<void> | null = null;
 
 function gotenbergBase(): string {
   const url = Deno.env.get('GOTENBERG_URL');
@@ -24,12 +32,78 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function traceId(response: Response): string | null {
   return response.headers.get('Gotenberg-Trace');
 }
 
 function shortDetail(value: string): string {
   return value.trim().replace(/\s+/g, ' ').slice(0, 500) || 'réponse vide';
+}
+
+/**
+ * Attend que Gotenberg et Chromium soient réellement prêts. Sur Fly.io, le
+ * proxy peut accepter la connexion alors que Chromium termine encore son
+ * démarrage. La route officielle /health évite de consommer une conversion
+ * comme sonde de disponibilité.
+ */
+export async function ensureGotenbergReady(): Promise<void> {
+  if (Date.now() < readyUntil) return;
+  if (readinessPromise) return readinessPromise;
+
+  readinessPromise = (async () => {
+    const startedAt = Date.now();
+    let attempts = 0;
+    let lastDetail = 'aucune réponse';
+
+    while (Date.now() - startedAt < HEALTH_MAX_WAIT_MS) {
+      attempts += 1;
+      try {
+        const response = await fetchWithTimeout(`${gotenbergBase()}/health`, {
+          method: 'GET',
+          headers: authHeader(),
+        }, HEALTH_REQUEST_TIMEOUT_MS);
+
+        if (response.ok) {
+          readyUntil = Date.now() + READY_CACHE_MS;
+          console.info('gotenberg_ready', {
+            attempts,
+            durationMs: Date.now() - startedAt,
+          });
+          return;
+        }
+
+        lastDetail = `HTTP ${response.status}: ${shortDetail(await response.text())}`;
+      } catch (error) {
+        lastDetail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      }
+
+      const remainingMs = HEALTH_MAX_WAIT_MS - (Date.now() - startedAt);
+      if (remainingMs <= 0) break;
+      await sleep(Math.min(HEALTH_POLL_MS, remainingMs));
+    }
+
+    throw new Error(
+      `Gotenberg indisponible après ${Date.now() - startedAt} ms (${attempts} sondes): ${lastDetail}`,
+    );
+  })().finally(() => {
+    readinessPromise = null;
+  });
+
+  return readinessPromise;
 }
 
 async function convertWithRetry(
@@ -40,14 +114,24 @@ async function convertWithRetry(
   let lastError: unknown = null;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    const startedAt = Date.now();
     try {
-      const response = await fetch(`${gotenbergBase()}${route}`, {
+      const response = await fetchWithTimeout(`${gotenbergBase()}${route}`, {
         method: 'POST',
         headers: authHeader(),
         body: makeForm(),
-      });
+      }, CONVERSION_TIMEOUT_MS);
 
-      if (response.ok) return new Uint8Array(await response.arrayBuffer());
+      if (response.ok) {
+        const result = new Uint8Array(await response.arrayBuffer());
+        console.info('gotenberg_conversion_completed', {
+          route,
+          attempt,
+          durationMs: Date.now() - startedAt,
+          bytes: result.byteLength,
+        });
+        return result;
+      }
 
       const detail = shortDetail(await response.text());
       const trace = traceId(response);
@@ -64,6 +148,7 @@ async function convertWithRetry(
         attempt,
         status: response.status,
         trace,
+        durationMs: Date.now() - startedAt,
       });
     } catch (error) {
       if (error === lastError) throw error;
@@ -74,6 +159,7 @@ async function convertWithRetry(
         attempt,
         status: 'network_error',
         name: error instanceof Error ? error.name : 'unknown',
+        durationMs: Date.now() - startedAt,
       });
     }
 

@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { htmlToPdf, htmlToPng } from '../supabase/functions/_shared/gotenberg.ts';
+import {
+  ensureGotenbergReady,
+  htmlToPdf,
+  htmlToPng,
+} from '../supabase/functions/_shared/gotenberg.ts';
 
 describe('client Gotenberg', () => {
   beforeEach(() => {
@@ -15,6 +19,21 @@ describe('client Gotenberg', () => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it('attend que Chromium soit prêt avant de lancer les conversions', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response('{"status":"down"}', { status: 503 }))
+      .mockResolvedValueOnce(new Response('{"status":"up"}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const readiness = ensureGotenbergReady();
+    await vi.runAllTimersAsync();
+
+    await expect(readiness).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://gotenberg.test/health');
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'GET' });
   });
 
   it('rejoue une conversion après un 500 transitoire de démarrage', async () => {

@@ -3,7 +3,7 @@
 
 import { evaluateDossier, type DossierContestation } from '../_shared/ruleset.ts';
 import { letterHtml } from '../_shared/letter-template.ts';
-import { htmlToPdf } from '../_shared/gotenberg.ts';
+import { ensureGotenbergReady, htmlToPdf } from '../_shared/gotenberg.ts';
 import { adminClient, flagManualReview } from '../_shared/supabase.ts';
 import { badRequest, json, preflight, serverError } from '../_shared/http.ts';
 
@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
     const dossier = { ...(dossierRow.payload as DossierContestation), signatureDataUrl: body.signatureDataUrl };
     const evaluation = evaluateDossier(dossier);
     if (!evaluation.eligible) return badRequest('Dossier non éligible');
+    await ensureGotenbergReady();
     const pdf = await htmlToPdf(letterHtml(dossier, evaluation));
     const cleanPath = `${body.dossierId}/requete-signee-${crypto.randomUUID()}.pdf`;
     const upload = await db.storage.from('letters-clean').upload(cleanPath, pdf, { contentType: 'application/pdf' });

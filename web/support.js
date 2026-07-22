@@ -1,77 +1,226 @@
 /*
- * support.js — minimal runtime for the "design component" (.dc) template format
- * used by web/index.html. It renders the design markup embedded in
- * <template id="dc-template"> against a Component instance's renderVals().
+ * Runtime du template historique de contestation.ch.
  *
- * Supported template syntax (a faithful subset of the Claude Design DC format):
- *   <sc-if value="{{ expr }}">…</sc-if>      conditional block
- *   <sc-for list="{{ arr }}" as="x">…</sc-for>  repeat block, x scoped inside
- *   {{ expr }}                                interpolation in text and attributes
- *   onClick / onInput / onChange="{{ fn }}"   event bindings (fn from renderVals)
- *   ref="{{ fn }}"                            imperative node ref (called once)
- *   value="{{ expr }}"                        controlled input value
- *
- * `expr` is a dotted path resolved first against the current loop scope, then
- * against the object returned by Component.renderVals().
+ * Le balisage et les bindings restent compatibles avec le format initial
+ * (`sc-if`, `sc-for`, `{{ valeur }}`, événements et refs), mais le rendu est
+ * désormais différentiel : les éléments DOM existants sont mis à jour au lieu
+ * d'être détruits à chaque frappe. Cela préserve naturellement le focus, le
+ * curseur, le scroll, les accordéons, les clics en cours et le canvas.
  */
 (function () {
   'use strict';
 
-  // ── expression helpers ───────────────────────────────────────────────
   function exprOf(binding) {
     if (binding == null) return '';
-    var m = /\{\{\s*([\s\S]*?)\s*\}\}/.exec(binding);
-    return m ? m[1].trim() : binding.trim();
+    var match = /\{\{\s*([\s\S]*?)\s*\}\}/.exec(binding);
+    return match ? match[1].trim() : binding.trim();
   }
+
   function evalExpr(expr, scope, vals) {
     if (!expr) return undefined;
     var parts = expr.split('.');
     var head = parts[0];
-    var base = (scope && Object.prototype.hasOwnProperty.call(scope, head))
+    var base = scope && Object.prototype.hasOwnProperty.call(scope, head)
       ? scope[head]
-      : (vals ? vals[head] : undefined);
-    for (var i = 1; i < parts.length && base != null; i++) base = base[parts[i]];
+      : vals && vals[head];
+    for (var index = 1; index < parts.length && base != null; index += 1) {
+      base = base[parts[index]];
+    }
     return base;
   }
+
   function resolveFn(binding, scope, vals) {
     var fn = evalExpr(exprOf(binding), scope, vals);
-    return (typeof fn === 'function') ? fn : null;
+    return typeof fn === 'function' ? fn : null;
   }
-  function interp(str, scope, vals) {
-    if (str.indexOf('{{') === -1) return str;
-    return str.replace(/\{\{\s*([\s\S]*?)\s*\}\}/g, function (_, e) {
-      var v = evalExpr(e.trim(), scope, vals);
-      return (v == null) ? '' : String(v);
+
+  function interp(value, scope, vals) {
+    if (value.indexOf('{{') === -1) return value;
+    return value.replace(/\{\{\s*([\s\S]*?)\s*\}\}/g, function (_, expression) {
+      var result = evalExpr(expression.trim(), scope, vals);
+      return result == null ? '' : String(result);
     });
   }
-  function cssEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
 
-  // ── touch-safe render guard ───────────────────────────────────────────
-  // Problem: on mobile, touchstart → blur → change → setState triggers a RAF.
-  // If that RAF fires between touchend and the synthetic click, replaceChildren
-  // removes the tapped button from the DOM before click fires → click swallowed.
-  // Solution: hold any RAF scheduled during a touch; release it after touchend,
-  // in the same task as the synthetic click so the DOM stays intact.
-  var _isTouching = false;
-  var _heldRender = false;
-
-  // ── base class exposed to the component ──────────────────────────────
   function DCLogic() {}
+
   DCLogic.prototype.setState = function (patch) {
-    var next = (typeof patch === 'function') ? patch(this.state) : patch;
-    this.state = Object.assign({}, this.state, next);
+    var previous = this.state;
+    var next = typeof patch === 'function' ? patch(previous) : patch;
+    if (!next || typeof next !== 'object') return;
+    this.state = Object.assign({}, previous, next);
+    if (typeof this.stateDidChange === 'function') {
+      try { this.stateDidChange(previous, this.state); } catch (error) {
+        console.error('stateDidChange_failed', error);
+      }
+    }
     DC.scheduleRender();
   };
+
   window.DCLogic = DCLogic;
 
-  // ── renderer ─────────────────────────────────────────────────────────
+  function bindEvent(element, type, fn) {
+    var events = element.__dcEvents || (element.__dcEvents = {});
+    var record = events[type];
+    if (record) {
+      record.fn = fn;
+      return;
+    }
+    record = { fn: fn, listener: null };
+    record.listener = function (event) {
+      if (typeof record.fn === 'function') return record.fn.call(element, event);
+    };
+    events[type] = record;
+    element.addEventListener(type, record.listener);
+  }
+
+  function syncEvents(current, desired) {
+    var currentEvents = current.__dcEvents || (current.__dcEvents = {});
+    var desiredEvents = desired.__dcEvents || {};
+
+    Object.keys(currentEvents).forEach(function (type) {
+      if (desiredEvents[type]) return;
+      current.removeEventListener(type, currentEvents[type].listener);
+      delete currentEvents[type];
+    });
+
+    Object.keys(desiredEvents).forEach(function (type) {
+      bindEvent(current, type, desiredEvents[type].fn);
+    });
+  }
+
+  function nodeKey(node) {
+    if (!node || node.nodeType !== 1) return '';
+    var explicit = node.getAttribute('data-dc-key');
+    if (explicit) return 'key:' + explicit;
+    var screen = node.getAttribute('data-screen-label');
+    if (screen) return 'screen:' + screen;
+    if (node.id) return 'id:' + node.id;
+    if (/^(input|select|textarea)$/.test(node.localName) && node.dataset && node.dataset.k) {
+      return 'field:' + node.dataset.k;
+    }
+    if (node.__dcRefName) return 'ref:' + node.__dcRefName;
+    return '';
+  }
+
+  function nodesMatch(current, desired) {
+    if (!current || !desired || current.nodeType !== desired.nodeType) return false;
+    if (current.nodeType === 3) return true;
+    if (current.nodeType !== 1 || current.localName !== desired.localName) return false;
+    var currentKey = nodeKey(current);
+    var desiredKey = nodeKey(desired);
+    if (currentKey || desiredKey) return currentKey === desiredKey;
+    return true;
+  }
+
+  function syncAttributes(current, desired) {
+    var preserveDetailsState = current.localName === 'details';
+    var currentNames = current.getAttributeNames();
+    for (var index = 0; index < currentNames.length; index += 1) {
+      var currentName = currentNames[index];
+      if (preserveDetailsState && currentName === 'open') continue;
+      if (!desired.hasAttribute(currentName)) current.removeAttribute(currentName);
+    }
+
+    var desiredNames = desired.getAttributeNames();
+    for (var desiredIndex = 0; desiredIndex < desiredNames.length; desiredIndex += 1) {
+      var desiredName = desiredNames[desiredIndex];
+      if (preserveDetailsState && desiredName === 'open') continue;
+      var value = desired.getAttribute(desiredName);
+      if (current.getAttribute(desiredName) !== value) current.setAttribute(desiredName, value);
+    }
+
+    syncEvents(current, desired);
+    current.__dcRefName = desired.__dcRefName || '';
+    current.__dcRef = desired.__dcRef || null;
+  }
+
+  function syncControlValue(current, desired) {
+    if (!Object.prototype.hasOwnProperty.call(desired, '__dcValue')) return;
+    if (!('value' in current)) return;
+    var value = desired.__dcValue == null ? '' : String(desired.__dcValue);
+    if (current.__dcComposing) return;
+    if (current.value !== value) current.value = value;
+  }
+
+  function keyAppearsLater(desiredNodes, start, key) {
+    if (!key) return false;
+    for (var index = start; index < desiredNodes.length; index += 1) {
+      if (nodeKey(desiredNodes[index]) === key) return true;
+    }
+    return false;
+  }
+
+  function findChildByKey(parent, start, key) {
+    if (!key) return null;
+    for (var index = start; index < parent.childNodes.length; index += 1) {
+      if (nodeKey(parent.childNodes[index]) === key) return parent.childNodes[index];
+    }
+    return null;
+  }
+
+  function patchNode(current, desired) {
+    if (!nodesMatch(current, desired)) {
+      current.replaceWith(desired);
+      return desired;
+    }
+
+    if (current.nodeType === 3) {
+      if (current.nodeValue !== desired.nodeValue) current.nodeValue = desired.nodeValue;
+      return current;
+    }
+
+    syncAttributes(current, desired);
+    patchChildren(current, desired);
+    syncControlValue(current, desired);
+    return current;
+  }
+
+  function patchChildren(currentParent, desiredParent) {
+    var desiredNodes = Array.prototype.slice.call(desiredParent.childNodes);
+    var targetIndex = 0;
+
+    for (var desiredIndex = 0; desiredIndex < desiredNodes.length; desiredIndex += 1) {
+      var desired = desiredNodes[desiredIndex];
+      var current = currentParent.childNodes[targetIndex];
+      var desiredKey = nodeKey(desired);
+      var currentKey = nodeKey(current);
+
+      if (desiredKey) {
+        var keyedCurrent = findChildByKey(currentParent, targetIndex, desiredKey);
+        if (keyedCurrent && keyedCurrent !== current) {
+          currentParent.insertBefore(keyedCurrent, current || null);
+          current = keyedCurrent;
+          currentKey = desiredKey;
+        } else if (!keyedCurrent && currentKey) {
+          currentParent.insertBefore(desired, current);
+          targetIndex += 1;
+          continue;
+        }
+      } else if (currentKey && keyAppearsLater(desiredNodes, desiredIndex + 1, currentKey)) {
+        currentParent.insertBefore(desired, current);
+        targetIndex += 1;
+        continue;
+      }
+
+      if (current) patchNode(current, desired);
+      else currentParent.appendChild(desired);
+      targetIndex += 1;
+    }
+
+    while (currentParent.childNodes.length > desiredNodes.length) {
+      currentParent.removeChild(currentParent.lastChild);
+    }
+  }
+
   var DC = {
     component: null,
-    template: null,   // array of template top-level nodes
+    template: null,
     mount: null,
     vals: null,
-    refCache: {},     // refName -> persisted live element (canvas, etc.)
     _pending: false,
+    _lastStep: null,
+    _lastScreen: null,
 
     init: function (mount, templateContent, component) {
       this.mount = mount;
@@ -79,187 +228,168 @@
       this.component = component;
       this._lastStep = null;
       this._lastScreen = null;
+
+      mount.addEventListener('compositionstart', function (event) {
+        if (event.target) event.target.__dcComposing = true;
+      }, true);
+      mount.addEventListener('compositionend', function (event) {
+        if (event.target) event.target.__dcComposing = false;
+      }, true);
+
       this.render();
+      if (typeof component.afterMount === 'function') {
+        Promise.resolve().then(function () { return component.afterMount(); }).catch(function (error) {
+          console.error('afterMount_failed', error);
+        });
+      }
     },
 
     scheduleRender: function () {
-      // Hold the render if the user is mid-touch so that replaceChildren
-      // never removes the tapped element before the synthetic click fires.
-      if (_isTouching) { _heldRender = true; return; }
       if (this._pending) return;
       this._pending = true;
       var self = this;
-      requestAnimationFrame(function () { self._pending = false; self.render(); });
+      requestAnimationFrame(function () {
+        self._pending = false;
+        self.render();
+      });
     },
 
     render: function () {
-      this.vals = this.component.renderVals();
+      try {
+        this.vals = this.component.renderVals();
+        var currentStep = this.component.state.step;
+        var currentScreen = this.component.state.screen;
+        var navigationChanged = this._lastStep !== currentStep || this._lastScreen !== currentScreen;
+        this._suppressEnterAnim = !navigationChanged;
 
-      // Preserve focus + caret across the full rebuild.
-      var act = document.activeElement, focusKey = null, selS = null, selE = null;
-      if (act && act.dataset && act.dataset.k) {
-        focusKey = act.dataset.k;
-        try { selS = act.selectionStart; selE = act.selectionEnd; } catch (e) {}
-      }
-
-      // Preserve scroll positions of all scrollable containers.
-      var scrollSave = [];
-      var scrollEls = this.mount.querySelectorAll('.cc-scroll');
-      for (var j = 0; j < scrollEls.length; j++) {
-        scrollSave.push(scrollEls[j].scrollTop);
-      }
-
-      // Detect whether the step or screen actually changed.
-      var curStep = this.component.state.step;
-      var curScreen = this.component.state.screen;
-      var stepChanged = this._lastStep !== curStep || this._lastScreen !== curScreen;
-      this._lastStep = curStep;
-      this._lastScreen = curScreen;
-
-      // When only data changed (typing / blur inside the same step), strip the
-      // enter animation AT BUILD TIME so it can never replay and cause jitter.
-      this._suppressEnterAnim = !stepChanged;
-
-      var frag = document.createDocumentFragment();
-      for (var i = 0; i < this.template.length; i++) {
-        var built = this.build(this.template[i], {});
-        if (built) frag.appendChild(built);
-      }
-      this.mount.replaceChildren(frag);
-
-      // Restore scroll positions (prevents the "page reload" jump on field blur).
-      var newScrollEls = this.mount.querySelectorAll('.cc-scroll');
-      for (var m = 0; m < scrollSave.length && m < newScrollEls.length; m++) {
-        newScrollEls[m].scrollTop = scrollSave[m];
-      }
-
-      if (focusKey) {
-        var el = this.mount.querySelector('[data-k="' + cssEscape(focusKey) + '"]');
-        if (el) {
-          try { el.focus({ preventScroll: true }); } catch (e3) { el.focus(); }
-          if (selS != null) { try { el.setSelectionRange(selS, selE); } catch (e2) {} }
+        var fragment = document.createDocumentFragment();
+        for (var index = 0; index < this.template.length; index += 1) {
+          var built = this.build(this.template[index], {});
+          if (built) fragment.appendChild(built);
         }
+
+        patchChildren(this.mount, fragment);
+        this.runRefs();
+        if (navigationChanged) {
+          var activeScroller = this.mount.querySelector('.cc-scroll');
+          if (activeScroller) activeScroller.scrollTop = 0;
+        }
+        this._lastStep = currentStep;
+        this._lastScreen = currentScreen;
+        if (typeof this.component.afterRender === 'function') this.component.afterRender();
+      } catch (error) {
+        // Le DOM précédent reste visible et utilisable si un binding inattendu
+        // échoue : un rendu défectueux ne doit jamais vider toute la page.
+        console.error('dc_render_failed', error);
       }
     },
 
     build: function (node, scope) {
       if (node.nodeType === 3) return document.createTextNode(interp(node.nodeValue, scope, this.vals));
-      if (node.nodeType !== 1) return null; // comments etc.
+      if (node.nodeType !== 1) return null;
 
       var tag = node.localName;
-
       if (tag === 'sc-if') {
-        var cond = evalExpr(exprOf(node.getAttribute('value')), scope, this.vals);
-        var f = document.createDocumentFragment();
-        if (cond) this.appendChildren(f, node, scope);
-        return f;
+        var condition = evalExpr(exprOf(node.getAttribute('value')), scope, this.vals);
+        var conditional = document.createDocumentFragment();
+        if (condition) this.appendChildren(conditional, node, scope);
+        return conditional;
       }
 
       if (tag === 'sc-for') {
         var list = evalExpr(exprOf(node.getAttribute('list')), scope, this.vals) || [];
-        var as = node.getAttribute('as') || 'item';
-        var ff = document.createDocumentFragment();
-        for (var k = 0; k < list.length; k++) {
-          var cs = Object.assign({}, scope);
-          cs[as] = list[k];
-          cs.$index = k;
-          this.appendChildren(ff, node, cs);
+        var name = node.getAttribute('as') || 'item';
+        var repeated = document.createDocumentFragment();
+        for (var index = 0; index < list.length; index += 1) {
+          var childScope = Object.assign({}, scope);
+          childScope[name] = list[index];
+          childScope.$index = index;
+          this.appendChildren(repeated, node, childScope);
         }
-        return ff;
+        return repeated;
       }
 
-      // ref'd elements persist across renders (keeps canvas drawing + listeners)
+      var element = document.createElement(tag);
+      this.applyAttrs(element, node, scope);
+      this.appendChildren(element, node, scope);
+      syncControlValue(element, element);
+
       var refAttr = node.getAttribute('ref');
       if (refAttr) {
-        var refName = exprOf(refAttr);
-        var cached = this.refCache[refName];
-        if (!cached) {
-          cached = document.createElement(tag);
-          this.applyAttrs(cached, node, scope);
-          this.appendChildren(cached, node, scope);
-          this.refCache[refName] = cached;
-          var fn = evalExpr(refName, scope, this.vals);
-          if (typeof fn === 'function') fn(cached);
-        }
-        return cached;
+        element.__dcRefName = exprOf(refAttr);
+        element.__dcRef = evalExpr(element.__dcRefName, scope, this.vals);
       }
-
-      var el = document.createElement(tag);
-      this.applyAttrs(el, node, scope);
-      this.appendChildren(el, node, scope);
-      return el;
+      return element;
     },
 
     appendChildren: function (target, node, scope) {
-      var kids = node.childNodes;
-      for (var i = 0; i < kids.length; i++) {
-        var b = this.build(kids[i], scope);
-        if (b) target.appendChild(b);
+      for (var index = 0; index < node.childNodes.length; index += 1) {
+        var built = this.build(node.childNodes[index], scope);
+        if (built) target.appendChild(built);
       }
     },
 
-    applyAttrs: function (el, node, scope) {
-      var attrs = node.attributes;
-      for (var i = 0; i < attrs.length; i++) {
-        var name = attrs[i].name; // parser lowercases HTML attribute names
-        var raw = attrs[i].value;
-
+    applyAttrs: function (element, node, scope) {
+      for (var index = 0; index < node.attributes.length; index += 1) {
+        var name = node.attributes[index].name;
+        var raw = node.attributes[index].value;
         if (name === 'hint-placeholder-val' || name === 'hint-placeholder-count' || name === 'ref') continue;
 
         if (name === 'onclick' || name === 'oninput' || name === 'onchange') {
           var fn = resolveFn(raw, scope, this.vals);
-          if (fn) el.addEventListener(name.slice(2), fn);
+          if (!fn) continue;
+          var type = name.slice(2);
+          bindEvent(element, type, fn);
+          // Les anciens templates utilisaient `onChange` pour les champs. On
+          // synchronise aussi à chaque saisie afin qu'une fermeture ou un clic
+          // immédiat ne puisse jamais perdre le dernier caractère.
+          if (type === 'change') bindEvent(element, 'input', fn);
           continue;
         }
 
         if (name === 'value') {
-          var v = interp(raw, scope, this.vals);
-          el.value = v;
-          // Ne pas appeler setAttribute('value') : l'attribut HTML définit la
-          // "defaultValue" et certains navigateurs mobiles l'utilisent pour
-          // réinitialiser la valeur affichée au moment du focus → jitter.
-          el.dataset.k = exprOf(raw);
+          var value = interp(raw, scope, this.vals);
+          element.__dcValue = value;
+          element.dataset.k = exprOf(raw);
           continue;
         }
 
         if (name === 'style') {
-          var sv = interp(raw, scope, this.vals);
-          // Data-only re-render: remove enter animations (fadeUp) so they never
-          // replay mid-typing / on blur — the visible "jitter".
-          if (this._suppressEnterAnim && sv.indexOf('fadeUp') !== -1) {
-            sv = sv.replace(/animation\s*:[^;]*fadeUp[^;]*;?/g, '');
+          var style = interp(raw, scope, this.vals);
+          if (this._suppressEnterAnim && style.indexOf('fadeUp') !== -1) {
+            style = style.replace(/animation\s*:[^;]*fadeUp[^;]*;?/g, '');
           }
-          el.setAttribute('style', sv);
+          element.setAttribute('style', style);
           continue;
         }
 
-        el.setAttribute(name, interp(raw, scope, this.vals));
+        element.setAttribute(name, interp(raw, scope, this.vals));
       }
-    }
+    },
+
+    runRefs: function () {
+      var elements = this.mount.querySelectorAll('*');
+      for (var index = 0; index < elements.length; index += 1) {
+        var element = elements[index];
+        if (!element.__dcRefName || typeof element.__dcRef !== 'function') continue;
+        if (element.__dcRefBound === element.__dcRefName) continue;
+        element.__dcRefBound = element.__dcRefName;
+        element.__dcRef(element);
+      }
+    },
+
+    flush: function () {
+      if (!this._pending) return;
+      this._pending = false;
+      this.render();
+    },
   };
-
-  // Wire up the touch-guard listeners (capture phase, passive — zero overhead).
-  document.addEventListener('touchstart', function () {
-    _isTouching = true;
-  }, { capture: true, passive: true });
-
-  document.addEventListener('touchend', function () {
-    _isTouching = false;
-    if (_heldRender) {
-      _heldRender = false;
-      DC.scheduleRender(); // release the held re-render after click can fire
-    }
-  }, { capture: true, passive: true });
-
-  document.addEventListener('touchcancel', function () {
-    _isTouching = false;
-    _heldRender = false; // discard held render on cancelled touch
-  }, { capture: true, passive: true });
 
   window.__DC = DC;
   window.__bootDC = function (ComponentClass) {
     var mount = document.getElementById('app');
-    var tpl = document.getElementById('dc-template');
-    DC.init(mount, tpl.content, new ComponentClass());
+    var template = document.getElementById('dc-template');
+    if (!mount || !template) throw new Error('Point de montage du front introuvable');
+    DC.init(mount, template.content, new ComponentClass());
   };
 })();
