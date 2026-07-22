@@ -33,7 +33,8 @@ class Component extends DCLogic {
     // offre / paiement
     offre: null,
     // UI transverse
-    busy: false, errorMsg: '',
+    busy: false, busyKind: '', errorMsg: '',
+    letterGenerationStep: 0,
     // validation flux manuel
     stepErrors: {},
     // autocomplétion de l'adresse de l'immeuble (geo.admin.ch)
@@ -110,7 +111,47 @@ class Component extends DCLogic {
   }
   fail(e) {
     console.error(e);
-    this.setState({ busy: false, calcLoading: false, baisseSimLoading: false, payLoading: false, errorMsg: (e && e.message) || 'Une erreur est survenue.' });
+    this.setState({ busy: false, busyKind: '', calcLoading: false, baisseSimLoading: false, payLoading: false, errorMsg: (e && e.message) || 'Une erreur est survenue.' });
+  }
+
+  startLetterGeneration() {
+    this.stopLetterGeneration();
+    this.setState({
+      busy: true,
+      busyKind: 'letter',
+      letterGenerationStep: 0,
+      errorMsg: '',
+    });
+
+    // Ces paliers accompagnent une opération serveur atomique : ils ne
+    // prétendent pas mesurer chaque sous-tâche, mais expliquent le travail en
+    // cours sans laisser l'utilisateur face à un spinner muet.
+    const stages = [
+      { delay: 2200, step: 1 },
+      { delay: 6000, step: 2 },
+      { delay: 12000, step: 3 },
+      { delay: 24000, step: 4 },
+    ];
+    this._letterGenerationTimers = stages.map(({ delay, step }) => setTimeout(() => {
+      if (this.state.busy && this.state.busyKind === 'letter') {
+        this.setState({ letterGenerationStep: step });
+      }
+    }, delay));
+
+    this._letterBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', this._letterBeforeUnload);
+  }
+
+  stopLetterGeneration() {
+    (this._letterGenerationTimers || []).forEach(clearTimeout);
+    this._letterGenerationTimers = [];
+    if (this._letterBeforeUnload) {
+      window.removeEventListener('beforeunload', this._letterBeforeUnload);
+      this._letterBeforeUnload = null;
+    }
   }
 
   // ── persistance légère (survie au round-trip Stripe) ───────────────
@@ -618,12 +659,17 @@ class Component extends DCLogic {
   // ── aperçu : génération lettre + preview filigrané (POST /generate-letter) ──
   async goApercu() {
     if (!this.state.dossierId) { this.setState({ errorMsg: 'Dossier non évalué.' }); return; }
-    this.setState({ busy: true, errorMsg: '' });
+    if (this.state.busy) return;
+    this.startLetterGeneration();
     try {
       const { letterId, previews } = await API.generateLetter(this.state.dossierId);
+      this.stopLetterGeneration();
       this.persist({ letterId });
-      this.setState({ busy: false, screen: 'apercu', letterId, previewUrl: (previews && previews[0]) || '' });
-    } catch (e) { this.fail(e); }
+      this.setState({ busy: false, busyKind: '', screen: 'apercu', letterId, previewUrl: (previews && previews[0]) || '' });
+    } catch (e) {
+      this.stopLetterGeneration();
+      this.fail(e);
+    }
   }
 
   // ── signature (flux recommandé 49,90 CHF) ──────────────────────────
@@ -719,6 +765,32 @@ class Component extends DCLogic {
     return {
       // transverse
       busy: !!st.busy,
+      genericBusy: !!st.busy && st.busyKind !== 'letter',
+      letterGenerating: !!st.busy && st.busyKind === 'letter',
+      letterGenerationProgress: ['16%', '34%', '56%', '78%', '90%'][st.letterGenerationStep] || '16%',
+      letterGenerationProgressValue: [16, 34, 56, 78, 90][st.letterGenerationStep] || 16,
+      letterGenerationTitle: [
+        'Nous structurons votre demande',
+        'Nous personnalisons vos arguments',
+        'Nous mettons la lettre en page',
+        'Nous créons votre aperçu sécurisé',
+        'Derniers contrôles en cours',
+      ][st.letterGenerationStep] || 'Nous structurons votre demande',
+      letterGenerationText: [
+        'Votre diagnostic est transformé en une demande claire et cohérente.',
+        'Les motifs, montants, coordonnées et demandes sont adaptés à votre situation.',
+        'La lettre et la liste des documents à joindre prennent leur forme finale.',
+        'Nous préparons une version consultable sans exposer le document original.',
+        'La mise en page peut parfois prendre un peu plus de temps. Votre lettre arrive.',
+      ][st.letterGenerationStep] || '',
+      letterStep0Done: st.letterGenerationStep > 0,
+      letterStep0Active: st.letterGenerationStep === 0,
+      letterStep1Done: st.letterGenerationStep > 1,
+      letterStep1Active: st.letterGenerationStep === 1,
+      letterStep2Done: st.letterGenerationStep > 2,
+      letterStep2Active: st.letterGenerationStep === 2,
+      letterStep3Done: st.letterGenerationStep > 3,
+      letterStep3Active: st.letterGenerationStep >= 3,
       errorMsg: st.errorMsg || '',
       dismissError: () => this.setState({ errorMsg: '' }),
 

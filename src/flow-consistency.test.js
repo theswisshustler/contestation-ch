@@ -62,3 +62,30 @@ describe('configuration du back-end de production', () => {
     expect(runtimeConfig).not.toContain('ecxauhrwylsbznvrlmlm');
   });
 });
+
+describe('accompagnement pendant la génération de la lettre', () => {
+  const app = readFileSync('web/app.js', 'utf8');
+  const html = readFileSync('web/index.html', 'utf8');
+
+  it('affiche une progression dédiée plutôt que le loader générique', () => {
+    expect(app).toContain("busyKind: 'letter'");
+    expect(html).toContain('{{ letterGenerating }}');
+    expect(html).toContain('Votre lettre prend forme');
+    expect(html).toContain('role="progressbar"');
+    expect(html).toContain('{{ genericBusy }}');
+  });
+
+  it('explique les étapes et demande de garder la page ouverte', () => {
+    expect(html).toContain('Structure');
+    expect(html).toContain('Personnalisation');
+    expect(html).toContain('Mise en page');
+    expect(html).toContain('Aperçu sécurisé');
+    expect(html).toContain('Gardez cette page ouverte.');
+  });
+
+  it('protège la navigation pendant le traitement puis nettoie les listeners', () => {
+    expect(app).toContain("window.addEventListener('beforeunload', this._letterBeforeUnload)");
+    expect(app).toContain("window.removeEventListener('beforeunload', this._letterBeforeUnload)");
+    expect(app).toContain('this.stopLetterGeneration();');
+  });
+});

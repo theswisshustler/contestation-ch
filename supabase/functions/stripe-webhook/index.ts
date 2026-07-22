@@ -13,6 +13,7 @@
 import Stripe from 'npm:stripe@17';
 import { adminClient, flagManualReview, notifyOperator } from '../_shared/supabase.ts';
 import { sendRegistered } from '../_shared/pingen.ts';
+import { reconcileCheckoutAmounts } from '../_shared/stripe-payment.ts';
 import { json, serverError } from '../_shared/http.ts';
 
 const PAID_OFFERS: Record<string, number> = {
@@ -63,19 +64,28 @@ Deno.serve(async (req) => {
     // ligne de paiement créée côté serveur avant la redirection vers Stripe.
     const { data: payment, error: paymentError } = await db
       .from('payments')
-      .select('id, dossier_id, offer, amount_chf, currency, status')
+      .select('id, dossier_id, offer, amount_chf, amount_paid_chf, discount_chf, currency, status')
       .eq('stripe_session_id', session.id)
       .single();
     if (paymentError || !payment) throw paymentError ?? new Error('Paiement interne introuvable');
     const persistedOffer = offer === 'recommande_35' ? 'recommande_4990' : offer;
+    const expectedAmount = PAID_OFFERS[offer];
     if (
       payment.dossier_id !== dossierId
       || payment.offer !== persistedOffer
-      || payment.amount_chf !== PAID_OFFERS[offer]
-      || session.amount_total !== PAID_OFFERS[offer]
-      || payment.currency !== 'chf'
-      || session.currency !== 'chf'
     ) throw new Error('Incohérence entre la session Stripe et le paiement interne');
+    const amounts = reconcileCheckoutAmounts({
+      expectedAmount,
+      persistedAmount: payment.amount_chf,
+      persistedCurrency: payment.currency,
+      sessionSubtotal: session.amount_subtotal,
+      sessionTotal: session.amount_total,
+      sessionDiscount: session.total_details?.amount_discount ?? 0,
+      sessionCurrency: session.currency,
+    });
+    if (!amounts.ok) {
+      throw new Error(`Incohérence des montants Stripe: ${amounts.reason}`);
+    }
 
     const { data: letter, error: letterError } = await db
       .from('letters')
@@ -102,6 +112,8 @@ Deno.serve(async (req) => {
       .update({
         status: 'paid',
         paid_at: new Date().toISOString(),
+        amount_paid_chf: amounts.paidAmount,
+        discount_chf: amounts.discountAmount,
         stripe_payment_intent: (session.payment_intent as string) ?? null,
       })
       .eq('stripe_session_id', session.id)

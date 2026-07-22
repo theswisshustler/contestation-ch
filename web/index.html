@@ -28,6 +28,9 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   @keyframes pulseDot{0%,100%{opacity:.3;}50%{opacity:1;}}
+  @keyframes magicFloat{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-6px) rotate(2deg);}}
+  @keyframes magicGlow{0%,100%{box-shadow:0 10px 30px -14px rgba(244,167,59,.45);}50%{box-shadow:0 12px 38px -8px rgba(244,167,59,.75);}}
+  @keyframes progressShimmer{from{transform:translateX(-120%);}to{transform:translateX(320%);}}
 
   /* ===== BASE : site responsive plein écran — aucun mockup téléphone ===== */
   .cc-outer{display:block;min-height:100vh;background:#FBFAF7;}
@@ -159,9 +162,51 @@
   <div class="cc-phone">
 
     <!-- ===================== OVERLAYS GLOBAUX (busy / erreur) ===================== -->
-    <sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ genericBusy }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;inset:0;z-index:50;background:rgba(251,250,247,.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;">
         <span style="width:42px;height:42px;border:4px solid #EAF1F5;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ letterGenerating }}" hint-placeholder-val="{{ false }}">
+      <div role="status" aria-live="polite" aria-busy="true" style="position:fixed;inset:0;z-index:55;background:rgba(238,244,247,.94);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:22px;overflow-y:auto;">
+        <div style="width:min(100%,520px);background:#fff;border:1px solid #D8E3E7;border-radius:24px;padding:28px 26px;box-shadow:0 28px 70px -38px rgba(18,48,63,.55);animation:fadeUp .35s ease;">
+          <div style="display:flex;justify-content:center;margin-bottom:18px;">
+            <div style="position:relative;width:76px;height:76px;border-radius:22px;background:linear-gradient(145deg,#FFF4DE,#FFE5B8);display:flex;align-items:center;justify-content:center;animation:magicGlow 2.2s ease-in-out infinite;">
+              <div style="width:37px;height:48px;border-radius:5px;background:#fff;border:1px solid #D7E0E3;box-shadow:0 8px 18px -12px rgba(18,48,63,.5);padding:11px 7px;animation:magicFloat 2.4s ease-in-out infinite;">
+                <span style="display:block;height:3px;background:#1B4965;border-radius:3px;margin-bottom:6px;"></span><span style="display:block;height:3px;background:#B8CAD2;border-radius:3px;margin-bottom:5px;"></span><span style="display:block;width:72%;height:3px;background:#D5E0E4;border-radius:3px;"></span>
+              </div>
+              <span style="position:absolute;right:5px;top:3px;color:#F4A73B;font-size:22px;line-height:1;">&#10022;</span>
+              <span style="position:absolute;left:7px;bottom:7px;color:#178A5B;font-size:13px;line-height:1;">&#10022;</span>
+            </div>
+          </div>
+
+          <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#B97912;margin-bottom:7px;">La magie opère</div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:27px;font-weight:800;color:#12303F;line-height:1.12;margin-bottom:8px;">Votre lettre prend forme</div>
+            <p style="font-size:14px;color:#5A6A70;line-height:1.5;margin:0;">Nous rédigeons une lettre personnalisée à partir de votre diagnostic. Cela prend généralement moins d'une minute.</p>
+          </div>
+
+          <div role="progressbar" aria-label="Progression de la génération de la lettre" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ letterGenerationProgressValue }}" style="height:9px;background:#EAF0F2;border-radius:999px;overflow:hidden;margin-bottom:17px;">
+            <div style="position:relative;width:{{ letterGenerationProgress }};height:100%;background:linear-gradient(90deg,#F4A73B,#F7C466);border-radius:999px;transition:width .65s ease;overflow:hidden;"><span style="position:absolute;inset:0;width:45%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:progressShimmer 1.6s linear infinite;"></span></div>
+          </div>
+
+          <div style="background:#F4F8FA;border:1px solid #DDE8EC;border-radius:14px;padding:14px 15px;margin-bottom:15px;min-height:83px;">
+            <div style="display:flex;align-items:center;gap:10px;color:#12303F;font-size:14px;font-weight:800;margin-bottom:5px;"><span style="width:17px;height:17px;border:2.5px solid #C9D8DE;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .75s linear infinite;flex:none;"></span>{{ letterGenerationTitle }}</div>
+            <div style="font-size:13px;color:#58717D;line-height:1.45;padding-left:27px;">{{ letterGenerationText }}</div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;margin-bottom:17px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#405861;"><span style="width:22px;height:22px;border-radius:50%;border:1px solid #C9D8DE;background:#F6F9FA;display:flex;align-items:center;justify-content:center;color:#178A5B;font-size:11px;font-weight:800;flex:none;"><sc-if value="{{ letterStep0Done }}" hint-placeholder-val="false">✓</sc-if><sc-if value="{{ letterStep0Active }}" hint-placeholder-val="true"><span style="width:6px;height:6px;border-radius:50%;background:#F4A73B;"></span></sc-if></span>Structure</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#405861;"><span style="width:22px;height:22px;border-radius:50%;border:1px solid #C9D8DE;background:#F6F9FA;display:flex;align-items:center;justify-content:center;color:#178A5B;font-size:11px;font-weight:800;flex:none;"><sc-if value="{{ letterStep1Done }}" hint-placeholder-val="false">✓</sc-if><sc-if value="{{ letterStep1Active }}" hint-placeholder-val="false"><span style="width:6px;height:6px;border-radius:50%;background:#F4A73B;"></span></sc-if></span>Personnalisation</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#405861;"><span style="width:22px;height:22px;border-radius:50%;border:1px solid #C9D8DE;background:#F6F9FA;display:flex;align-items:center;justify-content:center;color:#178A5B;font-size:11px;font-weight:800;flex:none;"><sc-if value="{{ letterStep2Done }}" hint-placeholder-val="false">✓</sc-if><sc-if value="{{ letterStep2Active }}" hint-placeholder-val="false"><span style="width:6px;height:6px;border-radius:50%;background:#F4A73B;"></span></sc-if></span>Mise en page</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#405861;"><span style="width:22px;height:22px;border-radius:50%;border:1px solid #C9D8DE;background:#F6F9FA;display:flex;align-items:center;justify-content:center;color:#178A5B;font-size:11px;font-weight:800;flex:none;"><sc-if value="{{ letterStep3Done }}" hint-placeholder-val="false">✓</sc-if><sc-if value="{{ letterStep3Active }}" hint-placeholder-val="false"><span style="width:6px;height:6px;border-radius:50%;background:#F4A73B;"></span></sc-if></span>Aperçu sécurisé</div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:flex-start;background:#FFF7E8;border:1px solid #F1D39A;border-radius:13px;padding:12px 13px;color:#684A10;">
+            <span style="font-size:17px;line-height:1.2;">&#128274;</span>
+            <div style="font-size:12.5px;line-height:1.45;"><strong>Gardez cette page ouverte.</strong> Votre aperçu s'affichera automatiquement dès qu'il sera prêt. Vous n'avez rien à faire pendant cette étape.</div>
+          </div>
+        </div>
       </div>
     </sc-if>
     <sc-if value="{{ errorMsg }}" hint-placeholder-val="{{ false }}">

@@ -50,8 +50,34 @@ Deno.serve(async (req) => {
     }
     if (body.offer === 'recommande_4990' && !dossier.payload?.signatureDataUrl) return badRequest('Signature requise pour l’envoi recommandé');
 
+    const payerEmail = typeof dossier.payload?.locataire?.email === 'string'
+      ? dossier.payload.locataire.email.trim().toLowerCase()
+      : '';
+    const adminPromoEmail = (Deno.env.get('STRIPE_ADMIN_PROMO_EMAIL') ?? '').trim().toLowerCase();
+    const adminPrintCustomerId = (Deno.env.get('STRIPE_ADMIN_PRINT_CUSTOMER_ID') ?? '').trim();
+    const adminRecommendedCustomerId = (
+      Deno.env.get('STRIPE_ADMIN_RECOMMENDED_CUSTOMER_ID')
+      ?? Deno.env.get('STRIPE_ADMIN_CUSTOMER_ID')
+      ?? ''
+    ).trim();
+    // Stripe permet de réutiliser un même code visible pour des promotions
+    // limitées à des clients distincts. Le client choisi détermine ainsi la
+    // remise ADMIN adaptée à l'offre (14,40 CHF ou 49,40 CHF).
+    const adminCustomerId = body.offer === 'imprimer_1490'
+      ? adminPrintCustomerId
+      : adminRecommendedCustomerId;
+    const checkoutCustomer = payerEmail && adminCustomerId && payerEmail === adminPromoEmail
+      ? { customer: adminCustomerId }
+      : payerEmail
+        ? { customer_email: payerEmail }
+        : {};
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      // Affiche le champ "Code promotionnel" sur la page Stripe. Les coupons
+      // et leurs restrictions restent gérés côté Stripe, jamais par le front.
+      allow_promotion_codes: true,
+      ...checkoutCustomer,
       line_items: [
         {
           quantity: 1,

@@ -30,6 +30,13 @@ Le contrat canonique et le guide d’exploitation sont documentés dans
 ne sont jamais concernées par la purge J+7 des dossiers locatifs ; seuls les
 jetons d’aperçu expirés sont retirés par `purge`.
 
+Le Checkout accepte les codes promotionnels gérés dans Stripe. Le code interne
+`ADMIN` est limité à l'adresse `STRIPE_ADMIN_PROMO_EMAIL`. Le backend sélectionne
+un client Stripe distinct pour chaque offre : `STRIPE_ADMIN_PRINT_CUSTOMER_ID`
+pour la lettre à 14,90 CHF et `STRIPE_ADMIN_RECOMMENDED_CUSTOMER_ID` pour l'envoi
+à 49,90 CHF. Les deux promotions laissent exactement 0,50 CHF à payer ; ne jamais
+supprimer leurs restrictions client sur un compte Stripe en mode réel.
+
 ## Invariant de sécurité (à ne jamais casser)
 
 > **Le PDF propre n'est jamais exposé avant confirmation du paiement.**
@@ -55,7 +62,7 @@ Toute nouvelle fonction touchant `letters-clean` doit préserver 1–4.
 ## Déploiement
 
 ```bash
-supabase db push                        # applique toutes les migrations, dont 0003 à 0005
+supabase db push                        # applique toutes les migrations, dont 0003 à 0007
 supabase functions deploy               # déploie les fonctions appelées par le front
 supabase functions deploy stripe-webhook --no-verify-jwt
 supabase functions deploy blog-admin
