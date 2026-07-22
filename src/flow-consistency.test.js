@@ -23,3 +23,42 @@ describe('parcours de demande de baisse', () => {
     expect(html).toContain('{{ baisseSimChf }} CHF/mois');
   });
 });
+
+describe('validation de la formule officielle importée', () => {
+  const app = readFileSync('web/app.js', 'utf8');
+  const html = readFileSync('web/index.html', 'utf8');
+
+  it('distingue une formule détectée d’une simple réponse utilisateur', () => {
+    expect(app).toContain('extractionFormuleDetected: formuleDetectee');
+    expect(app).toContain("x.formuleOfficielleSource");
+    expect(html).toContain('FORMULE DÉTECTÉE');
+    expect(html).toContain('{{ importFormuleDetectedText }}');
+  });
+
+  it('ne repose la question que si aucune formule n’a été identifiée', () => {
+    expect(html).toContain('{{ importFormuleNeedsConfirmation }}');
+    expect(html).toContain("Nous ne l'avons pas trouvée dans les PDF importés");
+    expect(html).not.toContain('DOCUMENT IDENTIFIÉ');
+  });
+
+  it('utilise des boutons non-submit avec un état sélectionné visible', () => {
+    expect(html).toContain('type="button" aria-pressed="{{ importFormuleOui }}"');
+    expect(html).toContain('style="{{ importFormuleOuiStyle }}"');
+    expect(app).toContain("setImportFormule('non')");
+  });
+});
+
+describe('configuration du back-end de production', () => {
+  const html = readFileSync('web/index.html', 'utf8');
+  const runtimeConfig = readFileSync('web/runtime-config.js', 'utf8');
+
+  it('charge la configuration versionnée après une éventuelle surcharge locale', () => {
+    expect(html.indexOf('./runtime-config.js')).toBeGreaterThan(html.indexOf('./config.js'));
+    expect(runtimeConfig).toContain('if (!isLocal || !window.CONTESTATION_CONFIG)');
+  });
+
+  it('pointe la production vers le projet où les fonctions sont déployées', () => {
+    expect(runtimeConfig).toContain('xdyesbnjspixogzhnxrm.supabase.co');
+    expect(runtimeConfig).not.toContain('ecxauhrwylsbznvrlmlm');
+  });
+});

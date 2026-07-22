@@ -39,6 +39,7 @@ class Component extends DCLogic {
     // autocomplétion de l'adresse de l'immeuble (geo.admin.ch)
     addressSuggestions: [], addressLoading: false,
     extractionUncertain: [], extractionProvider: '',
+    extractionFormuleDetected: false, extractionFormuleSource: '',
   };
 
   constructor() {
@@ -57,6 +58,12 @@ class Component extends DCLogic {
   num(v) { const n = parseFloat(String(v).replace(',', '.').replace(/[^0-9.]/g, '')); return isNaN(n) ? null : n; }
   fmt(n) { return Math.round(n).toLocaleString('fr-CH').replace(/[\u202f\u00a0,]/g, '\u2019'); }
   fmtMoney(n) { return Number(n).toLocaleString('fr-CH', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+  importFormuleChoiceStyle(selected, color) {
+    const active = selected
+      ? `background:${color};border-color:${color};color:#fff;box-shadow:0 5px 12px -8px ${color};`
+      : 'background:#fff;border-color:#9CB6C2;color:#1B4965;';
+    return `${active}border-style:solid;border-width:1px;border-radius:9px;padding:9px 11px;font-size:12px;font-weight:700;cursor:pointer;`;
+  }
 
   track(name, detail = {}) {
     try {
@@ -81,6 +88,18 @@ class Component extends DCLogic {
   setD(key, val) {
     if (this.state.data[key] === val) return; // valeur inchangée → pas de re-render
     this.setState(s => ({ data: { ...s.data, [key]: val }, stepErrors: {} }));
+  }
+  setImportFormule(value) {
+    if (!['oui', 'non', 'inconnu'].includes(value)) return;
+    this.setState(s => ({
+      data: { ...s.data, formule: value },
+      extractionFormuleDetected: false,
+      extractionFormuleSource: '',
+      stepErrors: {},
+    }));
+  }
+  correctDetectedFormule() {
+    this.setImportFormule('inconnu');
   }
   setDateWithoutRender(value) {
     // Un <input type="date"> natif peut émettre `change` pendant la saisie de
@@ -564,7 +583,18 @@ class Component extends DCLogic {
     if (!d.locAdresse) d.locAdresse = d.adresse;
     if (!d.locNpa) d.locNpa = d.npa;
     if (!d.locVille) d.locVille = d.commune;
-    this.setState({ data: d });
+    const formuleDetectee = x.formuleOfficielleRecue === 'oui';
+    let formuleSource = formuleDetectee ? x.formuleOfficielleSource : '';
+    if (!['document_bail', 'document_formule'].includes(formuleSource)) {
+      formuleSource = formuleDetectee
+        ? (this.state.formuleB64 ? 'documents_importes' : 'document_bail')
+        : '';
+    }
+    this.setState({
+      data: d,
+      extractionFormuleDetected: formuleDetectee,
+      extractionFormuleSource: formuleSource,
+    });
   }
 
   submitImportedDossier() {
@@ -866,12 +896,23 @@ class Component extends DCLogic {
       an0: (st.analyseStep || 0) >= 1, an1: (st.analyseStep || 0) >= 2, an2: (st.analyseStep || 0) >= 3,
       submitImportedDossier: () => this.submitImportedDossier(),
       backToDiagnostic: () => this.go('diagnostic'),
+      importFormuleDetected: !!st.extractionFormuleDetected && st.data.formule === 'oui',
+      importFormuleNeedsConfirmation: !st.extractionFormuleDetected,
+      importFormuleDetectedText: st.extractionFormuleSource === 'document_formule'
+        ? `La formule officielle a été identifiée dans le fichier « ${st.formuleName || 'formule officielle'} ». Elle sera prise en compte dans votre diagnostic.`
+        : st.extractionFormuleSource === 'document_bail'
+          ? `La formule officielle a été identifiée dans le PDF « ${st.bailName || 'bail et annexes'} ». Elle sera prise en compte dans votre diagnostic.`
+          : 'La formule officielle a été identifiée dans les documents importés. Elle sera prise en compte dans votre diagnostic.',
       importFormuleOui: st.data.formule === 'oui',
       importFormuleNon: st.data.formule === 'non',
       importFormuleInconnue: st.data.formule !== 'oui' && st.data.formule !== 'non',
-      setImportFormuleOui: () => this.setD('formule', 'oui'),
-      setImportFormuleNon: () => this.setD('formule', 'non'),
-      setImportFormuleInconnue: () => this.setD('formule', 'inconnu'),
+      importFormuleOuiStyle: this.importFormuleChoiceStyle(st.data.formule === 'oui', '#178A5B'),
+      importFormuleNonStyle: this.importFormuleChoiceStyle(st.data.formule === 'non', '#C43D2E'),
+      importFormuleInconnueStyle: this.importFormuleChoiceStyle(st.data.formule !== 'oui' && st.data.formule !== 'non', '#B97912'),
+      setImportFormuleOui: () => this.setImportFormule('oui'),
+      setImportFormuleNon: () => this.setImportFormule('non'),
+      setImportFormuleInconnue: () => this.setImportFormule('inconnu'),
+      correctDetectedFormule: () => this.correctDetectedFormule(),
       extractionHasUncertain: st.extractionUncertain.length > 0,
       extractionUncertainText: st.extractionUncertain.join(', '),
       goCgv: () => this.go('cgv'),

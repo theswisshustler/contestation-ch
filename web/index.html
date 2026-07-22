@@ -776,12 +776,25 @@
         <label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Régie ou propriétaire</label>
         <input type="text" value="{{ d.regNom }}" onChange="{{ onRegNom }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#fff;margin-bottom:18px;">
 
-        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Le point clé</div>
-        <div style="background:#F4F8FA;border:1px solid #CBDCE4;border-radius:14px;padding:16px;margin-bottom:20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Formule officielle</span><sc-if value="{{ importFormuleOui }}" hint-placeholder-val="false"><span style="background:#178A5B;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">DOCUMENT IDENTIFIÉ</span></sc-if><sc-if value="{{ importFormuleNon }}" hint-placeholder-val="false"><span style="background:#C43D2E;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">NON REÇUE</span></sc-if><sc-if value="{{ importFormuleInconnue }}" hint-placeholder-val="true"><span style="background:#F4A73B;color:#5C430D;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">À CONFIRMER</span></sc-if></div>
-          <p style="margin:0 0 12px;font-size:13px;color:#3E5560;line-height:1.45;">L'absence d'un fichier séparé ne prouve pas que la formule ne vous a jamais été remise. Confirmez votre situation après avoir vérifié le bail, ses annexes et vos e-mails.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:7px;"><button onClick="{{ setImportFormuleOui }}" style="background:#fff;border:1px solid #9CB6C2;border-radius:9px;padding:9px 11px;color:#1B4965;font-size:12px;font-weight:700;cursor:pointer;">Je l'ai reçue</button><button onClick="{{ setImportFormuleNon }}" style="background:#fff;border:1px solid #9CB6C2;border-radius:9px;padding:9px 11px;color:#1B4965;font-size:12px;font-weight:700;cursor:pointer;">Je ne l'ai jamais reçue</button><button onClick="{{ setImportFormuleInconnue }}" style="background:#fff;border:1px solid #9CB6C2;border-radius:9px;padding:9px 11px;color:#1B4965;font-size:12px;font-weight:700;cursor:pointer;">Je ne sais pas</button></div>
-        </div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">La formule officielle</div>
+        <sc-if value="{{ importFormuleDetected }}" hint-placeholder-val="false">
+          <div style="background:#F1F8F5;border:1px solid #A9D7C3;border-radius:14px;padding:16px;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Formule officielle</span><span style="background:#178A5B;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;">FORMULE DÉTECTÉE</span></div>
+            <p style="margin:0;font-size:13px;color:#31594A;line-height:1.5;">{{ importFormuleDetectedText }}</p>
+            <button type="button" onClick="{{ correctDetectedFormule }}" style="margin-top:12px;background:transparent;border:0;padding:0;color:#1B4965;font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer;">Ce document n'est pas la formule officielle</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ importFormuleNeedsConfirmation }}" hint-placeholder-val="true">
+          <div style="background:#F4F8FA;border:1px solid #CBDCE4;border-radius:14px;padding:16px;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:15px;">Formule non détectée automatiquement</span><sc-if value="{{ importFormuleOui }}" hint-placeholder-val="false"><span style="background:#178A5B;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">REÇUE</span></sc-if><sc-if value="{{ importFormuleNon }}" hint-placeholder-val="false"><span style="background:#C43D2E;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">NON REÇUE</span></sc-if><sc-if value="{{ importFormuleInconnue }}" hint-placeholder-val="true"><span style="background:#F4A73B;color:#5C430D;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;">À CONFIRMER</span></sc-if></div>
+            <p style="margin:0 0 12px;font-size:13px;color:#3E5560;line-height:1.45;">Nous ne l'avons pas trouvée dans les PDF importés. L'avez-vous reçue séparément, par exemple avec d'autres annexes ou par e-mail&nbsp;?</p>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;">
+              <button type="button" aria-pressed="{{ importFormuleOui }}" onClick="{{ setImportFormuleOui }}" style="{{ importFormuleOuiStyle }}"><sc-if value="{{ importFormuleOui }}" hint-placeholder-val="false">✓&nbsp; </sc-if>Je l'ai reçue</button>
+              <button type="button" aria-pressed="{{ importFormuleNon }}" onClick="{{ setImportFormuleNon }}" style="{{ importFormuleNonStyle }}"><sc-if value="{{ importFormuleNon }}" hint-placeholder-val="false">✓&nbsp; </sc-if>Je ne l'ai jamais reçue</button>
+              <button type="button" aria-pressed="{{ importFormuleInconnue }}" onClick="{{ setImportFormuleInconnue }}" style="{{ importFormuleInconnueStyle }}"><sc-if value="{{ importFormuleInconnue }}" hint-placeholder-val="true">✓&nbsp; </sc-if>Je ne sais pas</button>
+            </div>
+          </div>
+        </sc-if>
       </div>
       <div class="cc-cta-bar" style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">
         <button onClick="{{ submitImportedDossier }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Voir mon diagnostic →</button>
@@ -1214,6 +1227,7 @@
 </template>
 
 <script src="./config.js"></script>
+<script src="./runtime-config.js"></script>
 <script src="./api.js"></script>
 <script src="./support.js"></script>
 <script src="./app.js"></script>

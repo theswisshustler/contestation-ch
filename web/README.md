@@ -13,6 +13,7 @@ Edge Functions Supabase**. Sans build ni framework.
 | `app.js`           | Logique d'écran + mapping état→`DossierContestation`. **Aucune règle métier** : tout est recalculé côté serveur. |
 | `config.example.js`| Modèle de configuration à copier en `config.js`. |
 | `config.js`        | Config runtime (URL + clé anon). **Gitignoré.** |
+| `runtime-config.js`| Config publique de production, versionnée et prioritaire hors localhost. |
 
 ## Configuration
 

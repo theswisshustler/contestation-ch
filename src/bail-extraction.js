@@ -5,8 +5,9 @@
  */
 
 export const EXTRACTION_SYSTEM_PROMPT = `
-Tu extrais les données d'un contrat de bail suisse et, si elle est fournie, de
-la formule officielle de notification du loyer initial.
+Tu extrais les données d'un contrat de bail suisse et de ses annexes. La formule
+officielle de notification du loyer initial peut se trouver parmi les pages du
+PDF du bail ou dans un second PDF fourni séparément.
 
 Règles :
 - N'invente aucune valeur. Utilise null ou une chaîne vide, selon le schéma, si l'information est absente ou illisible.
@@ -15,6 +16,7 @@ Règles :
 - La date de remise des clés est la date d'entrée en jouissance ou de début du bail, au format YYYY-MM-DD.
 - Le loyer précédent ne peut provenir que de la formule officielle.
 - "formuleOfficielleRecue" vaut "oui" uniquement si le document est bien une formule officielle de notification du loyer initial. Ne conclus jamais "non" de la seule absence d'un document.
+- Si la formule est identifiée, indique dans "formuleOfficielleSource" si elle se trouve dans le PDF du bail et de ses annexes ("document_bail") ou dans le second PDF ("document_formule"). Sinon utilise "non_identifiee".
 - Le taux de référence est un nombre, par exemple 1.5 pour 1,5 %.
 - Les montants sont des nombres en CHF, sans symbole ni séparateur de milliers.
 - Signale dans "champs_incertains" chaque champ ambigu, calculé ou peu lisible.
@@ -53,6 +55,10 @@ export const EXTRACTION_JSON_SCHEMA = {
     loyerNetMensuel: nullableNumber,
     chargesMensuelles: nullableNumber,
     formuleOfficielleRecue: { type: 'string', enum: ['oui', 'non', 'inconnu'] },
+    formuleOfficielleSource: {
+      type: 'string',
+      enum: ['document_bail', 'document_formule', 'non_identifiee'],
+    },
     loyerPrecedentConnu: { type: 'boolean' },
     loyerPrecedentNet: nullableNumber,
     tauxReferenceBail: nullableNumber,
@@ -64,6 +70,7 @@ export const EXTRACTION_JSON_SCHEMA = {
   required: [
     'canton', 'npa', 'commune', 'adresseImmeuble', 'dateRemiseCles',
     'loyerNetMensuel', 'chargesMensuelles', 'formuleOfficielleRecue',
+    'formuleOfficielleSource',
     'loyerPrecedentConnu', 'loyerPrecedentNet', 'tauxReferenceBail',
     'anneeConstruction', 'locataire', 'bailleur', 'champs_incertains',
   ],
@@ -79,7 +86,7 @@ function docBlock(data, title) {
 }
 
 export function buildClaudeExtractionRequest({ model, bailB64, formuleB64 }) {
-  const content = [docBlock(bailB64, 'Contrat de bail')];
+  const content = [docBlock(bailB64, 'Contrat de bail et annexes éventuelles')];
   if (formuleB64) content.push(docBlock(formuleB64, 'Formule officielle fournie séparément'));
   content.push({
     type: 'text',
@@ -127,17 +134,29 @@ function cleanParty(value) {
   };
 }
 
-export function normalizeExtraction(raw, hasFormule) {
+export function normalizeExtraction(raw, hasSeparateFormule) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new ClaudeExtractionError('invalid_payload', 'La réponse d’extraction est invalide.');
   }
 
   const cantonValue = typeof raw.canton === 'string' ? raw.canton.toUpperCase() : null;
   const canton = cantonValue === 'VD' || cantonValue === 'GE' ? cantonValue : null;
-  const loyerPrecedentNet = hasFormule ? cleanNumber(raw.loyerPrecedentNet, 0, 100000) : null;
-  const formule = hasFormule && String(raw.formuleOfficielleRecue).toLowerCase() === 'oui'
-    ? 'oui'
-    : 'inconnu';
+  // La formule peut être une annexe du PDF principal. La présence d'un second
+  // fichier n'est donc pas une condition de validité de la détection Claude.
+  const formuleDetectee = String(raw.formuleOfficielleRecue).toLowerCase() === 'oui';
+  const formule = formuleDetectee ? 'oui' : 'inconnu';
+  const loyerPrecedentNet = formuleDetectee
+    ? cleanNumber(raw.loyerPrecedentNet, 0, 100000)
+    : null;
+  const rawSource = String(raw.formuleOfficielleSource || '').toLowerCase();
+  let formuleSource = 'non_identifiee';
+  if (formuleDetectee) {
+    if (rawSource === 'document_bail') formuleSource = 'document_bail';
+    else if (rawSource === 'document_formule' && hasSeparateFormule) formuleSource = 'document_formule';
+    // Sans second fichier, une formule effectivement détectée provient
+    // nécessairement du PDF principal, même si l'amont omet la provenance.
+    else if (!hasSeparateFormule) formuleSource = 'document_bail';
+  }
 
   return {
     canton,
@@ -148,6 +167,7 @@ export function normalizeExtraction(raw, hasFormule) {
     loyerNetMensuel: cleanNumber(raw.loyerNetMensuel, 0, 100000),
     chargesMensuelles: cleanNumber(raw.chargesMensuelles, 0, 50000),
     formuleOfficielleRecue: formule,
+    formuleOfficielleSource: formuleSource,
     loyerPrecedentConnu: loyerPrecedentNet !== null,
     loyerPrecedentNet,
     tauxReferenceBail: cleanNumber(raw.tauxReferenceBail, 0, 20),

@@ -15,6 +15,7 @@ function rawExtraction(overrides = {}) {
     loyerNetMensuel: 1800,
     chargesMensuelles: 190,
     formuleOfficielleRecue: 'oui',
+    formuleOfficielleSource: 'document_formule',
     loyerPrecedentConnu: true,
     loyerPrecedentNet: 1600,
     tauxReferenceBail: 1.25,
@@ -42,7 +43,11 @@ describe('contrat d’extraction Claude', () => {
       { type: 'null' },
     ]);
     expect(request.output_config.format.schema.properties.champs_incertains).not.toHaveProperty('maxItems');
+    expect(request.output_config.format.schema.properties.formuleOfficielleSource.enum).toEqual([
+      'document_bail', 'document_formule', 'non_identifiee',
+    ]);
     expect(request.messages[0].content.filter((block) => block.type === 'document')).toHaveLength(2);
+    expect(request.messages[0].content[0].title).toContain('annexes');
   });
 
   it('normalise une réponse structurée avant de la transmettre au parcours', () => {
@@ -56,19 +61,44 @@ describe('contrat d’extraction Claude', () => {
       npa: '1004',
       loyerNetMensuel: 1800,
       formuleOfficielleRecue: 'oui',
+      formuleOfficielleSource: 'document_formule',
       loyerPrecedentConnu: true,
       loyerPrecedentNet: 1600,
     });
     expect(extracted.locataire.adresse).toBeNull();
   });
 
-  it('ne déduit jamais la formule ni le loyer précédent quand elle n’est pas jointe', () => {
+  it('conserve une formule détectée parmi les pages du PDF du bail', () => {
     const extracted = parseClaudeExtraction({
       stop_reason: 'end_turn',
-      content: [{ type: 'text', text: JSON.stringify(rawExtraction()) }],
+      content: [{
+        type: 'text',
+        text: JSON.stringify(rawExtraction({ formuleOfficielleSource: 'document_bail' })),
+      }],
+    }, false);
+
+    expect(extracted.formuleOfficielleRecue).toBe('oui');
+    expect(extracted.formuleOfficielleSource).toBe('document_bail');
+    expect(extracted.loyerPrecedentConnu).toBe(true);
+    expect(extracted.loyerPrecedentNet).toBe(1600);
+  });
+
+  it('ne déduit jamais que la formule est absente lorsqu’elle n’est pas identifiée', () => {
+    const extracted = parseClaudeExtraction({
+      stop_reason: 'end_turn',
+      content: [{
+        type: 'text',
+        text: JSON.stringify(rawExtraction({
+          formuleOfficielleRecue: 'non',
+          formuleOfficielleSource: 'non_identifiee',
+          loyerPrecedentConnu: false,
+          loyerPrecedentNet: null,
+        })),
+      }],
     }, false);
 
     expect(extracted.formuleOfficielleRecue).toBe('inconnu');
+    expect(extracted.formuleOfficielleSource).toBe('non_identifiee');
     expect(extracted.loyerPrecedentConnu).toBe(false);
     expect(extracted.loyerPrecedentNet).toBeNull();
   });
