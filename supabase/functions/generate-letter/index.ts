@@ -48,9 +48,6 @@ Deno.serve(async (req) => {
     return badRequest('Dossier non éligible : pas de génération de lettre.');
   }
 
-  // Warm-up: s'assurer que Gotenberg est réveillé avant le vrai appel.
-  try { await fetch(`${Deno.env.get('GOTENBERG_URL')?.replace(/\/$/, '')}/health`); } catch { /* ignore */ }
-
   try {
     // 1) PDF PROPRE → bucket privé. Chemin non devinable, jamais exposé.
     const cleanPdf = await htmlToPdf(letterHtml(dossier, evaluation));

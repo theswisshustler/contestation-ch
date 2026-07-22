@@ -1,21 +1,39 @@
 // POST /extract-bail
-// Entrée : { bailB64: string, formuleB64?: string }  (PDF en base64)
-// - Envoie le(s) PDF à l'API Claude (lecture native PDF, texte + scan).
-// - Renvoie le JSON structuré (schéma EXTRACTION_SYSTEM_PROMPT) à préremplir,
-//   que l'utilisateur validera avant /evaluate.
-// - Zero-retention côté LLM (config compte Anthropic).
+// Entrée : { bailB64: string, formuleB64?: string } (PDF en base64)
+// Les données extraites sont toujours normalisées et doivent être confirmées
+// par l'utilisateur avant le diagnostic.
 
-import { EXTRACTION_SYSTEM_PROMPT } from '../_shared/ruleset.ts';
-import { badRequest, json, preflight, serverError } from '../_shared/http.ts';
+import {
+  buildClaudeExtractionRequest,
+  ClaudeExtractionError,
+  parseClaudeExtraction,
+} from '../../../src/bail-extraction.js';
+import { badRequest, json, preflight } from '../_shared/http.ts';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-4-6';
+// La limite Anthropic est de 32 Mo pour la requête complète. Une fois encodés
+// en base64, 20 Mo de PDF occupent environ 27 Mo et laissent de la place au JSON.
+const MAX_COMBINED_PDF_BYTES = 20 * 1024 * 1024;
 
-function docBlock(b64: string) {
-  return {
-    type: 'document',
-    source: { type: 'base64', media_type: 'application/pdf', data: b64 },
-  };
+function estimatedBase64Bytes(value: string): number {
+  const clean = value.replace(/\s/g, '');
+  const padding = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0;
+  return Math.max(0, Math.floor((clean.length * 3) / 4) - padding);
+}
+
+function validatePdf(value: unknown, label: string): string | null {
+  if (typeof value !== 'string' || !value.trim()) return `${label} requis (PDF en base64)`;
+  const clean = value.replace(/\s/g, '');
+  if (!clean.startsWith('JVBER')) return `${label} doit être un fichier PDF valide`;
+  return null;
+}
+
+function upstreamMessage(status: number): string {
+  if (status === 429) return 'Le service d’analyse est momentanément saturé. Réessayez dans une minute.';
+  if (status === 413) return 'Les documents sont trop volumineux pour être analysés.';
+  if (status >= 500) return 'Le service d’analyse est momentanément indisponible. Réessayez dans quelques instants.';
+  return 'Le document n’a pas pu être analysé. Vérifiez qu’il s’agit d’un PDF lisible et non protégé par mot de passe.';
 }
 
 Deno.serve(async (req) => {
@@ -24,7 +42,10 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return badRequest('POST attendu');
 
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
-  if (!apiKey) return serverError('ANTHROPIC_API_KEY manquant');
+  if (!apiKey) {
+    console.error('claude_configuration_error', { missing: 'ANTHROPIC_API_KEY' });
+    return json({ error: 'Le service d’analyse n’est pas configuré.', code: 'claude_not_configured' }, 503);
+  }
 
   let body: { bailB64?: string; formuleB64?: string };
   try {
@@ -32,57 +53,104 @@ Deno.serve(async (req) => {
   } catch {
     return badRequest('JSON invalide');
   }
-  if (!body.bailB64) return badRequest('bailB64 requis (PDF du bail en base64)');
 
-  const content: unknown[] = [docBlock(body.bailB64)];
-  if (body.formuleB64) content.push(docBlock(body.formuleB64));
-  content.push({ type: 'text', text: 'Extrais les champs et renvoie uniquement le JSON.' });
+  const bailError = validatePdf(body.bailB64, 'Le bail');
+  if (bailError) return badRequest(bailError);
+  if (body.formuleB64) {
+    const formuleError = validatePdf(body.formuleB64, 'La formule officielle');
+    if (formuleError) return badRequest(formuleError);
+  }
 
+  const totalBytes = estimatedBase64Bytes(body.bailB64!)
+    + (body.formuleB64 ? estimatedBase64Bytes(body.formuleB64) : 0);
+  if (totalBytes > MAX_COMBINED_PDF_BYTES) {
+    return json({
+      error: 'Les documents dépassent 20 Mo au total. Compressez-les puis réessayez.',
+      code: 'documents_too_large',
+    }, 413);
+  }
+
+  let requestId: string | null = null;
   try {
-    const r = await fetch(ANTHROPIC_URL, {
+    const response = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
-      body: JSON.stringify({
+      body: JSON.stringify(buildClaudeExtractionRequest({
         model: MODEL,
-        max_tokens: 1500,
-        system: EXTRACTION_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content }],
-      }),
+        bailB64: body.bailB64!,
+        formuleB64: body.formuleB64,
+      })),
     });
 
-    if (!r.ok) return serverError('Appel Claude échoué', await r.text());
-
-    const data = await r.json();
-    const text: string = (data.content ?? [])
-      .filter((b: { type: string }) => b.type === 'text')
-      .map((b: { text: string }) => b.text)
-      .join('')
-      .trim();
-
-    let extracted: Record<string, unknown>;
+    requestId = response.headers.get('request-id');
+    const responseText = await response.text();
+    let data: Record<string, unknown> = {};
     try {
-      const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-      extracted = JSON.parse(cleaned);
+      data = responseText ? JSON.parse(responseText) : {};
     } catch {
-      return serverError('Réponse Claude non-JSON', text.slice(0, 500));
+      // Une réponse amont non JSON est journalisée uniquement par ses métadonnées.
     }
 
-    // Ne jamais déduire « non reçue » du seul fait que l'utilisateur n'a pas
-    // téléversé de formule. Cette réponse doit être confirmée par l'utilisateur.
-    if (!body.formuleB64) {
-      extracted.formuleOfficielleRecue = 'inconnu';
-      extracted.loyerPrecedentConnu = false;
-      extracted.loyerPrecedentNet = null;
-    } else if (extracted.formuleOfficielleRecue !== 'oui') {
-      extracted.formuleOfficielleRecue = 'inconnu';
+    if (!response.ok) {
+      const anthropicError = data.error && typeof data.error === 'object'
+        ? data.error as Record<string, unknown>
+        : {};
+      console.error('claude_upstream_error', {
+        status: response.status,
+        requestId,
+        type: anthropicError.type ?? 'unknown',
+        message: typeof anthropicError.message === 'string'
+          ? anthropicError.message.slice(0, 500)
+          : 'unknown',
+      });
+      return json({
+        error: upstreamMessage(response.status),
+        code: 'claude_upstream_error',
+      }, 502);
     }
 
-    return json({ extracted });
-  } catch (e) {
-    return serverError('Erreur extraction', e);
+    try {
+      const extracted = parseClaudeExtraction(data, Boolean(body.formuleB64));
+      console.info('claude_extraction_completed', {
+        requestId,
+        model: data.model ?? MODEL,
+        stopReason: data.stop_reason ?? null,
+        inputTokens: data.usage && typeof data.usage === 'object'
+          ? (data.usage as Record<string, unknown>).input_tokens ?? null
+          : null,
+        outputTokens: data.usage && typeof data.usage === 'object'
+          ? (data.usage as Record<string, unknown>).output_tokens ?? null
+          : null,
+      });
+      return json({
+        extracted,
+        extraction: { provider: 'anthropic', model: data.model ?? MODEL },
+      });
+    } catch (error) {
+      const code = error instanceof ClaudeExtractionError ? error.code : 'invalid_response';
+      console.error('claude_extraction_invalid', {
+        requestId,
+        code,
+        model: data.model ?? MODEL,
+        stopReason: data.stop_reason ?? null,
+      });
+      const message = code === 'truncated'
+        ? 'Le document est trop complexe pour une seule analyse. Réessayez avec un PDF compressé.'
+        : 'Le service d’analyse n’a pas pu interpréter ce document. Réessayez dans quelques instants.';
+      return json({ error: message, code }, 502);
+    }
+  } catch (error) {
+    console.error('claude_network_error', {
+      requestId,
+      name: error instanceof Error ? error.name : 'unknown',
+    });
+    return json({
+      error: 'Le service d’analyse est injoignable. Réessayez dans quelques instants.',
+      code: 'claude_network_error',
+    }, 502);
   }
 });
