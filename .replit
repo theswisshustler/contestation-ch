@@ -35,6 +35,6 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-deploymentTarget = "cloudrun"
-build = "corepack pnpm install --frozen-lockfile && corepack pnpm build"
-run = "corepack pnpm start"
+deploymentTarget = "autoscale"
+build = ["bash", "-c", "npm install --include=dev && npm run build"]
+run = ["node", "dist/server/entry.mjs"]
