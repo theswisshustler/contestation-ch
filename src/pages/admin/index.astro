@@ -4,9 +4,11 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../lib/blog.ts';
 
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+const adminUrl = new URL('/admin', Astro.site || Astro.url.origin).toString();
+const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.origin).toString();
 ---
 <BaseLayout title="Administration des guides | Contestation.ch" description="Administration privée de la plateforme de publication." noindex={true}>
-  <div id="blog-admin" data-supabase-url={SUPABASE_URL} data-supabase-key={SUPABASE_PUBLISHABLE_KEY}>
+  <div id="blog-admin" data-supabase-url={SUPABASE_URL} data-supabase-key={SUPABASE_PUBLISHABLE_KEY} data-admin-url={adminUrl} data-recovery-url={recoveryUrl}>
     <section id="auth-panel" class="admin-auth">
       <p class="eyebrow">Accès privé</p>
       <h1>Administration des guides</h1>
@@ -15,8 +17,22 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
         <label>E-mail<input id="auth-email" type="email" autocomplete="email" required /></label>
         <label>Mot de passe<input id="auth-password" type="password" autocomplete="current-password" /></label>
         <div class="admin-actions"><button class="button button--secondary" type="submit">Se connecter</button><button id="magic-link" class="button button--ghost" type="button">Recevoir un lien magique</button></div>
+        <button id="forgot-password" class="admin-text-button" type="button">Mot de passe oublié&nbsp;?</button>
       </form>
       <p id="auth-status" class="admin-status" aria-live="polite"></p>
+    </section>
+
+    <section id="recovery-panel" class="admin-auth" hidden>
+      <p class="eyebrow">Compte administrateur</p>
+      <h1>Choisissez un nouveau mot de passe</h1>
+      <p>Votre lien a été validé par Supabase. Définissez maintenant le mot de passe qui servira à vos prochaines connexions.</p>
+      <form id="recovery-form" class="admin-form admin-form--compact">
+        <label>Nouveau mot de passe<input id="new-password" type="password" autocomplete="new-password" minlength="12" required aria-describedby="password-help" /></label>
+        <small id="password-help" class="admin-help">12 caractères minimum. Utilisez une phrase unique que vous ne réutilisez pas ailleurs.</small>
+        <label>Confirmez le mot de passe<input id="confirm-password" type="password" autocomplete="new-password" minlength="12" required /></label>
+        <div class="admin-actions"><button id="save-password" class="button button--primary" type="submit">Enregistrer le nouveau mot de passe</button><button id="cancel-recovery" class="button button--ghost" type="button">Annuler</button></div>
+      </form>
+      <p id="recovery-status" class="admin-status" aria-live="polite"></p>
     </section>
 
     <section id="admin-panel" class="admin-shell" hidden>
@@ -101,6 +117,8 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     const root = document.querySelector('#blog-admin');
     const supabaseUrl = root.dataset.supabaseUrl;
     const publishableKey = root.dataset.supabaseKey;
+    const adminUrl = root.dataset.adminUrl;
+    const recoveryUrl = root.dataset.recoveryUrl;
     const supabase = createClient(supabaseUrl, publishableKey);
     const $ = (selector) => document.querySelector(selector);
     let session = null;
@@ -109,6 +127,51 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 
     function status(message, error = false, target = '#editor-status') {
       const node = $(target); node.textContent = message || ''; node.classList.toggle('is-error', error);
+    }
+
+    function isEmailRateLimit(error) {
+      return error?.code === 'over_email_send_rate_limit'
+        || error?.code === 'over_request_rate_limit'
+        || error?.status === 429
+        || /email rate limit exceeded|too many requests/i.test(error?.message || '');
+    }
+
+    function authErrorMessage(error) {
+      if (error?.code === 'over_email_send_rate_limit' || /email rate limit exceeded/i.test(error?.message || '')) {
+        return 'Trop de liens ont été demandés en peu de temps. Supabase bloque temporairement les nouveaux envois pour protéger votre compte. Attendez au moins 60 secondes, puis réessayez. Vous pouvez aussi utiliser le dernier e-mail déjà reçu.';
+      }
+      if (error?.code === 'over_request_rate_limit' || error?.status === 429) {
+        return 'Trop de demandes ont été effectuées. Attendez quelques minutes avant de réessayer.';
+      }
+      if (error?.code === 'invalid_credentials') return 'Adresse e-mail ou mot de passe incorrect.';
+      if (error?.code === 'otp_expired') return 'Ce lien a expiré ou a déjà été utilisé. Demandez un nouveau lien.';
+      if (error?.code === 'same_password') return 'Choisissez un mot de passe différent de votre mot de passe actuel.';
+      if (error?.code === 'weak_password') return 'Ce mot de passe est trop faible. Utilisez au moins 12 caractères difficiles à deviner.';
+      return error?.message || 'Une erreur d’authentification est survenue. Réessayez dans quelques instants.';
+    }
+
+    function startEmailCooldown(button, seconds = 60) {
+      if (button._cooldownTimer) clearInterval(button._cooldownTimer);
+      const originalLabel = button.dataset.originalLabel || button.textContent.trim();
+      button.dataset.originalLabel = originalLabel;
+      let remaining = seconds;
+      button.disabled = true;
+      button.textContent = `Réessayer dans ${remaining} s`;
+      button._cooldownTimer = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(button._cooldownTimer); button._cooldownTimer = null;
+          button.disabled = false; button.textContent = originalLabel;
+        } else button.textContent = `Réessayer dans ${remaining} s`;
+      }, 1_000);
+    }
+
+    function showRecovery(message = '') {
+      $('#auth-panel').hidden = true;
+      $('#admin-panel').hidden = true;
+      $('#recovery-panel').hidden = false;
+      status(message, !!message, '#recovery-status');
+      if (!message) $('#new-password').focus();
     }
 
     async function authHeaders() {
@@ -290,8 +353,52 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
       } catch (error) { $('#auth-panel').hidden = false; $('#admin-panel').hidden = true; status(error.message, true, '#auth-status'); }
     }
 
-    $('#auth-form').addEventListener('submit', async (event) => { event.preventDefault(); status('Connexion…', false, '#auth-status'); const result = await supabase.auth.signInWithPassword({ email: $('#auth-email').value, password: $('#auth-password').value }); if (result.error) status(result.error.message, true, '#auth-status'); else enterAdmin(); });
-    $('#magic-link').addEventListener('click', async () => { const email = $('#auth-email').value; if (!email) return status('Indiquez votre e-mail.', true, '#auth-status'); const result = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${location.origin}/admin` } }); status(result.error ? result.error.message : 'Lien de connexion envoyé.', !!result.error, '#auth-status'); });
+    $('#auth-form').addEventListener('submit', async (event) => { event.preventDefault(); status('Connexion…', false, '#auth-status'); const result = await supabase.auth.signInWithPassword({ email: $('#auth-email').value, password: $('#auth-password').value }); if (result.error) status(authErrorMessage(result.error), true, '#auth-status'); else enterAdmin(); });
+    $('#magic-link').addEventListener('click', async () => {
+      const email = $('#auth-email').value.trim();
+      if (!email) return status('Indiquez votre e-mail.', true, '#auth-status');
+      const button = $('#magic-link'); button.disabled = true;
+      status('Envoi du lien magique…', false, '#auth-status');
+      const result = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: adminUrl } });
+      if (result.error) {
+        if (isEmailRateLimit(result.error)) startEmailCooldown(button); else button.disabled = false;
+        status(authErrorMessage(result.error), true, '#auth-status');
+      } else {
+        startEmailCooldown(button);
+        status('Lien de connexion envoyé. Consultez votre boîte de réception et vos courriers indésirables.', false, '#auth-status');
+      }
+    });
+    $('#forgot-password').addEventListener('click', async () => {
+      const email = $('#auth-email').value.trim();
+      if (!email) return status('Indiquez d’abord votre adresse e-mail.', true, '#auth-status');
+      const button = $('#forgot-password'); button.disabled = true;
+      status('Envoi du lien de récupération…', false, '#auth-status');
+      const result = await supabase.auth.resetPasswordForEmail(email, { redirectTo: recoveryUrl });
+      if (result.error) {
+        if (isEmailRateLimit(result.error)) startEmailCooldown(button); else button.disabled = false;
+        status(authErrorMessage(result.error), true, '#auth-status');
+      } else {
+        startEmailCooldown(button);
+        status('Si ce compte existe, un lien de récupération vient d’être envoyé. Consultez également vos courriers indésirables.', false, '#auth-status');
+      }
+    });
+    $('#recovery-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const password = $('#new-password').value;
+      const confirmation = $('#confirm-password').value;
+      if (password.length < 12) return status('Le mot de passe doit contenir au moins 12 caractères.', true, '#recovery-status');
+      if (password !== confirmation) return status('Les deux mots de passe ne correspondent pas.', true, '#recovery-status');
+      const button = $('#save-password'); button.disabled = true;
+      status('Enregistrement sécurisé…', false, '#recovery-status');
+      const result = await supabase.auth.updateUser({ password });
+      button.disabled = false;
+      if (result.error) return status(authErrorMessage(result.error), true, '#recovery-status');
+      history.replaceState({}, '', '/admin');
+      $('#recovery-form').reset(); $('#recovery-panel').hidden = true;
+      status('Mot de passe modifié. Ouverture de l’administration…', false, '#auth-status');
+      await enterAdmin();
+    });
+    $('#cancel-recovery').addEventListener('click', async () => { await supabase.auth.signOut(); location.assign('/admin'); });
     $('#sign-out').addEventListener('click', async () => { await supabase.auth.signOut(); location.reload(); });
     $('#article-form').addEventListener('submit', saveDraft); $('#new-article').addEventListener('click', resetEditor); $('#refresh-list').addEventListener('click', refreshList);
     $('#format').addEventListener('change', updateFormat); $('#preview').addEventListener('click', previewArticle); $('#publish').addEventListener('click', publishArticle);
@@ -299,8 +406,15 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     $('#import-file').addEventListener('change', (event) => event.target.files[0] && importFile(event.target.files[0]));
     $('#image-file').addEventListener('change', (event) => event.target.files[0] && uploadImage(event.target.files[0]));
     $('#create-api-key').addEventListener('click', createApiKey);
-    supabase.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; });
-    const initial = await supabase.auth.getSession(); session = initial.data.session; if (session) enterAdmin();
+    const recoveryRequested = new URLSearchParams(location.search).get('mode') === 'recovery';
+    supabase.auth.onAuthStateChange((event, nextSession) => {
+      session = nextSession;
+      if (event === 'PASSWORD_RECOVERY') showRecovery();
+    });
+    const initial = await supabase.auth.getSession();
+    session = initial.data.session;
+    if (recoveryRequested) showRecovery(session ? '' : 'Ce lien est invalide ou a expiré. Demandez un nouveau lien depuis la page de connexion.');
+    else if (session) enterAdmin();
   </script>
 
   <style>
@@ -326,6 +440,10 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     .admin-editor { padding: 28px; }
     .admin-form { display: grid; gap: 18px; }
     .admin-form--compact { margin-top: 24px; }
+    .admin-text-button { justify-self: start; border: 0; padding: 0; background: transparent; color: var(--cc-blue); font: inherit; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    .admin-text-button:disabled { cursor: wait; opacity: .6; }
+    .admin-actions .button:disabled { cursor: wait; opacity: .62; }
+    .admin-help { display: block; margin-top: -10px; color: var(--cc-muted); line-height: 1.45; }
     .admin-form label { display: grid; gap: 7px; color: var(--cc-ink); font-size: 13px; font-weight: 700; }
     .admin-form input, .admin-form textarea, .admin-form select, .rich-editor { width: 100%; border: 1.5px solid #d4dde1; border-radius: 10px; padding: 12px 13px; background: #fff; color: var(--cc-ink); font-size: 15px; font-weight: 400; }
     .admin-form textarea { resize: vertical; line-height: 1.55; }

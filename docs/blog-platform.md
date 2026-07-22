@@ -65,6 +65,13 @@ réellement.
 - `publisher` : mêmes droits, avec publication et archivage ;
 - `owner` : mêmes droits, avec suppression et gestion des clés API.
 
+La page permet la connexion par mot de passe ou lien magique et intègre un
+parcours complet « Mot de passe oublié ». Supabase envoie un lien vers
+`/admin?mode=recovery`, établit une session de récupération à usage limité, puis
+le navigateur enregistre le nouveau mot de passe directement avec Supabase Auth.
+Le mot de passe et le jeton de récupération ne transitent jamais par les Edge
+Functions de l’application.
+
 Pour initialiser le premier propriétaire :
 
 1. créer son utilisateur dans **Supabase → Authentication → Users** ;
