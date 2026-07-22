@@ -10,7 +10,7 @@
 //   Le client ne reçoit QUE des PNG filigranés (filigrane rastérisé, non
 //   retirable), servis via URL signée courte durée depuis le bucket `previews`.
 
-import { evaluateLoyerInitial, type DossierContestation } from '../_shared/ruleset.ts';
+import { evaluateDossier, type DossierContestation } from '../_shared/ruleset.ts';
 import { letterHtml, watermarkedHtml } from '../_shared/letter-template.ts';
 import { htmlToPdf, htmlToPng } from '../_shared/gotenberg.ts';
 import { adminClient, flagManualReview } from '../_shared/supabase.ts';
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
   const dossier = row.payload as DossierContestation;
   // Recalcul serveur : source de vérité pour la lettre.
-  const evaluation = evaluateLoyerInitial(dossier);
+  const evaluation = evaluateDossier(dossier);
 
   if (!evaluation.eligible) {
     return badRequest('Dossier non éligible : pas de génération de lettre.');

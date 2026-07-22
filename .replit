@@ -24,7 +24,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node tools/dev-server.mjs"
+args = "corepack pnpm dev --host 0.0.0.0 --port 5000"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -35,5 +35,6 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-deploymentTarget = "static"
-publicDir = "web"
+deploymentTarget = "cloudrun"
+build = "corepack pnpm install --frozen-lockfile && corepack pnpm build"
+run = "corepack pnpm start"

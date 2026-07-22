@@ -5,7 +5,7 @@
 //   1. Vérifie la signature Stripe (anti-forge).
 //   2. Marque payments.status = 'paid'.
 //   3. Passe letters.unlocked = true  → download-letter pourra servir le PDF.
-//   4. Offre 'recommande_35' → envoie le PDF propre en recommandé via Pingen.
+//   4. Offre 'recommande_4990' → envoie le PDF propre en recommandé via Pingen.
 //
 // Aucune autre fonction ne met unlocked=true. Tant que ce webhook n'a pas
 // confirmé le paiement, le PDF propre reste inaccessible au client.
@@ -14,6 +14,13 @@ import Stripe from 'npm:stripe@17';
 import { adminClient, flagManualReview, notifyOperator } from '../_shared/supabase.ts';
 import { sendRegistered } from '../_shared/pingen.ts';
 import { json, serverError } from '../_shared/http.ts';
+
+const PAID_OFFERS: Record<string, number> = {
+  imprimer_1490: 1490,
+  recommande_4990: 4990,
+  // Compatibilité avec les sessions ouvertes avant la migration tarifaire.
+  recommande_35: 3500,
+};
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'POST attendu' }, 405);
@@ -45,26 +52,75 @@ Deno.serve(async (req) => {
   const db = adminClient();
 
   try {
+    if (!dossierId || !letterId || !offer || !PAID_OFFERS[offer]) {
+      throw new Error('Métadonnées Stripe incomplètes ou offre inconnue');
+    }
+    if (session.payment_status !== 'paid') {
+      return json({ received: true, pending: true });
+    }
+
+    // Ne jamais se fier aux seules métadonnées : rapprocher la session de la
+    // ligne de paiement créée côté serveur avant la redirection vers Stripe.
+    const { data: payment, error: paymentError } = await db
+      .from('payments')
+      .select('id, dossier_id, offer, amount_chf, currency, status')
+      .eq('stripe_session_id', session.id)
+      .single();
+    if (paymentError || !payment) throw paymentError ?? new Error('Paiement interne introuvable');
+    const persistedOffer = offer === 'recommande_35' ? 'recommande_4990' : offer;
+    if (
+      payment.dossier_id !== dossierId
+      || payment.offer !== persistedOffer
+      || payment.amount_chf !== PAID_OFFERS[offer]
+      || session.amount_total !== PAID_OFFERS[offer]
+      || payment.currency !== 'chf'
+      || session.currency !== 'chf'
+    ) throw new Error('Incohérence entre la session Stripe et le paiement interne');
+
+    const { data: letter, error: letterError } = await db
+      .from('letters')
+      .select('id, unlocked')
+      .eq('id', letterId)
+      .eq('dossier_id', dossierId)
+      .single();
+    if (letterError || !letter) throw letterError ?? new Error('Lettre liée au paiement introuvable');
+
+    // Un retry Stripe ne doit pas provoquer un second envoi postal. Si le
+    // processus s'est arrêté après l'encaissement mais avant la mise en file,
+    // le retry reprend uniquement cette dernière étape.
+    if (payment.status === 'paid') {
+      if (offer === 'recommande_4990' || offer === 'recommande_35') {
+        const { data: mailing } = await db.from('mailings').select('id').eq('dossier_id', dossierId).limit(1).maybeSingle();
+        if (!mailing) await dispatchRegistered(db, dossierId, letterId);
+      }
+      return json({ received: true, duplicate: true });
+    }
+
     // 2) Paiement confirmé.
-    await db
+    const paidUpdate = await db
       .from('payments')
       .update({
         status: 'paid',
         paid_at: new Date().toISOString(),
         stripe_payment_intent: (session.payment_intent as string) ?? null,
       })
-      .eq('stripe_session_id', session.id);
+      .eq('stripe_session_id', session.id)
+      .neq('status', 'paid');
+    if (paidUpdate.error) throw paidUpdate.error;
 
     // 3) DÉVERROUILLAGE du PDF propre — le seul de tout le système.
     if (letterId) {
       await db
         .from('letters')
         .update({ unlocked: true, unlocked_at: new Date().toISOString() })
-        .eq('id', letterId);
+        .eq('id', letterId)
+        .eq('dossier_id', dossierId);
     }
 
     // 4) Offre recommandé : envoi Pingen du PDF propre.
-    if (offer === 'recommande_35' && letterId && dossierId) {
+    // L'ancien identifiant reste accepté pour terminer correctement une session
+    // Stripe créée juste avant le changement tarifaire.
+    if ((offer === 'recommande_4990' || offer === 'recommande_35') && letterId && dossierId) {
       await dispatchRegistered(db, dossierId, letterId);
     }
 
@@ -85,6 +141,7 @@ async function dispatchRegistered(
     .from('letters')
     .select('clean_pdf_path')
     .eq('id', letterId)
+    .eq('dossier_id', dossierId)
     .single();
   if (!letter?.clean_pdf_path) throw new Error('PDF propre introuvable pour envoi');
 
@@ -92,21 +149,22 @@ async function dispatchRegistered(
   if (dl.error || !dl.data) throw dl.error ?? new Error('download clean pdf');
   const pdf = new Uint8Array(await dl.data.arrayBuffer());
 
-  const { data: mailing } = await db
+  const { data: mailing, error: mailingError } = await db
     .from('mailings')
     .insert({ dossier_id: dossierId, status: 'queued' })
     .select('id')
     .single();
+  if (mailingError || !mailing) throw mailingError ?? new Error('Création du suivi postal échouée');
 
   try {
     const pingenId = await sendRegistered(pdf, `requete-${dossierId}.pdf`);
     await db
       .from('mailings')
       .update({ pingen_id: pingenId, status: 'sent' })
-      .eq('id', mailing!.id);
+      .eq('id', mailing.id);
     await notifyOperator(`📨 Recommandé Pingen envoyé (dossier ${dossierId}, pingen ${pingenId})`);
   } catch (e) {
-    await db.from('mailings').update({ status: 'failed' }).eq('id', mailing!.id);
+    await db.from('mailings').update({ status: 'failed' }).eq('id', mailing.id);
     throw e;
   }
 }

@@ -1,0 +1,29 @@
+---
+import ArticlePage from '../../components/blog/ArticlePage.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPublishedArticle, getRelatedArticles, isGoneSlug, resolveOldSlug } from '../../lib/blog.ts';
+
+const slug = String(Astro.params.slug || '');
+let article = null;
+let related = [];
+let gone = false;
+let error = false;
+try {
+  article = await getPublishedArticle(slug);
+  if (!article) {
+    const redirect = await resolveOldSlug(slug);
+    if (redirect) return Astro.redirect(`/blog/${redirect}`, 301);
+    gone = await isGoneSlug(slug);
+  } else {
+    related = await getRelatedArticles(article.id, 3);
+  }
+} catch (cause) {
+  console.error('blog_article_failed', cause);
+  error = true;
+}
+if (!article) Astro.response.status = gone ? 410 : error ? 503 : 404;
+if (article) Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400');
+---
+{article ? <ArticlePage article={article} related={related} /> : <BaseLayout title={gone ? 'Article retiré | Contestation.ch' : 'Article introuvable | Contestation.ch'} description="Cette page n’est pas disponible." noindex={true}>
+  <div class="page-shell"><div class="empty-state"><h1>{gone ? 'Ce guide a été retiré' : error ? 'Guide momentanément indisponible' : 'Guide introuvable'}</h1><p>{gone ? 'Son contenu n’est plus considéré comme suffisamment actuel pour rester publié.' : 'Consultez les autres guides ou revenez à l’accueil.'}</p><a class="button button--primary" href="/blog">Voir tous les guides</a></div></div>
+</BaseLayout>}

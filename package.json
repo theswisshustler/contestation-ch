@@ -3,15 +3,27 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "contestation.ch — génération de requêtes en contestation de loyer initial (VD + GE)",
+  "description": "contestation.ch — lettres pour loyer initial, hausse et demande de baisse (VD + GE)",
   "scripts": {
-    "dev": "node tools/dev-server.mjs",
+    "dev": "astro dev",
+    "dev:legacy": "node tools/dev-server.mjs",
+    "build": "astro build",
+    "start": "node dist/server/entry.mjs",
+    "preview": "node dist/server/entry.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && astro check"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.4.0",
+    "@supabase/supabase-js": "^2.57.4",
+    "astro": "^5.13.5"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@types/node": "^24.3.0",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
-  }
+  },
+  "packageManager": "pnpm@11.15.1"
 }

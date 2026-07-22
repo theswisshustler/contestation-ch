@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleBlocks from './ArticleBlocks.astro';
+import ArticleCard from './ArticleCard.astro';
+import TableOfContents from './TableOfContents.astro';
+import type { ArticleSummary, PublicBlogArticle } from '../../lib/blog.ts';
+import { absoluteUrl } from '../../lib/blog.ts';
+import { deriveToc, estimateReadingMinutes, extractFaq } from '../../../supabase/functions/_shared/blog/document.ts';
+
+interface Props { article: PublicBlogArticle; related?: ArticleSummary[] }
+const { article, related = [] } = Astro.props;
+const preview = article.preview === true;
+const publishedDate = article.first_published_at || article.published_at || new Date().toISOString();
+const modifiedDate = article.updated_at || article.published_at || publishedDate;
+const dateFormat = new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' });
+const toc = deriveToc(article.document);
+const minutes = estimateReadingMinutes(article.document);
+const canonicalPath = `/blog/${article.slug}`;
+const image = article.featured_image || '/assets/hero-lettre-contestation.png';
+const author = article.author_kind === 'person'
+  ? { '@type': 'Person', name: article.author_name, url: absoluteUrl(`/blog/auteur/${article.author_slug}`) }
+  : { '@type': 'Organization', name: article.author_name, url: absoluteUrl('/') };
+const articleSchema = {
+  '@context': 'https://schema.org', '@type': 'BlogPosting',
+  headline: article.title, description: article.seo_description,
+  image: [absoluteUrl(image)], datePublished: publishedDate, dateModified: modifiedDate,
+  inLanguage: article.locale || 'fr-CH', mainEntityOfPage: absoluteUrl(canonicalPath),
+  author, publisher: { '@type': 'Organization', name: 'Contestation.ch', url: absoluteUrl('/'), logo: { '@type': 'ImageObject', url: absoluteUrl('/assets/hero-lettre-contestation.png') } },
+  ...(article.reviewer_name ? { reviewedBy: { '@type': 'Person', name: article.reviewer_name } } : {}),
+};
+const breadcrumbSchema = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: absoluteUrl('/') },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: absoluteUrl('/blog') },
+    { '@type': 'ListItem', position: 3, name: article.title, item: absoluteUrl(canonicalPath) },
+  ],
+};
+const faq = extractFaq(article.document);
+const faqSchema = faq.length ? {
+  '@context': 'https://schema.org', '@type': 'FAQPage',
+  mainEntity: faq.map((item) => ({ '@type': 'Question', name: item.question, acceptedAnswer: { '@type': 'Answer', text: item.answer } })),
+} : null;
+const schemas = preview ? [] : [articleSchema, breadcrumbSchema, ...(faqSchema ? [faqSchema] : [])];
+---
+<BaseLayout title={article.seo_title} description={article.seo_description} canonicalPath={canonicalPath} image={image} type="article" noindex={preview} jsonLd={schemas}>
+  {preview && <div class="preview-banner">Aperçu privé — cette version n’est pas indexable</div>}
+  <article>
+    <header class="article-header">
+      {article.topics?.length > 0 && <div class="topic-list">{article.topics.map((topic) => <a class="topic-pill" href={`/blog/categorie/${topic.slug}`}>{topic.name}</a>)}</div>}
+      <h1>{article.title}</h1>
+      <p class="article-header__excerpt">{article.excerpt}</p>
+      <div class="article-meta">
+        <span>Par <a href={`/blog/auteur/${article.author_slug}`}>{article.author_name}</a></span>
+        <span>Publié le <time datetime={publishedDate}>{dateFormat.format(new Date(publishedDate))}</time></span>
+        {modifiedDate !== publishedDate && <span>Mis à jour le <time datetime={modifiedDate}>{dateFormat.format(new Date(modifiedDate))}</time></span>}
+        <span>{minutes} min de lecture</span>
+      </div>
+      {(article.reviewer_name || article.reviewed_at) && <div class="article-meta" style="margin-top:8px"><span>Vérifié{article.reviewer_name ? ` par ${article.reviewer_name}` : ''}{article.reviewed_at ? ` le ${dateFormat.format(new Date(article.reviewed_at))}` : ''}</span></div>}
+    </header>
+    {article.featured_image && <img class="article-hero" src={article.featured_image} alt="" fetchpriority="high" />}
+    <div class="article-layout">
+      <div class="article-content"><ArticleBlocks blocks={article.document.blocks} /></div>
+      <TableOfContents entries={toc} />
+    </div>
+    {article.sources?.length > 0 && <section class="source-list" aria-labelledby="sources-title"><div class="source-list__inner"><h2 id="sources-title">Sources et références</h2><ul>{article.sources.map((source) => <li><a href={source.url} rel="noopener">{source.label}</a></li>)}</ul></div></section>}
+  </article>
+  {!preview && related.length > 0 && <section class="related" aria-labelledby="related-title"><h2 id="related-title">À lire également</h2><div class="article-grid">{related.map((entry) => <ArticleCard article={entry} headingLevel={3} />)}</div></section>}
+</BaseLayout>

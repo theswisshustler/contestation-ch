@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/blog/ArticleCard.astro';
+import { listPublishedArticles } from '../../lib/blog.ts';
+
+const requestedPage = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const pageSize = 12;
+let articles = [];
+let count = 0;
+let loadError = false;
+try {
+  const result = await listPublishedArticles({ page: requestedPage - 1, pageSize });
+  articles = result.articles;
+  count = result.count;
+} catch (error) {
+  console.error('blog_list_failed', error);
+  loadError = true;
+}
+const pages = Math.max(1, Math.ceil(count / pageSize));
+Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=120, stale-while-revalidate=3600');
+---
+<BaseLayout title="Guides pratiques sur les loyers en Suisse | Contestation.ch" description="Des explications claires et vérifiées pour comprendre un loyer initial, une hausse de loyer ou une demande de baisse." canonicalPath="/blog">
+  <div class="page-shell">
+    <header class="page-intro">
+      <p class="eyebrow">Guides Contestation.ch</p>
+      <h1>Comprendre votre loyer, simplement</h1>
+      <p>Délais, calculs, documents et démarches : des explications concrètes fondées sur les sources officielles suisses.</p>
+    </header>
+    {loadError ? <div class="empty-state"><h2>Les guides sont momentanément indisponibles</h2><p>Le service de diagnostic reste accessible.</p><a class="button button--primary" href="/diagnostic">Vérifier mon loyer</a></div>
+      : articles.length ? <div class="article-grid">{articles.map((article) => <ArticleCard article={article} />)}</div>
+      : <div class="empty-state"><h2>Les premiers guides arrivent</h2><p>Cette rubrique accueillera prochainement nos explications pratiques.</p></div>}
+    {pages > 1 && <nav class="pagination" aria-label="Pagination">
+      {requestedPage > 1 && <a class="button button--secondary" href={`/blog?page=${requestedPage - 1}`}>Page précédente</a>}
+      {requestedPage < pages && <a class="button button--secondary" href={`/blog?page=${requestedPage + 1}`}>Page suivante</a>}
+    </nav>}
+  </div>
+</BaseLayout>

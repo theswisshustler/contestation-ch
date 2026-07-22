@@ -5,9 +5,15 @@
 // - Flag traitement manuel si autorité introuvable.
 // Sortie : { dossierId, evaluation } — AUCUN PDF ici.
 
-import { evaluateLoyerInitial, type DossierContestation } from '../_shared/ruleset.ts';
+import { evaluateDossier, type DossierContestation, type ParcoursKind } from '../_shared/ruleset.ts';
 import { adminClient, flagManualReview } from '../_shared/supabase.ts';
 import { badRequest, json, preflight, serverError } from '../_shared/http.ts';
+
+const VALID_TYPES_BAIL = ['ordinaire', 'indexe', 'echelonne', 'subventionne', 'inconnu'];
+const isPositiveNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0;
+const isIsoDate = (value: unknown): value is string =>
+  typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
 
 Deno.serve(async (req) => {
   const pre = preflight(req);
@@ -22,11 +28,45 @@ Deno.serve(async (req) => {
     return badRequest('JSON invalide');
   }
 
-  if (!dossier?.canton || !dossier?.commune || !dossier?.npa || !dossier?.dateRemiseCles) {
-    return badRequest('Champs obligatoires manquants (canton, commune, npa, dateRemiseCles)');
+  const kind: ParcoursKind = dossier?.kind ?? 'loyer_initial';
+  if (!['loyer_initial', 'hausse_loyer', 'demande_baisse'].includes(kind)) return badRequest('Type de parcours invalide');
+  if (!['VD', 'GE'].includes(dossier?.canton)) return badRequest('Canton non pris en charge');
+  if (!dossier?.canton || !dossier?.commune || !dossier?.npa || !dossier?.adresseImmeuble) {
+    return badRequest('Champs obligatoires manquants (canton, commune, npa, adresseImmeuble)');
+  }
+  if (kind === 'loyer_initial' && !isIsoDate(dossier.dateRemiseCles)) {
+    return badRequest('dateRemiseCles requise pour le loyer initial');
+  }
+  if (kind !== 'loyer_initial' && !VALID_TYPES_BAIL.includes(dossier.typeBail ?? '')) {
+    return badRequest('Type de bail requis pour ce parcours');
+  }
+  if (kind === 'hausse_loyer' && (
+    !isIsoDate(dossier.dateNotificationHausse)
+    || !isPositiveNumber(dossier.loyerAvantHausse)
+    || !isPositiveNumber(dossier.loyerApresHausse)
+    || dossier.loyerApresHausse <= dossier.loyerAvantHausse
+  )) {
+    return badRequest('Date valide et loyers positifs avant/après requis; le nouveau loyer doit être supérieur');
+  }
+  if (kind === 'hausse_loyer' && dossier.dateEffetHausse && !isIsoDate(dossier.dateEffetHausse)) {
+    return badRequest("Date d'effet invalide");
+  }
+  if (kind === 'demande_baisse' && (
+    !isPositiveNumber(dossier.loyerNetMensuel)
+    || !isPositiveNumber(dossier.tauxReferenceBail)
+    || dossier.tauxReferenceBail > 10
+  )) {
+    return badRequest('Loyer net et taux de référence déterminant requis pour une baisse');
+  }
+  if (!dossier.locataire?.nom || !dossier.locataire?.adresse || !dossier.locataire?.npa || !dossier.locataire?.ville) {
+    return badRequest('Coordonnées du locataire incomplètes');
+  }
+  if (!dossier.bailleur?.nom || !dossier.bailleur?.adresse || !dossier.bailleur?.npa || !dossier.bailleur?.ville) {
+    return badRequest('Coordonnées du bailleur incomplètes');
   }
 
-  const evaluation = evaluateLoyerInitial(dossier);
+  dossier.kind = kind;
+  const evaluation = evaluateDossier(dossier);
 
   try {
     const db = adminClient();
@@ -36,7 +76,7 @@ Deno.serve(async (req) => {
         canton: dossier.canton,
         npa: dossier.npa,
         commune: dossier.commune,
-        kind: 'loyer_initial',
+        kind,
         payload: dossier,
         evaluation,
         requires_manual: evaluation.requiertTraitementManuel,

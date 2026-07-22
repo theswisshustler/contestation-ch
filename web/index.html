@@ -8,6 +8,10 @@
 <meta property="og:title" content="Votre nouveau loyer est-il contestable ?">
 <meta property="og:description" content="Diagnostic gratuit pour Vaud et Genève. Vérifiez le délai, les motifs et l'autorité compétente.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://contestation.ch/">
+<meta property="og:image" content="https://contestation.ch/assets/hero-lettre-contestation.png">
+<link rel="canonical" href="https://contestation.ch/">
+<link rel="alternate" type="application/rss+xml" title="Guides Contestation.ch" href="/rss.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -124,7 +128,31 @@
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <!-- Contenu de secours pré-rendu. Le runtime le remplace à l'initialisation,
+       mais le site reste compréhensible sans JavaScript et par les crawlers. -->
+  <div class="cc-outer cc-static-fallback">
+    <div class="cc-phone">
+      <nav class="cc-nav" aria-label="Navigation principale" style="display:flex;align-items:center;justify-content:space-between;padding:16px max(20px,calc((100vw - 1140px)/2 + 48px));background:#FBFAF7;border-bottom:1px solid #E4E7E6;">
+        <a href="/" style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#12303F;">contestation<span style="color:#F4A73B;">.ch</span></a>
+        <div style="display:flex;align-items:center;gap:18px;font-size:14px;font-weight:700;"><a href="#parcours">Solutions</a><a href="/blog">Guides</a><a href="/diagnostic" style="padding:10px 16px;border-radius:8px;background:#1B4965;color:#fff;">Commencer</a></div>
+      </nav>
+      <main>
+        <section style="background:linear-gradient(160deg,#EEF4F9 0%,#F5F3EE 55%,#FBFAF7 100%);"><div class="cc-inner"><div class="cc-hero-row">
+          <div class="cc-hero-left"><div class="cc-eyebrow">Loyer initial · hausse · demande de baisse</div><h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:38px;line-height:1.06;margin:0 0 16px;color:#12303F;">Votre loyer est peut-être contestable. <span style="color:#178A5B;">Vérifiez-le.</span></h1><p style="font-size:16px;line-height:1.6;color:#4A5A60;">Identifiez la bonne démarche, obtenez un diagnostic gratuit puis préparez une lettre personnalisée adaptée à votre situation.</p><a href="/diagnostic" style="display:inline-block;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:17px;padding:16px 24px;border-radius:13px;">Vérifier mon loyer →</a><p style="font-size:13px;color:#5A6A70;">Environ 5 minutes · Sans inscription · Aucun paiement avant le diagnostic</p></div>
+          <div class="cc-hero-right"><img src="./assets/hero-lettre-contestation.png" alt="Lettre de contestation préparée" width="1254" height="1254" fetchpriority="high" style="display:block;width:100%;height:auto;"></div>
+        </div></div></section>
+        <section id="parcours"><div class="cc-inner cc-section-pad"><div class="cc-eyebrow">Choisir la bonne démarche</div><h2 class="cc-section-title">Trois situations, trois parcours distincts</h2><p class="cc-section-intro">Le point de départ dépend de ce qui vient de se produire dans votre bail.</p><div class="cc-paths">
+          <article class="cc-path"><span class="cc-path-number">01</span><h3>Contester un loyer initial</h3><p>Vous venez d'emménager et souhaitez faire examiner le montant fixé. Le délai est limité à 30 jours dès la remise des clés.</p><a href="/diagnostic?flow=loyer_initial">Vérifier mon loyer initial →</a></article>
+          <article class="cc-path"><span class="cc-path-number">02</span><h3>Contester une hausse</h3><p>Votre bailleur vous a notifié une augmentation pendant le bail. Vérifiez sa forme, son calcul et ses motifs.</p><a href="/diagnostic?flow=hausse_loyer">Vérifier la hausse →</a></article>
+          <article class="cc-path"><span class="cc-path-number">03</span><h3>Demander une baisse</h3><p>Le taux qui fonde votre loyer est supérieur au taux actuel. Commencez par estimer la baisse mensuelle possible.</p><a href="/diagnostic?flow=demande_baisse">Simuler ma baisse →</a></article>
+        </div></div></section>
+        <section style="background:#F4F8FA;"><div class="cc-inner cc-section-pad"><div class="cc-eyebrow">Guides pratiques</div><h2 class="cc-section-title">Comprendre avant d'agir</h2><p class="cc-section-intro">Consultez nos explications fondées sur les sources officielles suisses : délais, calculs, documents et démarches.</p><a href="/blog" style="font-weight:800;">Découvrir tous les guides →</a></div></section>
+        <section><div class="cc-inner cc-section-pad"><h2 class="cc-section-title">Questions fréquentes</h2><details class="cc-case" open><summary>Est-ce légal de contester son loyer ? <span>+</span></summary><p>Oui. Le droit du bail prévoit des mécanismes distincts pour le loyer initial, une hausse reçue pendant le bail et une demande de baisse.</p></details><details class="cc-case"><summary>Le diagnostic est-il payant ? <span>+</span></summary><p>Non. Une offre payante n'est proposée qu'après l'analyse lorsqu'une lettre peut être préparée.</p></details></div></section>
+      </main>
+    </div>
+  </div>
+</div>
 
 <template id="dc-template">
 <div class="cc-outer">
@@ -150,7 +178,7 @@
           <span style="position:relative;width:24px;height:24px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:11px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:11px;background:#fff;border-radius:1px;"></span></span>
           <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#12303F;">contestation<span style="color:#F4A73B;">.ch</span></span>
         </div>
-        <div style="display:flex;align-items:center;gap:20px;"><div class="cc-nav-links" style="display:none;gap:22px;font-size:14px;font-weight:600;"><a href="#resultat">Ce que vous obtenez</a><a href="#parcours">Solutions</a><a href="#faq">FAQ</a></div><button onClick="{{ goChoix }}" style="background:#1B4965;color:#fff;font-weight:700;font-size:14px;padding:11px 18px;border:none;border-radius:8px;cursor:pointer;">Commencer le diagnostic</button></div>
+        <div style="display:flex;align-items:center;gap:20px;"><div class="cc-nav-links" style="display:none;gap:22px;font-size:14px;font-weight:600;"><a href="#resultat">Ce que vous obtenez</a><a href="#parcours">Solutions</a><a href="/blog">Guides</a><a href="#faq">FAQ</a></div><button onClick="{{ goChoix }}" style="background:#1B4965;color:#fff;font-weight:700;font-size:14px;padding:11px 18px;border:none;border-radius:8px;cursor:pointer;">Commencer le diagnostic</button></div>
       </div>
 
       <div class="cc-landing-body">
@@ -165,7 +193,7 @@
                 <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:38px;line-height:1.06;margin:0 0 16px;color:#12303F;letter-spacing:-.02em;">Votre nouveau loyer est peut-être abusif. <span style="color:#178A5B;">Vérifiez-le.</span></h1>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#4A5A60;">En quelques clics, nous vérifions si votre loyer peut être contesté. Si c'est le cas, votre lettre personnalisée est préparée automatiquement, prête à envoyer.</p>
                 <button onClick="{{ goChoix }}" style="background:#F4A73B;color:#3A2A06;font-weight:800;font-size:17px;padding:16px 24px;border:none;border-radius:13px;box-shadow:0 9px 20px -9px rgba(244,167,59,.9);cursor:pointer;margin-bottom:13px;">Vérifier si mon loyer est contestable →</button>
-                <div style="font-size:13px;color:#5A6A70;margin-bottom:17px;">Environ 5 minutes · Diagnostic gratuit · Sans inscription · Lettre dès 5 CHF</div>
+                <div style="font-size:13px;color:#5A6A70;margin-bottom:17px;">Environ 5 minutes · Diagnostic gratuit · Sans inscription · Lettre dès 14,90 CHF</div>
                 <div style="display:flex;flex-wrap:wrap;gap:10px 16px;">
                   <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Aucun paiement avant le diagnostic</span>
                   <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Documents supprimés après 7 jours</span>
@@ -186,7 +214,7 @@
             <h2 class="cc-section-title">Trois situations, trois parcours distincts</h2>
             <p class="cc-section-intro">Le point de départ n'est pas le même selon que vous venez d'emménager, que vous recevez une hausse ou que le taux de référence a baissé.</p>
             <div class="cc-paths">
-              <article class="cc-path"><span class="cc-path-number">01</span><h3>Contester un loyer initial</h3><p>Vous venez de recevoir les clés, le nouveau loyer semble excessif ou la formule officielle manque. Le délai peut être de 30 jours.</p><button onClick="{{ goChoix }}">Vérifier mon loyer initial →</button></article>
+              <article class="cc-path"><span class="cc-path-number">01</span><h3>Contester un loyer initial</h3><p>Vous venez de recevoir les clés, le nouveau loyer semble excessif ou la formule officielle manque. Vous avez 30 jours dès la remise des clés pour contester.</p><button onClick="{{ goChoix }}">Vérifier mon loyer initial →</button></article>
               <article class="cc-path"><span class="cc-path-number">02</span><h3>Contester une hausse</h3><p>Votre bailleur vous notifie une augmentation. Vérifiez la forme, les motifs annoncés et le délai avant d'agir.</p><a href="#hausse-guide">Comprendre la marche à suivre →</a></article>
               <article class="cc-path"><span class="cc-path-number">03</span><h3>Demander une baisse</h3><p>Le taux de référence indiqué sur votre bail est supérieur au taux actuel. Estimez d'abord la baisse potentielle.</p><a href="#calcul-baisse">Faire une estimation →</a></article>
             </div>
@@ -255,7 +283,7 @@
                 <summary>Vous emménagez et le loyer a bondi <span style="color:#F4A73B;">+</span></summary>
                 <div class="cc-case-block"><div class="cc-case-kicker">Imaginez</div><p>Vous venez de recevoir les clés. Votre loyer est de 1'900 CHF alors que la personne avant vous payait 1'650 CHF, et aucun travail important ne semble expliquer l'écart.</p></div>
                 <div class="cc-case-block"><div class="cc-case-kicker">Ce que cela peut signifier</div><p>Une hausse entre deux locataires n'est pas automatiquement interdite. Mais un écart sensible, la pression du marché lors de votre recherche ou une formule officielle absente peuvent permettre de demander à l'autorité d'examiner le loyer.</p></div>
-                <div class="cc-case-action"><strong>Votre prochain geste :</strong> ne cherchez pas seul le bon argument. Lancez le parcours avec votre bail et votre formule officielle ; le délai ordinaire peut être de 30 jours dès la remise des clés.</div>
+                <div class="cc-case-action"><strong>Votre prochain geste :</strong> ne cherchez pas seul le bon argument. Lancez le parcours avec votre bail et votre formule officielle : vous avez 30 jours dès la remise des clés pour contester.</div>
               </details>
               <details class="cc-case" id="hausse-guide">
                 <summary>Vous recevez une hausse par courrier <span style="color:#F4A73B;">+</span></summary>
@@ -289,12 +317,13 @@
         <!-- ===== TARIFS ===== -->
         <div style="background:#F4F8FA;">
           <div class="cc-inner cc-section-pad" style="padding-top:72px;padding-bottom:72px;">
-            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,2.5vw,30px);color:#12303F;margin-bottom:8px;">Une lettre prête, dès 5 CHF</div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,2.5vw,30px);color:#12303F;margin-bottom:8px;">Votre contestation prête à partir</div>
             <p style="margin:0 0 28px;font-size:14px;color:#5A6A70;">Offre actuellement disponible pour la contestation du loyer initial.</p>
             <div class="cc-pricing-row" style="display:flex;flex-direction:column;gap:14px;">
-              <div style="background:#fff;border:1px solid #E4E2DB;border-radius:18px;padding:24px;"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-weight:700;color:#12303F;font-size:17px;">La lettre à imprimer</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#12303F;">5 CHF</span></div><div style="font-size:14px;color:#5A6A70;">PDF prêt à imprimer, vous l'envoyez vous-même.</div></div>
-              <div style="background:#12303F;border-radius:18px;padding:24px;position:relative;"><span style="position:absolute;top:-11px;right:18px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">RECOMMANDÉ · SANS EFFORT</span><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-weight:700;color:#fff;font-size:17px;">On l'envoie pour vous</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#F4A73B;">35 CHF</span></div><div style="font-size:14px;color:#B9C9D1;">Impression + envoi en recommandé. Rien à faire.</div></div>
+              <div style="background:#fff;border:1px solid #E4E2DB;border-radius:18px;padding:24px;"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:12px;"><span style="font-weight:700;color:#12303F;font-size:17px;">Lettre personnalisée</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#12303F;white-space:nowrap;">14,90 CHF</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.55;margin-bottom:13px;">Une contestation adaptée à votre situation, structurée pour présenter vos arguments clairement et maximiser vos chances d'obtenir une réduction.</div><div style="font-size:13px;color:#3E5560;line-height:1.7;"><div>✓ Lettre finalisée au format PDF</div><div>✓ Checklist des pièces à joindre</div><div>✓ Instructions pour l'envoyer vous-même</div></div></div>
+              <div style="background:#12303F;border-radius:18px;padding:24px;position:relative;"><span style="position:absolute;top:-11px;right:18px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">RECOMMANDÉ · ZÉRO DÉPLACEMENT</span><div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:12px;"><span style="font-weight:700;color:#fff;font-size:17px;">On s'occupe de tout</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#F4A73B;white-space:nowrap;">49,90 CHF</span></div><div style="font-size:14px;color:#D2DEE3;line-height:1.55;margin-bottom:13px;">Signez en ligne : nous imprimons, affranchissons et déposons votre contestation en recommandé. Pas de file d'attente, pas de timbre, pas de déplacement.</div><div style="font-size:13px;color:#CFE0E8;line-height:1.7;"><div>✓ Tout le contenu de l'offre PDF</div><div>✓ Impression et affranchissement inclus</div><div>✓ Preuve d'envoi et numéro de suivi</div></div></div>
             </div>
+            <div style="max-width:800px;margin:18px auto 0;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:14px;padding:17px 20px;display:flex;gap:13px;align-items:flex-start;"><span style="font-size:20px;">✓</span><div><div style="font-weight:800;color:#0C5638;font-size:15px;margin-bottom:4px;">Notre garantie utile ou remboursée</div><div style="font-size:13px;color:#376B55;line-height:1.55;">Si votre contestation n'aboutit pas à une réduction de loyer supérieure au prix payé pour notre service, nous vous remboursons ce prix. Sur justificatif, selon les conditions de la garantie.</div></div></div>
           </div>
         </div>
 
@@ -331,7 +360,7 @@
         <div style="background:#12303F;color:#8FA6B0;">
           <div class="cc-inner" style="padding-top:36px;padding-bottom:36px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;"><span style="position:relative;width:22px;height:22px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:10px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:10px;background:#fff;border-radius:1px;"></span></span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#fff;">contestation.ch</span></div>
-            <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;margin-bottom:16px;"><a onClick="{{ goCgv }}" style="color:#B9C9D1;cursor:pointer;">CGV</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Confidentialité</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Mentions légales</a></div>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;margin-bottom:16px;"><a href="/blog" style="color:#B9C9D1;">Guides</a><a href="/rss.xml" style="color:#B9C9D1;">RSS</a><a onClick="{{ goCgv }}" style="color:#B9C9D1;cursor:pointer;">CGV</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Confidentialité</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Mentions légales</a></div>
             <p style="margin:0;font-size:12px;line-height:1.6;">Service indépendant d'aide à la rédaction — ni autorité publique, ni cabinet d'avocats, ni conseil juridique individualisé. Pour les cas complexes, adressez-vous à l'ASLOCA.</p>
           </div>
         </div>
@@ -345,7 +374,26 @@
     <div class="cc-scroll cc-screen" data-screen-label="choix-parcours" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
         <button onClick="{{ goLanding }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-        <span style="font-weight:700;color:#12303F;font-size:16px;">Vérifier mon loyer initial</span>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Que voulez-vous faire exactement&nbsp;?</span>
+      </div>
+      <div style="padding:26px 22px;flex:1;">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:27px;color:#12303F;line-height:1.15;margin-bottom:9px;">Choisissez votre situation</div>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#4A5A60;">Ces trois démarches répondent à des règles et à des destinataires différents. Sélectionnez celle qui correspond à ce qui vient de se passer.</p>
+
+        <button onClick="{{ chooseInitialFlow }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #DDE3E5;border-radius:18px;padding:20px;margin-bottom:13px;cursor:pointer;display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:36px;height:36px;border-radius:50%;background:#EAF1F5;color:#1B4965;display:flex;align-items:center;justify-content:center;font-weight:800;">1</span><span><strong style="display:block;font-size:17px;color:#12303F;margin-bottom:5px;">Contester votre loyer initial</strong><span style="display:block;font-size:13.5px;color:#5A6A70;line-height:1.5;">Vous venez d'emménager et souhaitez faire examiner le montant fixé au début du bail.</span><span style="display:block;font-size:12px;color:#C43D2E;font-weight:700;margin-top:8px;">Délai limité à 30 jours dès la remise des clés</span></span></button>
+        <button onClick="{{ chooseHausseFlow }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #DDE3E5;border-radius:18px;padding:20px;margin-bottom:13px;cursor:pointer;display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:36px;height:36px;border-radius:50%;background:#FFF3DF;color:#7A5406;display:flex;align-items:center;justify-content:center;font-weight:800;">2</span><span><strong style="display:block;font-size:17px;color:#12303F;margin-bottom:5px;">Contester une hausse reçue pendant le bail</strong><span style="display:block;font-size:13.5px;color:#5A6A70;line-height:1.5;">Votre régie ou propriétaire vient de vous notifier un nouveau loyer plus élevé.</span><span style="display:block;font-size:12px;color:#C43D2E;font-weight:700;margin-top:8px;">30 jours dès la réception pour agir</span></span></button>
+        <button onClick="{{ chooseBaisseFlow }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #DDE3E5;border-radius:18px;padding:20px;cursor:pointer;display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:36px;height:36px;border-radius:50%;background:#E3F3EB;color:#0C5638;display:flex;align-items:center;justify-content:center;font-weight:800;">3</span><span><strong style="display:block;font-size:17px;color:#12303F;margin-bottom:5px;">Vérifier si vous pouvez obtenir une baisse</strong><span style="display:block;font-size:13.5px;color:#5A6A70;line-height:1.5;">Le taux de référence de votre loyer est peut-être supérieur au taux actuel de {{ tauxActuel }} %.</span><span style="display:block;font-size:12px;color:#178A5B;font-weight:700;margin-top:8px;">Demande adressée d'abord au bailleur</span></span></button>
+      </div>
+      <div style="padding:0 22px 26px;"><div style="background:#F4F8FA;border-radius:14px;padding:14px;font-size:12.5px;color:#5A6A70;line-height:1.5;">Vous hésitez entre deux parcours&nbsp;? Choisissez celui qui correspond au document le plus récent reçu de votre régie. Le diagnostic vous arrêtera avant paiement si la démarche ne paraît pas adaptée.</div></div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== MODE LOYER INITIAL ===================== -->
+    <sc-if value="{{ isMode }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll cc-screen" data-screen-label="mode-loyer-initial" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <button onClick="{{ backToFlows }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Contester mon loyer initial</span>
       </div>
       <div style="padding:26px 22px;flex:1;">
         <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">Importez vos documents ou répondez aux questions. Nous vérifions les éléments et délais propres au loyer initial.</p>
@@ -374,6 +422,119 @@
           <span style="color:#178A5B;font-size:18px;">🔒</span>
           <div style="font-size:13px;color:#3E5560;line-height:1.45;">Vos données sont conservées temporairement et <strong style="color:#12303F;">supprimées automatiquement après 7 jours</strong>. Aucun compte requis pour vérifier.</div>
         </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== SIMULATEUR BAISSE ===================== -->
+    <sc-if value="{{ isBaisseSim }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll cc-screen" data-screen-label="simulateur-baisse" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
+        <button onClick="{{ backToFlows }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">Simuler ma baisse de loyer</span>
+      </div>
+
+      <div style="padding:26px 22px 36px;flex:1;">
+        <div style="display:inline-flex;align-items:center;gap:7px;background:#EAF1F5;color:#1B4965;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;letter-spacing:.04em;margin-bottom:15px;">ÉTAPE 1 SUR 2 · GRATUIT</div>
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:28px;line-height:1.12;color:#12303F;margin:0 0 9px;">Combien pourriez-vous économiser&nbsp;?</h1>
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#5A6A70;">Deux informations suffisent pour vérifier si une demande est envisageable et estimer votre baisse mensuelle.</p>
+
+        <div style="background:#F0F7F4;border:1px solid #C9E5D8;border-radius:14px;padding:14px 15px;margin-bottom:18px;display:flex;gap:11px;align-items:flex-start;">
+          <span style="color:#178A5B;font-size:18px;line-height:1;">ⓘ</span>
+          <div style="font-size:13px;color:#376B55;line-height:1.5;">Le taux de référence actuel est de <strong>{{ tauxActuel }}&nbsp;%</strong>. Le taux qui détermine votre loyer figure sur votre bail ou sur la dernière notification de loyer reçue.</div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #E4E2DB;border-radius:18px;padding:19px;margin-bottom:16px;box-shadow:0 10px 28px -24px rgba(18,48,63,.6);">
+          <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Votre loyer net mensuel</label>
+          <div style="position:relative;margin-bottom:15px;"><input type="text" inputmode="decimal" value="{{ d.loyerNet }}" onChange="{{ onBaisseSimLoyer }}" placeholder="1 800" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 54px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:13px;color:#8A979C;font-weight:700;">CHF</span></div>
+
+          <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Taux de référence déterminant pour votre loyer</label>
+          <div style="position:relative;"><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onChange="{{ onBaisseSimTaux }}" placeholder="1,75" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px 42px 14px 14px;font-size:16px;color:#12303F;background:#fff;"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#8A979C;font-weight:700;">%</span></div>
+          <p style="margin:7px 0 0;font-size:11.5px;color:#7B898E;line-height:1.45;">Utilisez le taux de la dernière fixation de votre loyer, pas nécessairement celui indiqué sur le bail d'origine.</p>
+        </div>
+
+        <sc-if value="{{ baisseSimError }}" hint-placeholder-val="{{ false }}"><div style="background:#FBEAE7;color:#9B2F24;border-radius:11px;padding:12px 14px;font-size:13px;margin-bottom:12px;">⚠ {{ baisseSimError }}</div></sc-if>
+        <button onClick="{{ runBaisseSimulation }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:16px;padding:16px;border:0;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;">
+          <sc-if value="{{ baisseSimLoading }}" hint-placeholder-val="{{ false }}"><span style="width:17px;height:17px;border:2.5px solid rgba(58,42,6,.25);border-top-color:#3A2A06;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;"></span></sc-if>
+          Calculer ma baisse potentielle
+        </button>
+
+        <sc-if value="{{ baisseSimEligible }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:20px;background:#12303F;border-radius:20px;padding:21px;color:#fff;animation:fadeUp .3s ease;box-shadow:0 14px 30px -20px rgba(18,48,63,.8);">
+          <div style="display:flex;align-items:center;gap:8px;color:#87E0B3;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px;"><span style="width:22px;height:22px;border-radius:50%;background:#1E6249;display:flex;align-items:center;justify-content:center;">✓</span>Une demande de baisse est envisageable</div>
+          <div style="font-size:13px;color:#BFD2DA;margin-bottom:3px;">Baisse potentielle estimée</div>
+          <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:17px;"><strong style="font-family:'Bricolage Grotesque',sans-serif;font-size:35px;line-height:1;color:#F4A73B;">− {{ baisseSimChf }} CHF</strong><span style="font-size:14px;color:#CFE0E8;">par mois</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:17px;">
+            <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px;"><div style="font-size:11px;color:#AFC6D0;margin-bottom:3px;">ÉCONOMIE ANNUELLE</div><div style="font-size:16px;font-weight:800;">{{ baisseSimAnnuel }} CHF</div></div>
+            <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px;"><div style="font-size:11px;color:#AFC6D0;margin-bottom:3px;">NOUVEAU LOYER ESTIMÉ</div><div style="font-size:16px;font-weight:800;">{{ baisseSimNouveauLoyer }} CHF</div></div>
+          </div>
+          <div style="font-size:12.5px;color:#CFE0E8;line-height:1.5;margin-bottom:17px;">Estimation de {{ baisseSimPct }}&nbsp;% liée au taux de référence. Le bailleur peut faire valoir d'autres facteurs de coûts, qui seront intégrés à l'analyse.</div>
+          <button onClick="{{ continueBaisseFlow }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:16px;padding:15px;border:0;border-radius:12px;cursor:pointer;">Préparer ma demande de baisse →</button>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ baisseSimNo }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:20px;background:#fff;border:1px solid #E4E2DB;border-radius:18px;padding:19px;animation:fadeUp .3s ease;">
+          <div style="font-weight:800;color:#12303F;font-size:17px;margin-bottom:7px;">Aucune baisse liée au taux n'est identifiée</div>
+          <p style="margin:0;font-size:13.5px;color:#5A6A70;line-height:1.55;">Le taux indiqué n'est pas supérieur au taux actuel de {{ tauxActuel }}&nbsp;%. Nous ne vous proposons donc pas de lettre payante sur ce fondement.</p>
+        </div>
+        </sc-if>
+
+        <p style="margin:16px 0 0;text-align:center;font-size:11.5px;color:#8A979C;line-height:1.5;">Simulation gratuite et indicative. Aucun paiement et aucune création de dossier à cette étape.</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== HAUSSE / BAISSE ===================== -->
+    <sc-if value="{{ isAltForm }}" hint-placeholder-val="{{ false }}">
+    <div class="cc-scroll cc-screen" data-screen-label="formulaire-parcours" style="flex:1;overflow-y:auto;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;position:sticky;top:0;background:rgba(251,250,247,.94);z-index:10;">
+        <button onClick="{{ backFromAltForm }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;">←</button>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">{{ altTitle }}</span>
+      </div>
+      <div style="padding:26px 22px 36px;">
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:27px;line-height:1.15;color:#12303F;margin:0 0 8px;">{{ altTitle }}</h1>
+        <p style="margin:0 0 24px;font-size:14.5px;line-height:1.55;color:#5A6A70;">{{ altIntro }}</p>
+
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#58717D;margin-bottom:10px;">1 · Le logement</div>
+        <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:17px;margin-bottom:20px;">
+          <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Adresse complète</label>
+          <div style="position:relative;"><input type="text" autocomplete="off" value="{{ d.adresse }}" onInput="{{ onAdresse }}" placeholder="Avenue de la Gare 12, Lausanne" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:13px;font-size:15px;margin-bottom:8px;"><sc-if value="{{ hasAddressSuggestions }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;z-index:20;left:0;right:0;top:48px;background:#fff;border:1px solid #D8DEE1;border-radius:11px;box-shadow:0 10px 28px rgba(18,48,63,.14);overflow:hidden;"><sc-for list="{{ addressSuggestions }}" as="suggestion" hint-placeholder-count="3"><button type="button" onClick="{{ suggestion.select }}" style="display:block;width:100%;border:0;border-bottom:1px solid #EEF0F1;background:#fff;padding:11px 13px;text-align:left;color:#12303F;font-size:13px;cursor:pointer;">{{ suggestion.label }}</button></sc-for></div></sc-if></div>
+          <div style="display:flex;gap:10px;"><input type="text" value="{{ d.npa }}" onChange="{{ onNpa }}" placeholder="NPA" style="width:100px;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;font-size:14px;"><input type="text" value="{{ d.commune }}" onChange="{{ onCommune }}" placeholder="Commune" style="flex:1;min-width:0;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;font-size:14px;"></div>
+          <div style="margin-top:10px;font-size:12px;color:#5A6A70;">Canton identifié : <strong>{{ d.canton }}</strong> · service disponible à VD et GE</div>
+        </div>
+
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#58717D;margin-bottom:10px;">2 · Votre bail et votre loyer</div>
+        <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:17px;margin-bottom:20px;">
+          <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Type de loyer</label>
+          <select value="{{ d.typeBail }}" onChange="{{ onTypeBail }}" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:13px;background:#fff;font-size:14px;margin-bottom:14px;"><option value="ordinaire">Loyer ordinaire</option><option value="indexe">Loyer indexé</option><option value="echelonne">Loyer échelonné</option><option value="subventionne">Logement subventionné</option><option value="inconnu">Je ne sais pas</option></select>
+          <sc-if value="{{ isHausseFlow }}" hint-placeholder-val="{{ false }}">
+            <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Date de réception de la hausse</label><input type="date" value="{{ d.dateHausse }}" onChange="{{ onDateHausse }}" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:13px;font-size:14px;margin-bottom:12px;">
+            <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Date d'effet annoncée (facultatif)</label><input type="date" value="{{ d.dateEffetHausse }}" onChange="{{ onDateEffetHausse }}" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:13px;font-size:14px;margin-bottom:12px;">
+            <div style="display:flex;gap:10px;margin-bottom:12px;"><div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#12303F;margin-bottom:5px;">Loyer net actuel</label><input type="text" inputmode="decimal" value="{{ d.loyerAvantHausse }}" onChange="{{ onLoyerAvantHausse }}" placeholder="1 800" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;font-size:14px;"></div><div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#12303F;margin-bottom:5px;">Nouveau loyer net</label><input type="text" inputmode="decimal" value="{{ d.loyerApresHausse }}" onChange="{{ onLoyerApresHausse }}" placeholder="1 890" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;font-size:14px;"></div></div>
+            <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Avez-vous reçu la formule officielle cantonale&nbsp;?</label><select value="{{ d.formuleHausse }}" onChange="{{ onFormuleHausse }}" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:13px;background:#fff;font-size:14px;margin-bottom:12px;"><option value="oui">Oui</option><option value="non">Non, seulement un courrier ordinaire</option><option value="inconnu">Je ne sais pas</option></select>
+            <label style="display:block;font-size:13px;font-weight:700;color:#12303F;margin-bottom:6px;">Motif principal indiqué</label><select value="{{ d.motifHausse }}" onChange="{{ onMotifHausse }}" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:13px;background:#fff;font-size:14px;margin-bottom:12px;"><option value="taux_reference">Hausse du taux de référence</option><option value="renchérissement">Renchérissement / IPC</option><option value="couts">Hausse générale des coûts</option><option value="travaux">Travaux ou prestations supplémentaires</option><option value="loyers_usuels">Loyers usuels du quartier</option><option value="multiple">Plusieurs motifs</option><option value="inconnu">Absent ou incompréhensible</option></select>
+            <div style="display:flex;gap:10px;"><div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#12303F;margin-bottom:5px;">Taux de l'ancien loyer</label><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onChange="{{ onTauxRef }}" placeholder="1,50" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;font-size:14px;"></div><div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#12303F;margin-bottom:5px;">Taux indiqué après hausse</label><input type="text" inputmode="decimal" value="{{ d.tauxRefNouveau }}" onChange="{{ onTauxRefNouveau }}" placeholder="1,75" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;font-size:14px;"></div></div><p style="font-size:11.5px;color:#7B898E;margin:6px 0 0;">Facultatif, mais utile si la notification mentionne le taux de référence.</p>
+          </sc-if>
+          <sc-if value="{{ isBaisseFlow }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#F0F7F4;border:1px solid #C9E5D8;border-radius:13px;padding:14px;">
+              <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:13px;color:#376B55;"><span>Loyer net actuel</span><strong style="color:#12303F;">{{ baisseSummaryLoyer }} CHF</strong></div>
+              <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:13px;color:#376B55;"><span>Taux déterminant</span><strong style="color:#12303F;">{{ baisseSummaryTaux }} %</strong></div>
+              <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#376B55;"><span>Baisse simulée</span><strong style="color:#0C5638;">− {{ baisseSimChf }} CHF/mois</strong></div>
+              <button type="button" onClick="{{ editBaisseSimulation }}" style="margin-top:11px;border:0;background:transparent;color:#1B4965;font-size:12px;font-weight:700;padding:0;cursor:pointer;">Modifier ma simulation</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#58717D;margin-bottom:10px;">3 · Les parties</div>
+        <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:17px;margin-bottom:20px;">
+          <div style="font-weight:700;color:#12303F;font-size:14px;margin-bottom:9px;">Vos coordonnées</div><div style="display:flex;gap:10px;margin-bottom:9px;"><input type="text" value="{{ d.locPrenom }}" onChange="{{ onLocPrenom }}" placeholder="Prénom" style="flex:1;min-width:0;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;"><input type="text" value="{{ d.locNom }}" onChange="{{ onLocNom }}" placeholder="Nom" style="flex:1;min-width:0;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;"></div>
+          <input type="text" value="{{ d.locAdresse }}" onChange="{{ onLocAdresse }}" placeholder="Votre adresse" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;margin-bottom:9px;"><div style="display:flex;gap:10px;margin-bottom:18px;"><input type="text" value="{{ d.locNpa }}" onChange="{{ onLocNpa }}" placeholder="NPA" style="width:100px;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;"><input type="text" value="{{ d.locVille }}" onChange="{{ onLocVille }}" placeholder="Ville" style="flex:1;min-width:0;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;"></div>
+          <div style="font-weight:700;color:#12303F;font-size:14px;margin-bottom:9px;">Régie ou propriétaire</div><input type="text" value="{{ d.regNom }}" onChange="{{ onRegNom }}" placeholder="Nom" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;margin-bottom:9px;"><input type="text" value="{{ d.regAdresse }}" onChange="{{ onRegAdresse }}" placeholder="Adresse" style="width:100%;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;margin-bottom:9px;"><div style="display:flex;gap:10px;"><input type="text" value="{{ d.regNpa }}" onChange="{{ onRegNpa }}" placeholder="NPA" style="width:100px;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;"><input type="text" value="{{ d.regVille }}" onChange="{{ onRegVille }}" placeholder="Ville" style="flex:1;min-width:0;border:1.5px solid #D8DEE1;border-radius:11px;padding:12px;"></div>
+        </div>
+        <sc-if value="{{ altError }}" hint-placeholder-val="{{ false }}"><div style="background:#FBEAE7;color:#9B2F24;border-radius:11px;padding:12px 14px;font-size:13px;margin-bottom:12px;">⚠ {{ altError }}</div></sc-if>
+        <button onClick="{{ submitAltForm }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:16px;padding:16px;border:0;border-radius:13px;cursor:pointer;">Voir mon diagnostic →</button>
+        <p style="text-align:center;font-size:11.5px;color:#8A979C;line-height:1.45;margin:10px 0 0;">Aucun paiement avant le diagnostic. Les dossiers hors délai ou soumis à un régime spécial sont arrêtés automatiquement.</p>
       </div>
     </div>
     </sc-if>
@@ -623,7 +784,7 @@
         </div>
       </div>
       <div class="cc-cta-bar" style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">
-        <button onClick="{{ goDiagnostic }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Voir mon diagnostic →</button>
+        <button onClick="{{ submitImportedDossier }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Voir mon diagnostic →</button>
       </div>
     </div>
     </sc-if>
@@ -640,14 +801,14 @@
         <sc-if value="{{ diagEligible }}" hint-placeholder-val="{{ true }}">
           <div style="background:linear-gradient(150deg,#178A5B,#0C5638);border-radius:22px;padding:26px 22px;color:#fff;animation:fadeUp .4s ease;">
             <div style="width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:16px;">✓</div>
-            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:27px;line-height:1.1;margin-bottom:8px;">Votre dossier paraît solide.</div>
-            <p style="margin:0;font-size:15px;line-height:1.5;color:#CDEBDC;">Nous avons identifié <strong style="color:#fff;">{{ diagMotifsText }}</strong>. Au vu des informations fournies, il vaut la peine de contester votre loyer initial auprès de l'autorité de conciliation.</p>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:27px;line-height:1.1;margin-bottom:8px;">{{ diagTitle }}</div>
+            <p style="margin:0;font-size:15px;line-height:1.5;color:#CDEBDC;">{{ diagSummary }}</p>
           </div>
         </sc-if>
         <sc-if value="{{ diagHorsDelai }}" hint-placeholder-val="{{ false }}">
           <div style="background:#FFF3DF;border:1px solid #F0C77A;border-radius:22px;padding:24px 22px;animation:fadeUp .4s ease;">
-            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#7A5406;line-height:1.15;margin-bottom:8px;">Le délai de 30 jours semble dépassé</div>
-            <p style="margin:0 0 4px;font-size:15px;line-height:1.5;color:#7A5406;">Contester le loyer initial n'est probablement plus recevable. Mais tout n'est pas perdu&nbsp;: vous pourriez avoir droit à une baisse fondée sur le taux de référence.</p>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#7A5406;line-height:1.15;margin-bottom:8px;">{{ diagLateTitle }}</div>
+            <p style="margin:0 0 4px;font-size:15px;line-height:1.5;color:#7A5406;">{{ diagLateText }}</p>
           </div>
         </sc-if>
         <sc-if value="{{ diagManuel }}" hint-placeholder-val="{{ false }}">
@@ -656,11 +817,17 @@
             <p style="margin:0;font-size:15px;line-height:1.5;color:#3E5560;">Votre situation demande une vérification humaine. Laissez-nous votre e-mail, on revient vers vous rapidement.</p>
           </div>
         </sc-if>
+        <sc-if value="{{ diagNo }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#EAF1F5;border:1px solid #CBDCE4;border-radius:22px;padding:24px 22px;animation:fadeUp .4s ease;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#1B4965;line-height:1.15;margin-bottom:8px;">{{ diagNoTitle }}</div>
+            <p style="margin:0;font-size:15px;line-height:1.5;color:#3E5560;">{{ diagNoText }}</p>
+          </div>
+        </sc-if>
       </div>
 
       <div style="padding:6px 22px 8px;">
-        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">Vos motifs de contestation</div>
-        <p style="margin:0 0 16px;font-size:14px;color:#5A6A70;">Les éléments juridiques et factuels qui seront développés dans votre requête.</p>
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">{{ diagSectionTitle }}</div>
+        <p style="margin:0 0 16px;font-size:14px;color:#5A6A70;">{{ diagSectionIntro }}</p>
         <div style="display:flex;flex-direction:column;gap:12px;">
           <sc-for list="{{ motifs }}" as="m" hint-placeholder-count="3">
             <div style="background:#fff;border:1px solid #E4E2DB;border-radius:16px;padding:16px;border-left:4px solid #178A5B;">
@@ -745,6 +912,7 @@
         <sc-if value="{{ diagEligible }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goApercu }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:17px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Voir ma lettre →</button></sc-if>
         <sc-if value="{{ diagHorsDelai }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goLanding }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:16px;border:none;border-radius:14px;cursor:pointer;">Retour à l'accueil</button></sc-if>
         <sc-if value="{{ diagManuel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goLanding }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:16px;border:none;border-radius:14px;cursor:pointer;">Être recontacté par e-mail →</button></sc-if>
+        <sc-if value="{{ diagNo }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goChoix }}" style="width:100%;background:#1B4965;color:#fff;font-weight:700;font-size:16px;padding:16px;border:none;border-radius:14px;cursor:pointer;">Choisir une autre démarche</button></sc-if>
       </div>
       <div style="padding:14px 22px 32px;"><p style="margin:0;font-size:12px;color:#8A979C;line-height:1.5;text-align:center;">Ce diagnostic est un outil d'aide, pas un conseil juridique. Vous restez responsable du suivi de votre démarche.</p></div>
     </div>
@@ -754,7 +922,7 @@
     <sc-if value="{{ isApercu }}" hint-placeholder-val="{{ false }}">
     <div class="cc-scroll cc-screen" data-screen-label="apercu-offres" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;background:#F4F2EC;">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #E4E2DB;position:sticky;top:0;background:rgba(244,242,236,.94);backdrop-filter:blur(8px);z-index:5;">
-        <button onClick="{{ goDiagnostic }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;">←</button>
+        <button onClick="{{ backToDiagnostic }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;">←</button>
         <span style="font-weight:700;color:#12303F;font-size:16px;">Votre lettre est prête</span>
       </div>
 
@@ -784,8 +952,14 @@
           <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;background:#12303F;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:999px;box-shadow:0 6px 16px -6px rgba(18,48,63,.6);white-space:nowrap;">🔒 PDF original après paiement</div>
         </div>
         </sc-if>
+        <sc-if value="{{ noPreviewAlt }}" hint-placeholder-val="{{ false }}">
+        <div style="position:relative;background:#fff;border-radius:10px;box-shadow:0 16px 40px -20px rgba(18,48,63,.5);overflow:hidden;border:1px solid #E4E2DB;">
+          <div style="padding:30px 26px;font-size:11px;color:#12303F;line-height:1.7;min-height:620px;"><div style="font-weight:600;">{{ letterNom }}</div><div>{{ letterAdr }}</div><div>{{ letterVille }}</div><div style="text-align:right;margin:22px 0;">{{ letterAutNom }}<br>{{ letterAutAdr }}<br>{{ letterAutVille }}</div><div style="font-weight:800;margin:22px 0 14px;">Objet : {{ letterObject }} — {{ letterAdresseImmeuble }}</div><p>Madame, Monsieur,</p><p>{{ letterIntro }}</p><div style="font-weight:700;margin:16px 0 8px;">Éléments de la demande</div><sc-for list="{{ letterMotifs }}" as="motif" hint-placeholder-count="2"><p><strong>{{ motif.libelle }}.</strong> {{ motif.explication }}</p></sc-for><div style="font-weight:700;margin:16px 0 8px;">Demandes</div><ol><sc-for list="{{ conclusions }}" as="c" hint-placeholder-count="3"><li>{{ c }}</li></sc-for></ol><div style="font-weight:700;margin:16px 0 8px;">Documents à joindre</div><ul><sc-for list="{{ letterPieces }}" as="piece" hint-placeholder-count="2"><li>{{ piece }}</li></sc-for></ul><div style="margin-top:24px;">Veuillez agréer, Madame, Monsieur, mes salutations distinguées.</div><div style="margin-top:12px;font-style:italic;">{{ letterNom }}</div></div>
+          <div style="position:absolute;inset:-15%;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:18px 28px;transform:rotate(-24deg) scale(1.15);pointer-events:none;overflow:hidden;"><sc-for list="{{ wmTiles }}" as="w" hint-placeholder-count="40"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;color:rgba(196,61,46,.22);white-space:nowrap;">APERÇU · NON VALABLE · contestation.ch</span></sc-for></div>
+        </div>
+        </sc-if>
         <!-- Fallback maquette si l'aperçu serveur n'est pas encore disponible -->
-        <sc-if value="{{ noPreview }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ noPreviewInitial }}" hint-placeholder-val="{{ false }}">
         <div style="position:relative;background:#fff;border-radius:10px;box-shadow:0 16px 40px -20px rgba(18,48,63,.5);overflow:hidden;border:1px solid #E4E2DB;">
           <div style="padding:26px 24px;font-size:11px;color:#12303F;line-height:1.7;">
             <div style="font-weight:600;">{{ letterNom }}</div>
@@ -841,25 +1015,27 @@
         <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:16px;">Choisissez votre formule</div>
 
         <div style="background:#fff;border:1.5px solid #E4E2DB;border-radius:20px;padding:20px;margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#12303F;">La lettre prête à imprimer</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;white-space:nowrap;">5 CHF</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#12303F;">La lettre personnalisée</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;white-space:nowrap;">14,90 CHF</span></div>
           <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px;">
-            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>PDF final, prêt à imprimer</div>
-            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>Vous l'envoyez vous-même</div>
-            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>Suivi de votre dossier en ligne</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>Lettre adaptée aux éléments de votre dossier</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>Checklist complète des documents à joindre</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#5A6A70;"><span style="color:#178A5B;font-weight:800;">✓</span>PDF final et instructions d'envoi</div>
           </div>
-          <button onClick="{{ selectOffre5 }}" style="width:100%;background:#EAF1F5;color:#1B4965;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Choisir — 5 CHF</button>
+          <button onClick="{{ selectOffre5 }}" style="width:100%;background:#EAF1F5;color:#1B4965;font-weight:700;font-size:16px;padding:14px;border:none;border-radius:12px;cursor:pointer;">Choisir — 14,90 CHF</button>
         </div>
 
         <div style="background:#12303F;border-radius:20px;padding:20px;position:relative;">
           <span style="position:absolute;top:-11px;left:20px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;">RECOMMANDÉ · SANS EFFORT</span>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#fff;">On l'envoie pour vous</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#F4A73B;white-space:nowrap;">35 CHF</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#fff;">On s'occupe de tout</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#F4A73B;white-space:nowrap;">49,90 CHF</span></div>
           <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px;">
-            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>On imprime et postons en recommandé</div>
-            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>Preuve d'envoi + numéro de suivi</div>
-            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>Vous n'avez rien à faire</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>Lettre personnalisée et checklist incluses</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>Impression, timbre et recommandé inclus</div>
+            <div style="display:flex;gap:9px;font-size:13.5px;color:#CFE0E8;"><span style="color:#6FD6A2;font-weight:800;">✓</span>Aucun déplacement · suivi de l'envoi</div>
           </div>
-          <button onClick="{{ selectOffre35 }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:16px;padding:14px;border:none;border-radius:12px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Choisir — 35 CHF</button>
+          <button onClick="{{ selectOffre35 }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:16px;padding:14px;border:none;border-radius:12px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Choisir — 49,90 CHF</button>
         </div>
+
+        <div style="margin-top:14px;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:14px;padding:15px;"><div style="font-size:14px;font-weight:800;color:#0C5638;margin-bottom:4px;">✓ Utile ou remboursée</div><div style="font-size:12.5px;color:#376B55;line-height:1.5;">Si la réduction obtenue ne dépasse pas le prix de votre formule, nous vous la remboursons. Sur justificatif, selon les conditions de la garantie.</div></div>
 
         <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
           <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5A6A70;font-weight:600;">🔒 Paiement sécurisé</span>
@@ -871,7 +1047,7 @@
     </div>
     </sc-if>
 
-    <!-- ===================== SIGNATURE (offre 35) ===================== -->
+    <!-- ===================== SIGNATURE (offre recommandée 49,90) ===================== -->
     <sc-if value="{{ isSignature }}" hint-placeholder-val="{{ false }}">
     <div class="cc-screen" data-screen-label="signature" style="flex:1;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
@@ -909,21 +1085,8 @@
           <div style="border-top:1px solid #EEEBE3;margin-top:14px;padding-top:14px;display:flex;justify-content:space-between;align-items:center;"><span style="font-weight:700;color:#12303F;font-size:15px;">Total</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#12303F;">{{ offrePrice }} CHF</span></div>
         </div>
 
-        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Moyen de paiement</div>
-        <div style="display:flex;gap:12px;margin-bottom:18px;">
-          <button onClick="{{ setTwint }}" style="flex:1;background:{{ twintBg }};border:2px solid {{ twintBorder }};border-radius:14px;padding:16px;cursor:pointer;font-weight:700;color:#12303F;font-size:15px;">TWINT</button>
-          <button onClick="{{ setCarte }}" style="flex:1;background:{{ carteBg }};border:2px solid {{ carteBorder }};border-radius:14px;padding:16px;cursor:pointer;font-weight:700;color:#12303F;font-size:15px;">Carte</button>
-        </div>
-
-        <sc-if value="{{ isCarte }}" hint-placeholder-val="{{ false }}">
-          <div style="animation:fadeUp .3s ease;margin-bottom:18px;">
-            <input type="text" placeholder="Numéro de carte" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;margin-bottom:12px;">
-            <div style="display:flex;gap:12px;"><input type="text" placeholder="MM / AA" style="flex:1;min-width:0;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"><input type="text" placeholder="CVC" style="width:110px;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:14px;font-size:16px;color:#12303F;background:#fff;"></div>
-          </div>
-        </sc-if>
-        <sc-if value="{{ isTwint }}" hint-placeholder-val="{{ true }}">
-          <div style="animation:fadeUp .3s ease;background:#F4F8FA;border-radius:14px;padding:16px;margin-bottom:18px;display:flex;gap:12px;align-items:center;"><span style="font-size:22px;">📱</span><span style="font-size:14px;color:#3E5560;line-height:1.4;">Vous confirmerez le paiement dans l'application TWINT sur votre téléphone.</span></div>
-        </sc-if>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Paiement sécurisé</div>
+        <div style="background:#F4F8FA;border:1px solid #DCE7EB;border-radius:14px;padding:16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start;"><span style="font-size:21px;">🔒</span><span style="font-size:14px;color:#3E5560;line-height:1.5;"><strong style="color:#12303F;">Vous allez être redirigé vers Stripe.</strong><br>Vous y choisirez TWINT ou votre carte et saisirez vos informations directement sur la page sécurisée de Stripe.</span></div>
 
         <div style="background:#FBFAF7;border:1px solid #EEEBE3;border-radius:12px;padding:14px;font-size:12.5px;color:#5A6A70;line-height:1.5;margin-bottom:6px;">En payant, vous confirmez avoir compris que contestation.ch est un <strong style="color:#12303F;">outil d'aide</strong> et non un conseil juridique, et que le suivi de votre démarche vous incombe.</div>
       </div>
@@ -943,7 +1106,7 @@
       <div style="padding:44px 24px 24px;text-align:center;">
         <div style="width:72px;height:72px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;">✓</div>
         <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#12303F;line-height:1.15;margin-bottom:8px;">Paiement confirmé&nbsp;!</div>
-        <sc-if value="{{ is5 }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:15px;color:#5A6A70;line-height:1.5;">Votre lettre est débloquée. Téléchargez-la, imprimez-la et envoyez-la à l'autorité de conciliation.</p></sc-if>
+        <sc-if value="{{ is5 }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:15px;color:#5A6A70;line-height:1.5;">{{ successPrintText }}</p></sc-if>
         <sc-if value="{{ is35 }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:15px;color:#5A6A70;line-height:1.5;">On s'occupe de tout. Votre lettre signée part en recommandé sous 1 à 2 jours ouvrés. Vous suivrez son envoi ici.</p></sc-if>
       </div>
       <div style="padding:0 22px 20px;">
@@ -1011,12 +1174,12 @@
       <div style="padding:26px 22px;">
         <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;margin:0 0 6px;">Conditions générales de vente</h1>
         <p style="margin:0 0 24px;font-size:13px;color:#8A979C;">Dernière mise à jour&nbsp;: {{ lieuDate }}</p>
-        <div style="background:#FBEAE7;border:1px solid #F1B8AE;border-radius:14px;padding:16px;margin-bottom:24px;"><div style="font-weight:700;color:#12303F;font-size:14px;margin-bottom:4px;">Nature du service</div><p style="margin:0;font-size:13.5px;color:#7A2A20;line-height:1.5;">contestation.ch est un outil d'aide à la rédaction de courriers. Ce n'est <strong>ni un cabinet d'avocats, ni un conseil juridique</strong>. Aucune garantie de résultat n'est donnée.</p></div>
+        <div style="background:#FBEAE7;border:1px solid #F1B8AE;border-radius:14px;padding:16px;margin-bottom:24px;"><div style="font-weight:700;color:#12303F;font-size:14px;margin-bottom:4px;">Nature du service</div><p style="margin:0;font-size:13.5px;color:#7A2A20;line-height:1.5;">contestation.ch est un outil d'aide à la rédaction de courriers. Ce n'est <strong>ni un cabinet d'avocats, ni un conseil juridique</strong>. L'issue de la procédure ne peut pas être garantie ; la garantie commerciale de remboursement décrite ci-dessous reste applicable.</p></div>
         <div style="display:flex;flex-direction:column;gap:20px;">
           <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">1. Objet</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Le service génère une lettre de contestation de loyer initial personnalisée, à partir des informations que vous fournissez, pour les cantons de Vaud et Genève.</p></div>
-          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">2. Prix et prestations</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Formule à 5 CHF&nbsp;: lettre au format PDF à imprimer et envoyer soi-même. Formule à 35 CHF&nbsp;: impression et envoi en recommandé par nos soins, expéditeur étant le locataire.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">2. Prix et prestations</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Formule à 14,90 CHF&nbsp;: lettre personnalisée au format PDF, checklist des pièces et instructions pour l'imprimer et l'envoyer soi-même. Formule à 49,90 CHF&nbsp;: mêmes éléments, avec impression, affranchissement et envoi en recommandé par nos soins, le locataire figurant comme expéditeur.</p></div>
           <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">3. Responsabilité</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Vous restez seul responsable du suivi de votre démarche&nbsp;: respect des délais, réception par l'autorité, suites de la procédure. Pour tout cas complexe, adressez-vous à l'<strong>ASLOCA</strong>.</p></div>
-          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">4. Rétractation et remboursement</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">La lettre étant générée sur mesure, le droit de rétractation ne s'applique pas une fois le document débloqué. En cas d'échec de génération, vous êtes intégralement remboursé.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">4. Rétractation et garantie de remboursement</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">La lettre étant générée sur mesure, le droit de rétractation ne s'applique pas une fois le document débloqué. En cas d'échec technique de génération ou d'envoi imputable à contestation.ch, le prix est intégralement remboursé. Il est également remboursé si la démarche menée avec la lettre n'aboutit pas à une réduction de loyer supérieure au prix payé. Cette garantie suppose que la lettre ait été envoyée dans le délai indiqué, que les informations fournies soient exactes et que le demandeur présente le justificatif de l'issue obtenue. Elle ne couvre pas une démarche abandonnée, envoyée hors délai ou modifiée après génération.</p></div>
           <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">5. Données</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Vos données et documents sont traités uniquement pour fournir le service et supprimés automatiquement 7 jours après la clôture du dossier. Voir la politique de confidentialité pour les prestataires utilisés.</p></div>
         </div>
       </div>

@@ -65,6 +65,8 @@
     evaluate: function (dossier) { return call('evaluate', { dossier: dossier }); },
     /** dossierId -> { letterId, previews: [url] } */
     generateLetter: function (dossierId) { return call('generate-letter', { dossierId: dossierId }); },
+    /** Régénère le PDF privé avec la signature avant le recommandé. */
+    signLetter: function (b) { return call('sign-letter', b); },
     /** { dossierId, letterId, offer } -> { url, sessionId } */
     createCheckout: function (b) { return call('create-checkout', b); },
     /** letterId -> { url } | 402 */

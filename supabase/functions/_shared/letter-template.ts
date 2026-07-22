@@ -10,6 +10,7 @@ import type {
   DossierContestation,
   ResultatContestation,
 } from './ruleset.ts';
+import { TAUX_REFERENCE } from './ruleset.ts';
 
 function esc(s: string | number | null | undefined): string {
   if (s == null) return '';
@@ -59,7 +60,51 @@ const WATERMARK_CSS = `
   .content { position: relative; z-index: 1; }
 `;
 
+function signatureHtml(d: DossierContestation): string {
+  const nom = [d.locataire.prenom, d.locataire.nom].filter(Boolean).map(esc).join(' ');
+  return `${d.signatureDataUrl ? `<img src="${esc(d.signatureDataUrl)}" alt="signature" />` : '<div style="height:60px"></div>'}<br>${nom}`;
+}
+
+function hausseLetterHtml(d: DossierContestation, res: ResultatContestation): string {
+  const a = res.autorite;
+  const dest = a ? [a.nom, a.adresse, a.casePostale, `${a.npa} ${a.ville}`].filter(Boolean).map(esc).join('<br>') : '[Autorité à compléter]';
+  const nom = [d.locataire.prenom, d.locataire.nom].filter(Boolean).map(esc).join(' ');
+  const motifs = res.motifs.map((m) => `<div class="motif"><span class="lib">${esc(m.libelle)}.</span> ${esc(m.explication)}</div>`).join('\n');
+  const conclusions = res.conclusions.map((c) => `<li>${esc(c)}</li>`).join('\n');
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>${BASE_CSS}</style></head><body><div class="content">
+  <div class="expediteur">${nom}<br>${esc(d.locataire.adresse)}<br>${esc(d.locataire.npa)} ${esc(d.locataire.ville)}</div>
+  <div class="destinataire">${dest}</div><div class="lieu-date">${esc(d.locataire.ville)}, le ${formatDateFr(new Date().toISOString())}</div>
+  <div class="objet">Objet : Contestation de la hausse de loyer — ${esc(d.adresseImmeuble)}, ${esc(d.npa)} ${esc(d.commune)}</div>
+  <p>Madame, Monsieur,</p><p>Je conteste dans le délai de l'art. 270b CO la hausse de loyer qui m'a été notifiée le ${formatDateFr(d.dateNotificationHausse!)} et demande à votre autorité de convoquer les parties en conciliation.</p>
+  <h2>I. Situation</h2><table class="faits"><tr><td>Logement</td><td>${esc(d.adresseImmeuble)}, ${esc(d.npa)} ${esc(d.commune)}</td></tr><tr><td>Partie bailleresse / régie</td><td>${esc(d.bailleur.nom)}, ${esc(d.bailleur.adresse)}, ${esc(d.bailleur.npa)} ${esc(d.bailleur.ville)}</td></tr><tr><td>Loyer net avant la hausse</td><td>${esc(d.loyerAvantHausse)} CHF par mois</td></tr><tr><td>Nouveau loyer net annoncé</td><td>${esc(d.loyerApresHausse)} CHF par mois</td></tr><tr><td>Date de notification</td><td>${formatDateFr(d.dateNotificationHausse!)}</td></tr>${d.dateEffetHausse ? `<tr><td>Date d'effet annoncée</td><td>${formatDateFr(d.dateEffetHausse)}</td></tr>` : ''}</table>
+  <h2>II. Motifs de la contestation</h2>${motifs}<p>Je demande que la partie bailleresse produise un calcul complet, vérifiable et accompagné des justificatifs nécessaires, comprenant aussi les facteurs de baisse intervenus depuis la dernière fixation.</p>
+  <h2>III. Conclusions</h2><ol class="conclusions">${conclusions}</ol>
+  <h2>IV. Documents joints</h2><ol><li>Copie du contrat de bail.</li><li>Copie de la notification de hausse et de son enveloppe.</li><li>Copie de la dernière fixation de loyer disponible.</li></ol>
+  <p>Je vous prie d'agréer, Madame, Monsieur, mes salutations distinguées.</p><div class="signature">${signatureHtml(d)}</div>
+  <div class="footer-note">Lettre générée avec l'aide de contestation.ch — outil d'aide à la rédaction, sans valeur de conseil juridique.</div></div></body></html>`;
+}
+
+function baisseLetterHtml(d: DossierContestation, res: ResultatContestation): string {
+  const nom = [d.locataire.prenom, d.locataire.nom].filter(Boolean).map(esc).join(' ');
+  const dest = [d.bailleur.nom, d.bailleur.adresse, `${d.bailleur.npa} ${d.bailleur.ville}`].filter(Boolean).map(esc).join('<br>');
+  const pct = res.estimationPct ?? 0;
+  const chf = res.estimationChf ?? 0;
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>${BASE_CSS}</style></head><body><div class="content">
+  <div class="expediteur">${nom}<br>${esc(d.locataire.adresse)}<br>${esc(d.locataire.npa)} ${esc(d.locataire.ville)}</div>
+  <div class="destinataire">${dest}</div><div class="lieu-date">${esc(d.locataire.ville)}, le ${formatDateFr(new Date().toISOString())}</div>
+  <div class="objet">Objet : Demande de baisse de loyer — ${esc(d.adresseImmeuble)}, ${esc(d.npa)} ${esc(d.commune)}</div>
+  <p>Madame, Monsieur,</p><p>Le loyer net de mon logement est fondé sur un taux d'intérêt de référence de ${esc(d.tauxReferenceBail)} %, alors que le taux actuellement publié par l'Office fédéral du logement est de ${esc(TAUX_REFERENCE.value)} %.</p>
+  <p>En application de l'art. 270a CO et de l'art. 13 OBLF, je vous demande de réduire mon loyer net au prochain terme de résiliation possible. La baisse liée au seul taux de référence est estimée à ${esc(pct.toFixed(2))} %, soit environ ${esc(chf.toFixed(2))} CHF par mois, sous réserve des autres facteurs de coûts qui devraient être justifiés et détaillés.</p>
+  <table class="faits"><tr><td>Logement</td><td>${esc(d.adresseImmeuble)}, ${esc(d.npa)} ${esc(d.commune)}</td></tr><tr><td>Loyer net actuel</td><td>${esc(d.loyerNetMensuel)} CHF par mois</td></tr><tr><td>Taux déterminant du loyer</td><td>${esc(d.tauxReferenceBail)} %</td></tr><tr><td>Taux de référence actuel</td><td>${esc(TAUX_REFERENCE.value)} %</td></tr></table>
+  <p>Je vous remercie de me communiquer dans les 30 jours votre acceptation ou, en cas de refus total ou partiel, le calcul détaillé des facteurs compensatoires invoqués. À défaut d'accord ou de réponse dans ce délai, je me réserve le droit de saisir l'autorité de conciliation compétente.</p>
+  <h2>Documents utiles</h2><ol><li>Copie du contrat de bail.</li><li>Copie de la dernière notification ayant fixé le loyer et son taux de référence.</li></ol>
+  <p>Je vous prie d'agréer, Madame, Monsieur, mes salutations distinguées.</p><div class="signature">${signatureHtml(d)}</div>
+  <div class="footer-note">Lettre générée avec l'aide de contestation.ch — estimation indicative, les autres facteurs de coûts pouvant modifier le résultat.</div></div></body></html>`;
+}
+
 export function letterHtml(d: DossierContestation, res: ResultatContestation): string {
+  if (res.kind === 'hausse_loyer') return hausseLetterHtml(d, res);
+  if (res.kind === 'demande_baisse') return baisseLetterHtml(d, res);
   const a = res.autorite;
   const dest = a
     ? [a.nom, a.adresse, a.casePostale, `${a.npa} ${a.ville}`].filter(Boolean).map(esc).join('<br>')

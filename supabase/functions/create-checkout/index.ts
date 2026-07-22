@@ -1,5 +1,5 @@
 // POST /create-checkout
-// Entrée : { dossierId, letterId, offer: 'imprimer_5' | 'recommande_35' }
+// Entrée : { dossierId, letterId, offer: 'imprimer_1490' | 'recommande_4990' }
 // - Crée une session Stripe Checkout (CHF, carte + TWINT).
 // - Crée la ligne payments (status 'pending'), avec la session id.
 // - Renvoie l'URL de redirection Stripe. Aucun déverrouillage ici.
@@ -7,10 +7,11 @@
 import Stripe from 'npm:stripe@17';
 import { adminClient } from '../_shared/supabase.ts';
 import { badRequest, json, preflight, serverError } from '../_shared/http.ts';
+import { evaluateDossier, type DossierContestation } from '../_shared/ruleset.ts';
 
 const OFFERS = {
-  imprimer_5: { amount: 500, label: 'Lettre à imprimer (PDF)' },
-  recommande_35: { amount: 3500, label: 'Envoi recommandé (Pingen)' },
+  imprimer_1490: { amount: 1490, label: 'Lettre personnalisée à imprimer' },
+  recommande_4990: { amount: 4990, label: 'Envoi recommandé tout compris' },
 } as const;
 
 Deno.serve(async (req) => {
@@ -29,7 +30,7 @@ Deno.serve(async (req) => {
     return badRequest('JSON invalide');
   }
   if (!body.dossierId || !body.letterId || !body.offer || !OFFERS[body.offer]) {
-    return badRequest('dossierId, letterId et offer (imprimer_5|recommande_35) requis');
+    return badRequest('dossierId, letterId et offer (imprimer_1490|recommande_4990) requis');
   }
 
   const offer = OFFERS[body.offer];
@@ -37,6 +38,18 @@ Deno.serve(async (req) => {
   const db = adminClient();
 
   try {
+    // Ne jamais facturer un dossier inéligible ni accepter un letterId appartenant
+    // à un autre dossier. Le recommandé exige en plus le PDF régénéré avec signature.
+    const { data: dossier } = await db.from('dossiers').select('eligible, payload').eq('id', body.dossierId).single();
+    const { data: letter } = await db.from('letters').select('id, unlocked').eq('id', body.letterId).eq('dossier_id', body.dossierId).single();
+    const liveEvaluation = dossier?.payload
+      ? evaluateDossier(dossier.payload as DossierContestation)
+      : null;
+    if (!dossier?.eligible || !liveEvaluation?.eligible || !letter || letter.unlocked) {
+      return badRequest('Dossier ou lettre non disponible au paiement');
+    }
+    if (body.offer === 'recommande_4990' && !dossier.payload?.signatureDataUrl) return badRequest('Signature requise pour l’envoi recommandé');
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [
@@ -59,7 +72,7 @@ Deno.serve(async (req) => {
       cancel_url: `${appOrigin}/?dossier=${body.dossierId}`,
     });
 
-    await db.from('payments').insert({
+    const paymentInsert = await db.from('payments').insert({
       dossier_id: body.dossierId,
       offer: body.offer,
       amount_chf: offer.amount,
@@ -67,6 +80,13 @@ Deno.serve(async (req) => {
       status: 'pending',
       stripe_session_id: session.id,
     });
+    if (paymentInsert.error) {
+      // Éviter qu'une session payable existe sans ligne interne rapprochable par
+      // le webhook. L'expiration est best-effort; l'erreur reste bloquante.
+      try { await stripe.checkout.sessions.expire(session.id); } catch { /* ignore */ }
+      throw paymentInsert.error;
+    }
+    if (!session.url) throw new Error('Stripe n’a pas renvoyé d’URL de paiement');
 
     return json({ url: session.url, sessionId: session.id });
   } catch (e) {

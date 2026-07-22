@@ -1,0 +1,354 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../lib/blog.ts';
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+<BaseLayout title="Administration des guides | Contestation.ch" description="Administration privée de la plateforme de publication." noindex={true}>
+  <div id="blog-admin" data-supabase-url={SUPABASE_URL} data-supabase-key={SUPABASE_PUBLISHABLE_KEY}>
+    <section id="auth-panel" class="admin-auth">
+      <p class="eyebrow">Accès privé</p>
+      <h1>Administration des guides</h1>
+      <p>Connectez-vous avec le compte autorisé dans <code>blog_admins</code>.</p>
+      <form id="auth-form" class="admin-form admin-form--compact">
+        <label>E-mail<input id="auth-email" type="email" autocomplete="email" required /></label>
+        <label>Mot de passe<input id="auth-password" type="password" autocomplete="current-password" /></label>
+        <div class="admin-actions"><button class="button button--secondary" type="submit">Se connecter</button><button id="magic-link" class="button button--ghost" type="button">Recevoir un lien magique</button></div>
+      </form>
+      <p id="auth-status" class="admin-status" aria-live="polite"></p>
+    </section>
+
+    <section id="admin-panel" class="admin-shell" hidden>
+      <header class="admin-topbar">
+        <div><p class="eyebrow">Plateforme de publication</p><h1>Guides Contestation.ch</h1><p id="admin-identity"></p></div>
+        <div class="admin-actions"><button id="new-article" class="button button--primary">Nouvel article</button><button id="sign-out" class="button button--ghost">Déconnexion</button></div>
+      </header>
+
+      <div class="admin-layout">
+        <aside class="admin-list-panel">
+          <div class="admin-list-title"><h2>Articles</h2><button id="refresh-list" type="button" aria-label="Actualiser">↻</button></div>
+          <div id="article-list" class="admin-list"></div>
+        </aside>
+
+        <main class="admin-editor">
+          <form id="article-form" class="admin-form">
+            <input id="article-id" type="hidden" />
+            <input id="revision-id" type="hidden" />
+            <input id="featured-media-id" type="hidden" />
+            <div class="admin-section-heading"><div><p class="eyebrow">Contenu</p><h2 id="editor-title">Nouvel article</h2></div><span id="article-state" class="admin-badge">Brouillon</span></div>
+            <label>Titre de l’article<input id="title" maxlength="240" required placeholder="Comment contester une hausse de loyer ?" /></label>
+            <div class="admin-columns">
+              <label>Slug <input id="slug" maxlength="90" placeholder="généré automatiquement" /></label>
+              <label>Thèmes <input id="topics" placeholder="Hausse de loyer, Délais" /></label>
+            </div>
+            <label>Introduction / extrait<textarea id="excerpt" rows="3" maxlength="320" placeholder="Généré automatiquement si ce champ reste vide"></textarea></label>
+
+            <div class="admin-source-bar">
+              <label>Format d’entrée<select id="format"><option value="markdown">Markdown</option><option value="html">HTML</option><option value="rich-text">Rich Text</option><option value="plain">Texte simple</option><option value="canonical-v1">JSON canonique v1</option><option value="tiptap">JSON Tiptap</option><option value="json">JSON auto-détecté</option></select></label>
+              <label class="button button--ghost admin-file-button">Importer un fichier<input id="import-file" type="file" accept=".md,.markdown,.html,.htm,.json,.txt" hidden /></label>
+              <label class="button button--ghost admin-file-button">Ajouter une image<input id="image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" hidden /></label>
+            </div>
+            <label id="source-label">Contenu<textarea id="source-content" rows="22" required spellcheck="true" placeholder="Collez ou écrivez le contenu ici…"></textarea></label>
+            <div id="rich-editor" class="rich-editor" contenteditable="true" hidden aria-label="Éditeur Rich Text"></div>
+
+            <details class="admin-details">
+              <summary>SEO, auteur et vérification</summary>
+              <div class="admin-details-content">
+                <label>Titre SEO<input id="seo-title" maxlength="70" placeholder="Par défaut : titre de l’article" /></label>
+                <label>Description SEO<textarea id="seo-description" rows="3" maxlength="180" placeholder="Par défaut : extrait"></textarea></label>
+                <div class="admin-columns">
+                  <label>Auteur<select id="author-id"><option value="">Contestation.ch</option></select></label>
+                  <label>Relu par<select id="reviewer-id"><option value="">Non renseigné</option></select></label>
+                </div>
+                <div class="admin-columns">
+                  <label>Date de vérification<input id="reviewed-at" type="date" /></label>
+                  <label>Prochaine revue<input id="next-review-at" type="date" /></label>
+                </div>
+                <label>Sources officielles ou éditoriales <textarea id="sources" rows="4" placeholder="Une source par ligne : Libellé | https://…"></textarea></label>
+              </div>
+            </details>
+
+            <p id="editor-status" class="admin-status" aria-live="polite"></p>
+            <div class="admin-actions admin-actions--sticky">
+              <button id="save-draft" class="button button--secondary" type="submit">Enregistrer le brouillon</button>
+              <button id="preview" class="button button--ghost" type="button">Prévisualiser</button>
+              <button id="publish" class="button button--primary" type="button">Publier</button>
+              <button id="archive" class="button button--ghost" type="button">Archiver</button>
+              <button id="delete" class="button button--danger" type="button">Supprimer</button>
+            </div>
+          </form>
+
+          <details id="api-settings" class="admin-details admin-api" hidden>
+            <summary>Intégrations API</summary>
+            <div class="admin-details-content">
+              <p>Les clés ne sont affichées qu’une seule fois. Conservez-les dans le gestionnaire de secrets de l’outil source.</p>
+              <div class="admin-columns"><label>Nom de l’intégration<input id="api-key-name" placeholder="Outrank production" /></label><label>Permissions<select id="api-key-scope"><option value="import">Importer des brouillons</option><option value="publish">Importer et publier</option></select></label></div>
+              <button id="create-api-key" class="button button--secondary" type="button">Créer une clé</button>
+              <pre id="new-api-key" class="api-key-output" hidden></pre>
+              <div id="api-key-list"></div>
+            </div>
+          </details>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // @ts-nocheck — interface DOM volontairement légère, contrats validés côté Edge Function.
+    import { createClient } from '@supabase/supabase-js';
+
+    const root = document.querySelector('#blog-admin');
+    const supabaseUrl = root.dataset.supabaseUrl;
+    const publishableKey = root.dataset.supabaseKey;
+    const supabase = createClient(supabaseUrl, publishableKey);
+    const $ = (selector) => document.querySelector(selector);
+    let session = null;
+    let adminRole = null;
+    let currentStatus = 'draft';
+
+    function status(message, error = false, target = '#editor-status') {
+      const node = $(target); node.textContent = message || ''; node.classList.toggle('is-error', error);
+    }
+
+    async function authHeaders() {
+      const { data } = await supabase.auth.getSession();
+      session = data.session;
+      if (!session) throw new Error('Session expirée');
+      return { 'Content-Type': 'application/json', apikey: publishableKey, Authorization: `Bearer ${session.access_token}` };
+    }
+
+    async function adminCall(action, payload = {}) {
+      const response = await fetch(`${supabaseUrl}/functions/v1/blog-admin`, { method: 'POST', headers: await authHeaders(), body: JSON.stringify({ action, ...payload }) });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
+      return body;
+    }
+
+    async function ingest(payload) {
+      const response = await fetch(`${supabaseUrl}/functions/v1/blog-ingest`, { method: 'POST', headers: { ...(await authHeaders()), 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
+      return body;
+    }
+
+    function sourceValue() {
+      return $('#format').value === 'rich-text' ? $('#rich-editor').innerHTML : $('#source-content').value;
+    }
+
+    function parseSources() {
+      return $('#sources').value.split('\n').map((line) => {
+        const [label, url] = line.split('|').map((part) => part?.trim());
+        return label && /^https?:\/\//.test(url || '') ? { label, url } : null;
+      }).filter(Boolean);
+    }
+
+    function metadata() {
+      return {
+        title: $('#title').value.trim(), slug: $('#slug').value.trim() || undefined,
+        excerpt: $('#excerpt').value.trim() || undefined,
+        seoTitle: $('#seo-title').value.trim() || undefined,
+        seoDescription: $('#seo-description').value.trim() || undefined,
+        locale: 'fr-CH', topics: $('#topics').value.split(',').map((item) => item.trim()).filter(Boolean),
+        featuredMediaId: $('#featured-media-id').value || undefined,
+        authorId: $('#author-id').value || undefined,
+        reviewedById: $('#reviewer-id').value || undefined,
+        reviewedAt: $('#reviewed-at').value ? `${$('#reviewed-at').value}T12:00:00+02:00` : undefined,
+        nextReviewAt: $('#next-review-at').value || undefined,
+        sources: parseSources(),
+      };
+    }
+
+    function updateFormat() {
+      const rich = $('#format').value === 'rich-text';
+      $('#source-label').hidden = rich;
+      $('#rich-editor').hidden = !rich;
+      if (rich && !$('#rich-editor').innerHTML.trim() && $('#source-content').value.trim()) $('#rich-editor').textContent = $('#source-content').value;
+    }
+
+    function resetEditor() {
+      $('#article-form').reset(); $('#article-id').value = ''; $('#revision-id').value = ''; $('#featured-media-id').value = '';
+      $('#source-content').value = ''; $('#rich-editor').innerHTML = ''; $('#editor-title').textContent = 'Nouvel article';
+      currentStatus = 'draft'; $('#article-state').textContent = 'Brouillon'; status(''); updateFormat();
+    }
+
+    function articleButton(article) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'admin-list-item';
+      const draft = article.draft || article.published || {};
+      button.innerHTML = `<strong></strong><span></span><small></small>`;
+      button.querySelector('strong').textContent = draft.title || 'Sans titre';
+      button.querySelector('span').textContent = draft.excerpt || '';
+      button.querySelector('small').textContent = article.status === 'published' ? 'Publié' : article.status === 'archived' ? 'Archivé' : 'Brouillon';
+      button.addEventListener('click', () => loadArticle(article.id)); return button;
+    }
+
+    async function refreshList() {
+      const list = $('#article-list'); list.innerHTML = '<p>Chargement…</p>';
+      try { const data = await adminCall('list'); list.replaceChildren(...data.articles.map(articleButton)); if (!data.articles.length) list.innerHTML = '<p>Aucun article.</p>'; }
+      catch (error) { list.innerHTML = `<p class="is-error"></p>`; list.firstChild.textContent = error.message; }
+    }
+
+    async function loadAuthors() {
+      const data = await adminCall('authors');
+      for (const select of [$('#author-id'), $('#reviewer-id')]) {
+        const first = select.firstElementChild; select.replaceChildren(first, ...data.authors.map((author) => new Option(author.name, author.id)));
+      }
+    }
+
+    async function loadArticle(id) {
+      status('Chargement…');
+      try {
+        const data = await adminCall('get', { articleId: id }); const revision = data.revisions[0];
+        if (!revision) throw new Error('Aucune révision disponible');
+        $('#article-id').value = id; $('#revision-id').value = data.article.draft_revision_id || revision.id;
+        $('#title').value = revision.title; $('#slug').value = revision.slug; $('#excerpt').value = revision.excerpt;
+        $('#seo-title').value = revision.seo_title; $('#seo-description').value = revision.seo_description;
+        $('#topics').value = data.topics.map((topic) => topic?.name).filter(Boolean).join(', ');
+        $('#featured-media-id').value = revision.featured_media_id || ''; $('#author-id').value = revision.author_id || '';
+        $('#reviewer-id').value = revision.reviewed_by_id || ''; $('#reviewed-at').value = revision.reviewed_at?.slice(0, 10) || '';
+        $('#next-review-at').value = revision.next_review_at || '';
+        $('#sources').value = (revision.sources || []).map((source) => `${source.label} | ${source.url}`).join('\n');
+        $('#format').value = revision.source_format || 'canonical-v1';
+        const source = revision.source_content || JSON.stringify(revision.document, null, 2);
+        $('#source-content').value = source; $('#rich-editor').innerHTML = $('#format').value === 'rich-text' ? source : '';
+        currentStatus = data.article.status; $('#article-state').textContent = currentStatus === 'published' ? 'Publié' : currentStatus === 'archived' ? 'Archivé' : 'Brouillon';
+        $('#editor-title').textContent = revision.title; updateFormat(); status('Article chargé.');
+      } catch (error) { status(error.message, true); }
+    }
+
+    async function saveDraft(event) {
+      event?.preventDefault(); status('Normalisation et enregistrement…');
+      try {
+        const body = await ingest({ articleId: $('#article-id').value || undefined, format: $('#format').value, content: sourceValue(), metadata: metadata(), intent: 'draft', source: { provider: 'admin' } });
+        $('#article-id').value = body.articleId; $('#revision-id').value = body.revisionId; $('#slug').value = body.slug;
+        $('#editor-title').textContent = $('#title').value; status(body.warnings?.length ? `Brouillon enregistré. ${body.warnings.join(' ')}` : 'Brouillon enregistré.');
+        await refreshList(); return body;
+      } catch (error) { status(error.message, true); throw error; }
+    }
+
+    async function publishArticle() {
+      try { const draft = await saveDraft(); status('Publication…'); const result = await adminCall('publish', { articleId: draft.articleId }); currentStatus = 'published'; $('#article-state').textContent = 'Publié'; status(`Article publié : /blog/${result.slug}`); await refreshList(); }
+      catch (_) { /* saveDraft a déjà affiché l'erreur */ }
+    }
+
+    async function previewArticle() {
+      try { const draft = await saveDraft(); const preview = await adminCall('preview', { revisionId: draft.revisionId }); window.open(`/blog/apercu?token=${encodeURIComponent(preview.token)}`, '_blank', 'noopener'); }
+      catch (_) { /* message déjà visible */ }
+    }
+
+    async function archiveArticle() {
+      const id = $('#article-id').value; if (!id || !confirm('Archiver cet article ?')) return;
+      try { await adminCall('archive', { articleId: id }); currentStatus = 'archived'; $('#article-state').textContent = 'Archivé'; status('Article archivé.'); await refreshList(); } catch (error) { status(error.message, true); }
+    }
+
+    async function deleteArticle() {
+      const id = $('#article-id').value; if (!id || !confirm('Supprimer cet article ? Un article déjà publié sera retiré et son URL renverra 410.')) return;
+      try { await adminCall('delete', { articleId: id }); resetEditor(); status('Article supprimé.'); await refreshList(); } catch (error) { status(error.message, true); }
+    }
+
+    async function importFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase(); const map = { md: 'markdown', markdown: 'markdown', html: 'html', htm: 'html', json: 'json', txt: 'plain' };
+      $('#format').value = map[ext] || 'plain'; $('#source-content').value = await file.text(); updateFormat(); status(`Fichier ${file.name} importé dans l’éditeur.`);
+    }
+
+    async function uploadImage(file) {
+      status('Préparation de l’image…');
+      try {
+        const signed = await adminCall('media-upload-url', { mime: file.type, bytes: file.size });
+        const upload = await supabase.storage.from('blog-media').uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type });
+        if (upload.error) throw upload.error;
+        const alt = prompt('Texte alternatif décrivant l’image :', '') || '';
+        const registered = await adminCall('media-register', { path: signed.path, publicUrl: signed.publicUrl, mime: file.type, bytes: file.size, alt });
+        $('#featured-media-id').value ||= registered.media.id;
+        const insertion = `\n\n![${alt}](${signed.publicUrl})\n\n`;
+        if ($('#format').value === 'markdown') $('#source-content').setRangeText(insertion, $('#source-content').selectionStart, $('#source-content').selectionEnd, 'end');
+        else { $('#format').value = 'html'; $('#source-content').value += `\n<figure><img src="${signed.publicUrl}" alt="${alt.replace(/"/g, '&quot;')}"></figure>`; updateFormat(); }
+        status('Image ajoutée.');
+      } catch (error) { status(error.message, true); }
+    }
+
+    async function refreshApiKeys() {
+      if (adminRole !== 'owner') return;
+      const data = await adminCall('list-api-keys'); const list = $('#api-key-list'); list.innerHTML = '';
+      data.keys.forEach((key) => { const row = document.createElement('div'); row.className = 'api-key-row'; row.innerHTML = '<span></span><button type="button">Révoquer</button>'; row.querySelector('span').textContent = `${key.name} · ${key.key_prefix}… · ${key.active ? 'active' : 'révoquée'}`; row.querySelector('button').disabled = !key.active; row.querySelector('button').onclick = async () => { await adminCall('revoke-api-key', { id: key.id }); refreshApiKeys(); }; list.append(row); });
+    }
+
+    async function createApiKey() {
+      try { const publish = $('#api-key-scope').value === 'publish'; const data = await adminCall('create-api-key', { name: $('#api-key-name').value || 'Intégration API', scopes: publish ? ['articles:import', 'articles:write', 'articles:publish'] : ['articles:import', 'articles:write'] }); const output = $('#new-api-key'); output.textContent = data.apiKey; output.hidden = false; await refreshApiKeys(); }
+      catch (error) { status(error.message, true); }
+    }
+
+    async function enterAdmin() {
+      try {
+        const me = await adminCall('me'); adminRole = me.role; $('#auth-panel').hidden = true; $('#admin-panel').hidden = false;
+        $('#admin-identity').textContent = `Connecté · rôle ${adminRole}`;
+        $('#api-settings').hidden = adminRole !== 'owner';
+        $('#publish').hidden = adminRole === 'editor';
+        $('#archive').hidden = adminRole === 'editor';
+        $('#delete').hidden = adminRole !== 'owner';
+        await Promise.all([refreshList(), loadAuthors(), adminRole === 'owner' ? refreshApiKeys() : Promise.resolve()]);
+      } catch (error) { $('#auth-panel').hidden = false; $('#admin-panel').hidden = true; status(error.message, true, '#auth-status'); }
+    }
+
+    $('#auth-form').addEventListener('submit', async (event) => { event.preventDefault(); status('Connexion…', false, '#auth-status'); const result = await supabase.auth.signInWithPassword({ email: $('#auth-email').value, password: $('#auth-password').value }); if (result.error) status(result.error.message, true, '#auth-status'); else enterAdmin(); });
+    $('#magic-link').addEventListener('click', async () => { const email = $('#auth-email').value; if (!email) return status('Indiquez votre e-mail.', true, '#auth-status'); const result = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${location.origin}/admin` } }); status(result.error ? result.error.message : 'Lien de connexion envoyé.', !!result.error, '#auth-status'); });
+    $('#sign-out').addEventListener('click', async () => { await supabase.auth.signOut(); location.reload(); });
+    $('#article-form').addEventListener('submit', saveDraft); $('#new-article').addEventListener('click', resetEditor); $('#refresh-list').addEventListener('click', refreshList);
+    $('#format').addEventListener('change', updateFormat); $('#preview').addEventListener('click', previewArticle); $('#publish').addEventListener('click', publishArticle);
+    $('#archive').addEventListener('click', archiveArticle); $('#delete').addEventListener('click', deleteArticle);
+    $('#import-file').addEventListener('change', (event) => event.target.files[0] && importFile(event.target.files[0]));
+    $('#image-file').addEventListener('change', (event) => event.target.files[0] && uploadImage(event.target.files[0]));
+    $('#create-api-key').addEventListener('click', createApiKey);
+    supabase.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; });
+    const initial = await supabase.auth.getSession(); session = initial.data.session; if (session) enterAdmin();
+  </script>
+
+  <style>
+    #blog-admin { min-height: 70vh; }
+    .admin-auth { width: min(520px, calc(100% - 36px)); margin: 72px auto; padding: 34px; border: 1px solid var(--cc-border); border-radius: 18px; background: #fff; }
+    .admin-auth h1, .admin-topbar h1 { margin: 0 0 10px; }
+    .admin-shell { max-width: 1440px; margin: 0 auto; padding: 38px 24px 80px; }
+    .admin-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+    .admin-topbar p { margin: 0; color: var(--cc-muted); }
+    .admin-layout { display: grid; grid-template-columns: 310px minmax(0, 850px); align-items: start; gap: 26px; }
+    .admin-list-panel, .admin-editor, .admin-api { border: 1px solid var(--cc-border); border-radius: 16px; background: #fff; }
+    .admin-list-panel { position: sticky; top: 82px; max-height: calc(100vh - 110px); overflow: auto; }
+    .admin-list-title { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--cc-border); background: #fff; }
+    .admin-list-title h2 { margin: 0; font-size: 18px; }
+    .admin-list-title button { border: 0; background: none; color: var(--cc-blue); font-size: 22px; cursor: pointer; }
+    .admin-list { padding: 8px; }
+    .admin-list-item { display: block; width: 100%; padding: 13px 12px; border: 0; border-bottom: 1px solid #edf0f1; background: transparent; color: var(--cc-text); text-align: left; cursor: pointer; }
+    .admin-list-item:hover { border-radius: 9px; background: var(--cc-soft); }
+    .admin-list-item strong, .admin-list-item span, .admin-list-item small { display: block; }
+    .admin-list-item strong { color: var(--cc-ink); }
+    .admin-list-item span { margin: 4px 0; overflow: hidden; color: var(--cc-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .admin-list-item small { color: var(--cc-green); font-weight: 700; }
+    .admin-editor { padding: 28px; }
+    .admin-form { display: grid; gap: 18px; }
+    .admin-form--compact { margin-top: 24px; }
+    .admin-form label { display: grid; gap: 7px; color: var(--cc-ink); font-size: 13px; font-weight: 700; }
+    .admin-form input, .admin-form textarea, .admin-form select, .rich-editor { width: 100%; border: 1.5px solid #d4dde1; border-radius: 10px; padding: 12px 13px; background: #fff; color: var(--cc-ink); font-size: 15px; font-weight: 400; }
+    .admin-form textarea { resize: vertical; line-height: 1.55; }
+    .admin-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .admin-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .admin-actions--sticky { position: sticky; bottom: 12px; z-index: 10; margin: 0 -12px -12px; padding: 13px; border: 1px solid var(--cc-border); border-radius: 13px; background: rgba(255,255,255,.95); box-shadow: 0 10px 30px -20px rgba(18,48,63,.5); backdrop-filter: blur(8px); }
+    .button--ghost { border: 1px solid var(--cc-border); background: #fff; color: var(--cc-blue) !important; }
+    .button--danger { background: #fff; color: #a92e25 !important; border: 1px solid #e8bbb6; }
+    .admin-section-heading, .admin-source-bar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+    .admin-section-heading h2 { margin: 0; }
+    .admin-badge { padding: 6px 10px; border-radius: 999px; background: #e3f3eb; color: #0c5638; font-size: 12px; font-weight: 800; }
+    .admin-source-bar label:first-child { min-width: 200px; flex: 1; }
+    .admin-file-button { display: inline-flex !important; width: auto !important; }
+    .rich-editor { min-height: 420px; overflow-y: auto; line-height: 1.7; }
+    .admin-details { margin-top: 6px; border: 1px solid var(--cc-border); border-radius: 12px; }
+    .admin-details summary { padding: 15px; color: var(--cc-ink); font-weight: 750; cursor: pointer; }
+    .admin-details-content { display: grid; gap: 16px; padding: 0 16px 18px; }
+    .admin-status { min-height: 22px; margin: 0; color: var(--cc-green); font-size: 13px; font-weight: 650; }
+    .is-error { color: #a92e25 !important; }
+    .admin-api { margin-top: 24px; }
+    .api-key-output { overflow-x: auto; padding: 14px; border-radius: 9px; background: #102a36; color: #fff; user-select: all; }
+    .api-key-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--cc-border); font-size: 13px; }
+    @media (max-width: 900px) { .admin-layout { grid-template-columns: 1fr; }.admin-list-panel { position: static; max-height: 320px; }.admin-topbar { display: block; }.admin-topbar .admin-actions { margin-top: 18px; } }
+    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns { grid-template-columns: 1fr; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; } }
+  </style>
+</BaseLayout>

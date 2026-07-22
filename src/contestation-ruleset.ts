@@ -16,6 +16,8 @@
 
 export type Canton = 'VD' | 'GE';
 export type TriState = 'oui' | 'non' | 'inconnu';
+export type ParcoursKind = 'loyer_initial' | 'hausse_loyer' | 'demande_baisse';
+export type TypeBail = 'ordinaire' | 'indexe' | 'echelonne' | 'subventionne' | 'inconnu';
 
 export type VdDistrict =
   | 'aigle' | 'broye_vully' | 'gros_de_vaud' | 'jura_nord_vaudois'
@@ -43,6 +45,7 @@ export interface Autorite {
 
 /** Données d'un dossier (issues du flux manuel OU de l'extraction du bail). */
 export interface DossierContestation {
+  kind?: ParcoursKind;                // absent dans les anciens dossiers => loyer initial
   canton: Canton;
   npa: string;                       // NPA de l'immeuble
   commune: string;                   // commune de l'immeuble
@@ -58,7 +61,15 @@ export interface DossierContestation {
   contraintePersonnelle: boolean;    // nécessité perso/familiale (flux manuel)
   locataire: Partie;
   bailleur: Partie;                  // régie ou propriétaire
-  signatureDataUrl: string | null;   // pour le flux recommandé (35 CHF)
+  signatureDataUrl: string | null;   // pour le flux recommandé (49,90 CHF)
+  typeBail?: TypeBail;
+  dateNotificationHausse?: string;   // ISO, date de réception de la hausse
+  dateEffetHausse?: string;          // ISO, date annoncée d'entrée en vigueur
+  loyerAvantHausse?: number;
+  loyerApresHausse?: number;
+  formuleHausseRecue?: TriState;
+  motifHausse?: 'taux_reference' | 'renchérissement' | 'couts' | 'travaux' | 'loyers_usuels' | 'multiple' | 'inconnu';
+  tauxReferenceNouveau?: number | null;
 }
 
 export type ForceMotif = 'tres_forte' | 'forte' | 'moyenne' | 'faible';
@@ -73,16 +84,20 @@ export interface Motif {
 export type AxeArgumentaire = 'rendement_net' | 'rendement_brut' | 'loyers_usuels';
 
 export interface ResultatContestation {
+  kind: ParcoursKind;
   eligible: boolean;
   horsDelai: boolean;
   requiertTraitementManuel: boolean;
   autorite: Autorite | null;
   joursEcoules: number | null;
-  motifs: Motif[];                       // triés par force décroissante
+  motifs: Motif[];                       // motifs pertinents, sans classement affiché
   axeArgumentaire: AxeArgumentaire | null;
   conclusions: string[];
   avertissements: string[];
   rendementAdmissiblePct: number | null; // pédagogie UI uniquement
+  estimationPct?: number | null;
+  estimationChf?: number | null;
+  destinataireType?: 'autorite' | 'bailleur';
 }
 
 export interface ResultatBaisse {
@@ -327,10 +342,6 @@ function diffJours(from: Date, to: Date): number {
   return Math.floor(ms / 86_400_000);
 }
 
-const ORDRE_FORCE: Record<ForceMotif, number> = {
-  tres_forte: 3, forte: 2, moyenne: 1, faible: 0,
-};
-
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -363,6 +374,7 @@ export function evaluateLoyerInitial(
   today: Date = new Date(),
 ): ResultatContestation {
   const res: ResultatContestation = {
+    kind: 'loyer_initial',
     eligible: false,
     horsDelai: false,
     requiertTraitementManuel: false,
@@ -485,8 +497,9 @@ export function evaluateLoyerInitial(
     res.axeArgumentaire = 'rendement_net';
   }
 
-  // — STEP 6 : tri des motifs + conclusions —
-  res.motifs.sort((a, b) => ORDRE_FORCE[b.force] - ORDRE_FORCE[a.force]);
+  // — STEP 6 : conclusions —
+  // L'ordre suit les faits du dossier. Les motifs ne sont pas présentés comme
+  // un palmarès : leur portée juridique dépend des pièces et de la procédure.
   res.conclusions = buildConclusions(d, res, formuleManquante);
 
   return res;
@@ -515,7 +528,130 @@ function buildConclusions(
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 7. evaluateDemandeBaisse — produit d'appel gratuit
+// 7. Contestation d'une hausse pendant le bail (art. 269d et 270b CO)
+// ────────────────────────────────────────────────────────────────────────────
+
+export function evaluateHausseLoyer(
+  d: DossierContestation,
+  today: Date = new Date(),
+): ResultatContestation {
+  const res: ResultatContestation = {
+    kind: 'hausse_loyer', eligible: false, horsDelai: false,
+    requiertTraitementManuel: false, autorite: resolveAutorite(d.canton, d.npa, d.commune),
+    joursEcoules: null, motifs: [], axeArgumentaire: null, conclusions: [],
+    avertissements: [], rendementAdmissiblePct: null, destinataireType: 'autorite',
+  };
+  if (!res.autorite) {
+    res.requiertTraitementManuel = true;
+    res.avertissements.push("Autorité de conciliation introuvable pour cette commune — vérification humaine requise.");
+  }
+  if (d.typeBail !== 'ordinaire') {
+    res.requiertTraitementManuel = true;
+    res.avertissements.push("Les loyers indexés, échelonnés ou subventionnés suivent des règles particulières : aucune lettre automatisée ne sera vendue sans vérification humaine.");
+    return res;
+  }
+  if (!d.dateNotificationHausse) {
+    res.requiertTraitementManuel = true;
+    res.avertissements.push("La date de réception de la hausse est indispensable pour vérifier le délai.");
+    return res;
+  }
+  const jours = diffJours(new Date(d.dateNotificationHausse), today);
+  res.joursEcoules = jours;
+  if (jours < 0) {
+    res.requiertTraitementManuel = true;
+    res.avertissements.push("La date de réception indiquée est dans le futur.");
+    return res;
+  }
+  if (jours > 30) {
+    res.horsDelai = true;
+    res.avertissements.push(`Le délai ordinaire de 30 jours paraît dépassé (${jours} jours depuis la réception).`);
+    return res;
+  }
+  if (d.formuleHausseRecue === 'non') {
+    res.motifs.push({ code: 'hausse_forme', libelle: 'Notification sans formule officielle', force: 'tres_forte', explication: "La hausse n'a pas été notifiée au moyen de la formule agréée par le canton, alors que l'art. 269d CO impose cette forme." });
+  } else if (d.formuleHausseRecue === 'inconnu') {
+    res.avertissements.push("Vérifiez si le courrier reçu est bien la formule officielle cantonale et conservez son enveloppe.");
+  }
+  if (!d.motifHausse || d.motifHausse === 'inconnu') {
+    res.motifs.push({ code: 'hausse_motivation', libelle: 'Motivation à contrôler', force: 'forte', explication: "Une hausse doit indiquer ses motifs de manière compréhensible. Une motivation absente ou insuffisante peut affecter sa validité." });
+  }
+  if (d.loyerAvantHausse && d.loyerApresHausse && d.loyerApresHausse > d.loyerAvantHausse) {
+    const pct = round2(((d.loyerApresHausse - d.loyerAvantHausse) / d.loyerAvantHausse) * 100);
+    res.estimationPct = pct;
+    res.estimationChf = round2(d.loyerApresHausse - d.loyerAvantHausse);
+    res.motifs.push({ code: 'hausse_calcul', libelle: `Calcul de la hausse de ${pct.toFixed(2)} % à vérifier`, force: 'moyenne', explication: "Le montant doit correspondre aux motifs annoncés et tenir compte des facteurs de baisse intervenus depuis la dernière fixation du loyer." });
+  }
+  if ((d.motifHausse === 'taux_reference' || d.motifHausse === 'multiple') && d.tauxReferenceBail != null) {
+    const nouveau = d.tauxReferenceNouveau ?? TAUX_REFERENCE.value;
+    const incoherent = nouveau <= d.tauxReferenceBail || nouveau > TAUX_REFERENCE.value;
+    res.motifs.push({ code: 'hausse_taux', libelle: 'Taux de référence invoqué à vérifier', force: incoherent ? 'forte' : 'moyenne', explication: `Le loyer antérieur est indiqué comme fondé sur ${d.tauxReferenceBail.toFixed(2)} % et la notification sur ${nouveau.toFixed(2)} %, tandis que le taux publié est de ${TAUX_REFERENCE.value.toFixed(2)} %. La base et le taux de répercussion doivent être contrôlés.` });
+  }
+  res.motifs.push({ code: 'hausse_compensations', libelle: 'Facteurs de baisse à prendre en compte', force: 'moyenne', explication: "Le calcul doit aussi intégrer les réductions de coûts pertinentes, notamment l'évolution du taux de référence et du renchérissement depuis la dernière fixation." });
+  res.eligible = !res.requiertTraitementManuel;
+  res.conclusions = [
+    "Déclarer recevable la contestation de la hausse de loyer notifiée.",
+    "Constater la nullité de la hausse si les exigences de forme ou de motivation ne sont pas respectées.",
+    "À défaut, réduire la hausse au montant qui peut être justifié par les facteurs de coûts admissibles.",
+    "Maintenir le loyer antérieur jusqu'à l'entrée en force d'un accord ou d'une décision.",
+  ];
+  return res;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 8. Demande de baisse au bailleur (art. 270a CO)
+// ────────────────────────────────────────────────────────────────────────────
+
+function baissePourDelta(deltaPts: number): number {
+  // Aux niveaux actuels, l'art. 13 OBLF prévoit 3 % de hausse par 0,25 point.
+  // La baisse réciproque est x / (100 + x), afin de revenir au montant initial.
+  const hausseReciproque = (Math.round(deltaPts / 0.25) * 3);
+  return round2((hausseReciproque / (100 + hausseReciproque)) * 100);
+}
+
+export function evaluateBaisseDossier(d: DossierContestation): ResultatContestation {
+  const res: ResultatContestation = {
+    kind: 'demande_baisse', eligible: false, horsDelai: false,
+    requiertTraitementManuel: false, autorite: null, joursEcoules: null, motifs: [],
+    axeArgumentaire: null, conclusions: [], avertissements: [], rendementAdmissiblePct: null,
+    destinataireType: 'bailleur', estimationPct: null, estimationChf: null,
+  };
+  if (d.typeBail !== 'ordinaire') {
+    res.requiertTraitementManuel = true;
+    res.avertissements.push("Les loyers indexés, échelonnés ou subventionnés suivent des règles particulières : une vérification humaine est nécessaire.");
+    return res;
+  }
+  if (d.tauxReferenceBail == null) {
+    res.requiertTraitementManuel = true;
+    res.avertissements.push("Le taux déterminant du loyer actuel est nécessaire. Il figure sur le bail ou la dernière notification de loyer.");
+    return res;
+  }
+  if (d.tauxReferenceBail <= TAUX_REFERENCE.value) {
+    res.avertissements.push("Le taux déterminant de votre loyer n'est pas supérieur au taux actuel : aucune baisse ne peut être demandée sur ce seul fondement.");
+    return res;
+  }
+  const delta = round2(d.tauxReferenceBail - TAUX_REFERENCE.value);
+  const pct = baissePourDelta(delta);
+  res.estimationPct = pct;
+  res.estimationChf = round2((d.loyerNetMensuel * pct) / 100);
+  res.motifs.push({ code: 'baisse_taux', libelle: `Taux déterminant de ${d.tauxReferenceBail.toFixed(2)} % contre ${TAUX_REFERENCE.value.toFixed(2)} % actuellement`, force: 'forte', explication: `La diminution de ${delta.toFixed(2)} point(s) ouvre en principe la possibilité de demander une adaptation du loyer net.` });
+  res.motifs.push({ code: 'baisse_compensation', libelle: 'Autres facteurs de coûts réservés', force: 'moyenne', explication: "Le bailleur peut opposer le renchérissement ou d'autres hausses de coûts, mais il doit expliquer leur incidence sur le calcul." });
+  res.eligible = true;
+  res.conclusions = [
+    `Réduire le loyer net d'environ ${pct.toFixed(2)} %, sous réserve des autres facteurs de coûts justifiés.`,
+    `Appliquer la baisse au prochain terme de résiliation possible, conformément à l'art. 270a CO.`,
+    "Communiquer dans les 30 jours l'acceptation de la demande ou le calcul détaillé de tout refus ou compensation.",
+  ];
+  return res;
+}
+
+export function evaluateDossier(d: DossierContestation, today: Date = new Date()): ResultatContestation {
+  if (d.kind === 'hausse_loyer') return evaluateHausseLoyer(d, today);
+  if (d.kind === 'demande_baisse') return evaluateBaisseDossier(d);
+  return evaluateLoyerInitial(d, today);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 9. evaluateDemandeBaisse — produit d'appel gratuit
 // ────────────────────────────────────────────────────────────────────────────
 
 export function evaluateDemandeBaisse(
@@ -545,7 +681,7 @@ export function evaluateDemandeBaisse(
   if (tauxReferenceBail > tauxActuel) {
     const deltaPts = round2(tauxReferenceBail - tauxActuel);
     // Approximation usuelle : ~ -2,91 % du loyer net par -0,25 pt.
-    const baissePct = round2((deltaPts / 0.25) * 2.91);
+    const baissePct = baissePourDelta(deltaPts);
     base.eligible = true;
     base.deltaPts = deltaPts;
     base.baisseEstimeePct = baissePct;

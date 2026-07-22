@@ -1,0 +1,41 @@
+---
+import type { BlogBlock } from '../../../supabase/functions/_shared/blog/document.ts';
+import InlineContent from './InlineContent.astro';
+
+interface Props { blocks: BlogBlock[] }
+const { blocks } = Astro.props;
+---
+{blocks.map((block) => {
+  switch (block.type) {
+    case 'paragraph':
+      return <p><InlineContent nodes={block.children} /></p>;
+    case 'heading':
+      if (block.level === 2) return <h2 id={block.id}><InlineContent nodes={block.children} /></h2>;
+      if (block.level === 3) return <h3 id={block.id}><InlineContent nodes={block.children} /></h3>;
+      return <h4 id={block.id}><InlineContent nodes={block.children} /></h4>;
+    case 'list': {
+      const Items = block.items.map((item) => <li><Astro.self blocks={item.blocks} /></li>);
+      return block.ordered ? <ol start={block.start}>{Items}</ol> : <ul>{Items}</ul>;
+    }
+    case 'quote':
+      return <blockquote><Astro.self blocks={block.blocks} />{block.cite && <cite>{block.cite}</cite>}</blockquote>;
+    case 'table':
+      return <div class="table-wrap" role="region" aria-label={block.caption || 'Tableau défilable'} tabindex="0"><table>
+        {block.caption && <caption>{block.caption}</caption>}
+        {block.headers.length > 0 && <thead><tr>{block.headers.map((cell) => <th scope="col"><InlineContent nodes={cell} /></th>)}</tr></thead>}
+        <tbody>{block.rows.map((row) => <tr>{row.map((cell) => <td><InlineContent nodes={cell} /></td>)}</tr>)}</tbody>
+      </table></div>;
+    case 'image':
+      return <figure class="article-figure"><img src={block.src} alt={block.alt} loading="lazy" decoding="async" />{(block.caption || block.credit) && <figcaption>{block.caption}{block.caption && block.credit && ' — '}{block.credit}</figcaption>}</figure>;
+    case 'faq':
+      return <section class="faq-block" aria-labelledby={`faq-${block.items[0]?.id}`}><h2 id={`faq-${block.items[0]?.id}`}>Questions fréquentes</h2>{block.items.map((item) => <details><summary>{item.question}</summary><div class="faq-answer"><Astro.self blocks={item.answer} /></div></details>)}</section>;
+    case 'callout':
+      return <aside class={`callout callout--${block.kind}`}>{block.title && <strong class="callout__title">{block.title}</strong>}<Astro.self blocks={block.blocks} /></aside>;
+    case 'cta':
+      return <div class="content-cta"><a class="button button--primary" href={block.href}>{block.label}</a></div>;
+    case 'code':
+      return <pre><code data-language={block.language}>{block.code}</code></pre>;
+    case 'divider':
+      return <hr />;
+  }
+})}

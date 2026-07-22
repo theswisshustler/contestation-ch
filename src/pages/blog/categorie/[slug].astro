@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArticleCard from '../../../components/blog/ArticleCard.astro';
+import { listPublishedArticles } from '../../../lib/blog.ts';
+
+const slug = String(Astro.params.slug || '');
+const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const result = await listPublishedArticles({ page: page - 1, pageSize: 24, topic: slug });
+const topicName = result.articles.flatMap((article) => article.topics || []).find((topic) => topic.slug === slug)?.name || slug.replace(/-/g, ' ');
+if (!result.articles.length) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=180, stale-while-revalidate=3600');
+---
+<BaseLayout title={`${topicName} — Guides Contestation.ch`} description={`Guides pratiques sur ${topicName.toLowerCase()} et les démarches liées au loyer.`} canonicalPath={`/blog/categorie/${slug}`}>
+  <div class="page-shell">
+    <header class="page-intro"><p class="eyebrow">Thème</p><h1>{topicName}</h1><p>Les guides Contestation.ch consacrés à ce sujet.</p></header>
+    {result.articles.length ? <div class="article-grid">{result.articles.map((article) => <ArticleCard article={article} />)}</div> : <div class="empty-state"><h2>Aucun guide publié</h2><a href="/blog">Revenir aux guides</a></div>}
+  </div>
+</BaseLayout>

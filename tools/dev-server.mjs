@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractBailDocuments } from './extract-bail.mjs';
+import { mockEvaluateDossier } from './mock-evaluate.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = path.join(__dirname, '..', 'web');
@@ -37,8 +38,9 @@ const handlers = {
     if (t == null) return [200, { result: { eligible: false, tauxActuel, tauxBail: null, deltaPts: null, baisseEstimeePct: null, baisseEstimeeChf: null, procedure: [], avertissements: ['Taux de référence du bail inconnu.'] } }];
     if (t > tauxActuel) {
       const deltaPts = Math.round((t - tauxActuel) * 100) / 100;
-      const pct = Math.round((deltaPts / 0.25) * 2.91 * 100) / 100;
-      return [200, { result: { eligible: true, tauxActuel, tauxBail: t, deltaPts, baisseEstimeePct: pct, baisseEstimeeChf: Math.round((b.loyerNetMensuel * pct) / 100), procedure: ['…'], avertissements: [] } }];
+      const hausseTheorique = Math.round(deltaPts / 0.25) * 3;
+      const pct = Math.round((hausseTheorique / (100 + hausseTheorique)) * 10000) / 100;
+      return [200, { result: { eligible: true, tauxActuel, tauxBail: t, deltaPts, baisseEstimeePct: pct, baisseEstimeeChf: Math.round(b.loyerNetMensuel * pct) / 100, procedure: ['…'], avertissements: [] } }];
     }
     return [200, { result: { eligible: false, tauxActuel, tauxBail: t, deltaPts: null, baisseEstimeePct: null, baisseEstimeeChf: null, procedure: [], avertissements: [] } }];
   },
@@ -47,6 +49,8 @@ const handlers = {
 
   'evaluate': (b) => {
     const d = b.dossier;
+    const alternative = mockEvaluateDossier(d);
+    if (alternative) return alternative;
     if (!d || !d.canton || !d.commune || !d.npa || !d.dateRemiseCles) return [400, { error: 'Champs obligatoires manquants' }];
     const motifs = [];
     const formuleManquante = d.formuleOfficielleRecue === 'non';
@@ -91,10 +95,15 @@ const handlers = {
     return [200, { letterId, previews: [] }];
   },
 
+  'sign-letter': (b) => {
+    if (!b.dossierId || !b.letterId || !b.signatureDataUrl) return [400, { error: 'Signature requise' }];
+    return [200, { signed: true }];
+  },
+
   'create-checkout': (b) => {
     if (!b.dossierId || !b.letterId || !b.offer) return [400, { error: 'dossierId, letterId, offer requis' }];
     const l = letters.get(b.letterId); if (l) l.unlocked = true;
-    return [200, { url: '/index.html?paid=1', sessionId: 'cs_mock_123' }];
+    return [200, { url: '/index.html?paid=1&session_id=cs_mock_123', sessionId: 'cs_mock_123' }];
   },
 
   'download-letter': (b) => {

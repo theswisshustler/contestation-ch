@@ -1,0 +1,16 @@
+project_id = "contestation-ch"
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.purge]
+verify_jwt = false
+
+[functions.blog-ingest]
+verify_jwt = false
+
+[functions.blog-preview]
+verify_jwt = false
+
+[functions.blog-admin]
+verify_jwt = true

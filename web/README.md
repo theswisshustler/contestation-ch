@@ -63,7 +63,7 @@ projet live. Il n'implémente pas la logique juridique réelle.
 
 ## Limites connues / suite
 
-- **Signature (offre 35)** : la signature est capturée côté client et incluse
+- **Signature (offre recommandée à 49,90 CHF)** : la signature est capturée côté client et incluse
   dans `DossierContestation.signatureDataUrl`, mais `generate-letter` lit le
   dossier déjà persisté (sans signature) et s'exécute à l'aperçu, avant la
   signature. Faire signer *avant* la génération, ou étendre `generate-letter`

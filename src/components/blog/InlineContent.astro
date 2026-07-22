@@ -1,0 +1,17 @@
+---
+import type { InlineNode } from '../../../supabase/functions/_shared/blog/document.ts';
+
+interface Props { nodes: InlineNode[] }
+const { nodes } = Astro.props;
+---
+{nodes.map((node) => {
+  if (node.type === 'break') return <br />;
+  if (node.type === 'link') return <a href={node.href}><Astro.self nodes={node.children} /></a>;
+  let content: any = node.text;
+  for (const mark of node.marks || []) {
+    if (mark === 'bold') content = <strong>{content}</strong>;
+    if (mark === 'italic') content = <em>{content}</em>;
+    if (mark === 'code') content = <code>{content}</code>;
+  }
+  return content;
+})}

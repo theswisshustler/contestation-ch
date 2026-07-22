@@ -1,0 +1,6 @@
+---
+import type { TocEntry } from '../../../supabase/functions/_shared/blog/document.ts';
+interface Props { entries: TocEntry[] }
+const { entries } = Astro.props;
+---
+{entries.length > 1 && <nav class="toc" aria-label="Sommaire de l’article"><strong>Dans cet article</strong><ol>{entries.map((entry) => <li data-level={entry.level}><a href={`#${entry.id}`}>{entry.label}</a></li>)}</ol></nav>}

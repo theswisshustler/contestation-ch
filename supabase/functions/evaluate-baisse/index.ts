@@ -24,8 +24,14 @@ Deno.serve(async (req) => {
     return badRequest('JSON invalide');
   }
 
-  if (typeof body.loyerNetMensuel !== 'number') {
-    return badRequest('loyerNetMensuel requis');
+  if (typeof body.loyerNetMensuel !== 'number' || !Number.isFinite(body.loyerNetMensuel) || body.loyerNetMensuel <= 0) {
+    return badRequest('loyerNetMensuel positif requis');
+  }
+  if (
+    body.tauxReferenceBail != null
+    && (typeof body.tauxReferenceBail !== 'number' || !Number.isFinite(body.tauxReferenceBail) || body.tauxReferenceBail <= 0 || body.tauxReferenceBail > 10)
+  ) {
+    return badRequest('tauxReferenceBail invalide');
   }
 
   const result = evaluateDemandeBaisse(body.tauxReferenceBail ?? null, body.loyerNetMensuel);

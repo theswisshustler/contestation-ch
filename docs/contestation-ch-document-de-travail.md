@@ -12,8 +12,8 @@ contestation.ch génère automatiquement une **requête en contestation de loyer
 **La thèse commerciale et juridique (à garder en tête partout) :** l'outil ne « prouve » pas que le loyer est abusif — il n'en a pas les moyens (les chiffres sont chez le bailleur). Il **installe un doute sérieux, renverse le fardeau de la preuve sur le bailleur, et crée une pression de règlement à l'amiable**. La très grande majorité des dossiers se règlent en conciliation, sans procès public : le bailleur préfère souvent concéder une baisse plutôt que d'ouvrir sa comptabilité. C'est exactement l'effet recherché.
 
 **Deux offres :**
-- **5 CHF** — lettre finalisée, PDF à imprimer et envoyer soi-même.
-- **35 CHF** — on imprime et on envoie en recommandé pour le locataire (via Pingen).
+- **14,90 CHF** — lettre personnalisée finalisée, checklist des pièces, PDF à imprimer et envoyer soi-même.
+- **49,90 CHF** — même contenu, puis impression et envoi en recommandé pour le locataire (via Pingen).
 
 **Produit d'appel gratuit :** un calculateur « ai-je droit à une baisse de loyer ? » basé sur le taux de référence, pour capter l'email et alimenter le funnel.
 
@@ -30,7 +30,7 @@ contestation.ch génère automatiquement une **requête en contestation de loyer
 | Type d'objet | Habitation uniquement |
 | Langue | Français seul |
 | Flux | Import bail **et** flux manuel dès le MVP |
-| Prix | 5 CHF (impression soi-même) / 35 CHF (recommandé) — ajustables |
+| Prix | 14,90 CHF (impression soi-même) / 49,90 CHF (recommandé) |
 | Objectif | ~10 contestations/mois |
 | Compte | Parcours sans compte ; création de compte **après paiement** pour le suivi |
 | Signature | Signature dessinée capturée dans l'UI (nécessaire pour le recommandé) |
@@ -231,10 +231,10 @@ Génération lettre (HTML → PDF serveur)
 PREVIEW FILIGRANÉ (images matricielles, filigranes incrustés — PDF propre JAMAIS exposé)
    │
    ▼
-Choix offre → PAIEMENT Stripe (5 ou 35 CHF, TWINT/carte)
+Choix offre → PAIEMENT Stripe (14,90 ou 49,90 CHF, TWINT/carte)
    │
-   ├── 5 CHF  → création compte → PDF propre débloqué (téléchargement) → suivi
-   └── 35 CHF → capture SIGNATURE → PDF signé → Pingen (recommandé, expéditeur=locataire)
+   ├── 14,90 CHF → création compte → PDF propre + checklist débloqués (téléchargement) → suivi
+   └── 49,90 CHF → capture SIGNATURE → PDF signé → Pingen (recommandé, expéditeur=locataire)
                  → webhook suivi → compte + tracking dans le dashboard
    │
    ▼
@@ -325,8 +325,8 @@ La requête va à la **préfecture du district** où se situe l'immeuble. 10 dis
 
 | Offre | Prix | Coûts variables | Marge nette approx. |
 |---|---|---|---|
-| Lettre à imprimer | 5 CHF | Stripe ~0,45 + Claude API ~0,05 | **~4,4 CHF** |
-| Recommandé | 35 CHF | Pingen recommandé ~8–11 (affranchissement recommandé ~5,30–6,30 + impression + frais) + Stripe ~1,3 + Claude API ~0,05 | **~22 CHF** |
+| Lettre à imprimer | 14,90 CHF | Frais Stripe + génération | Marge à recalculer |
+| Recommandé | 49,90 CHF | Pingen recommandé + frais Stripe + génération | Marge à recalculer |
 
 À 10/mois (mix), le CA est modeste (ordre de 100–350 CHF/mois) : les marges sont saines, **le levier c'est le volume** (SEO programmatique + ads). Un 3ᵉ palier possible plus tard : recommandé + relance automatique à J+30 si pas de réponse.
 
@@ -337,8 +337,8 @@ La requête va à la **préfecture du district** où se situe l'immeuble. 10 dis
 Le « lancement aujourd'hui » se traduit ainsi : **la landing + le calculateur gratuit peuvent partir aujourd'hui** ; le flux payant demande quelques jours.
 
 - **Phase 0 — Aujourd'hui.** Landing contestation.ch + **calculateur « ai-je droit à une baisse ? »** (taux de référence) + capture email/waitlist. Claude Design + Lovable. → génère des leads immédiatement, valide la demande.
-- **Phase 1 — J+2 à J+5 — MVP payant Genève.** Flux **manuel** loyer initial GE → ruleset → lettre → preview filigrané → **Stripe 5 CHF** (impression soi-même). GE d'abord (une seule adresse).
-- **Phase 2 — J+5 à J+10.** Ajout **Vaud** (dataset préfectures) + **flux import bail** (Claude API) + **offre 35 CHF** (Pingen sandbox→prod + capture signature).
+- **Phase 1 — J+2 à J+5 — MVP payant Genève.** Flux **manuel** loyer initial GE → ruleset → lettre → preview filigrané → **Stripe 14,90 CHF** (impression soi-même). GE d'abord (une seule adresse).
+- **Phase 2 — J+5 à J+10.** Ajout **Vaud** (dataset préfectures) + **flux import bail** (Claude API) + **offre 49,90 CHF** (Pingen sandbox→prod + capture signature).
 - **Phase 3 — J+10+.** SEO programmatique (pages par motif : « formule manquante », « hausse >10 % », « baisse taux de référence », par canton), Facebook Ads, itération sur le taux de conversion du preview.
 
 ---

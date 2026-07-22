@@ -1,0 +1,17 @@
+---
+import type { PublicBlogArticle, ArticleSummary } from '../../lib/blog.ts';
+
+interface Props { article: PublicBlogArticle | ArticleSummary; headingLevel?: 2 | 3 }
+const { article, headingLevel = 2 } = Astro.props;
+const topics = 'topics' in article ? article.topics : [];
+const formatted = new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(article.published_at));
+---
+<article class="article-card">
+  {article.featured_image && <a href={`/blog/${article.slug}`} tabindex="-1"><img class="article-card__image" src={article.featured_image} alt="" loading="lazy" /></a>}
+  <div class="article-card__body">
+    {topics.length > 0 && <div class="article-card__topics">{topics.slice(0, 2).map((topic) => topic.name).join(' · ')}</div>}
+    {headingLevel === 2 ? <h2><a href={`/blog/${article.slug}`}>{article.title}</a></h2> : <h3><a href={`/blog/${article.slug}`}>{article.title}</a></h3>}
+    <p>{article.excerpt}</p>
+    <time datetime={article.published_at}>{formatted}</time>
+  </div>
+</article>

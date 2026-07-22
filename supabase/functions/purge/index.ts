@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
   const db = adminClient();
   const nowIso = new Date().toISOString();
-  const removed = { uploads: 0, previews: 0, clean: 0, dossiers: 0 };
+  const removed = { uploads: 0, previews: 0, clean: 0, dossiers: 0, blogPreviewTokens: 0 };
 
   try {
     // 1) Documents importés (bucket uploads).
@@ -59,6 +59,15 @@ Deno.serve(async (req) => {
     await db.from('letters').delete().lt('expires_at', nowIso);
     await db.from('payments').delete().lt('expires_at', nowIso);
     await db.from('mailings').delete().lt('expires_at', nowIso);
+
+    // Les articles et leurs révisions sont durables. Seuls les jetons d'aperçu
+    // temporaires du blog sont concernés par le nettoyage quotidien.
+    const { data: deletedPreviewTokens } = await db
+      .from('blog_preview_tokens')
+      .delete()
+      .lt('expires_at', nowIso)
+      .select('token_hash');
+    removed.blogPreviewTokens = deletedPreviewTokens?.length ?? 0;
 
     return json({ ok: true, removed });
   } catch (e) {

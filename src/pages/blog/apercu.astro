@@ -1,0 +1,12 @@
+---
+import ArticlePage from '../../components/blog/ArticlePage.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPreviewArticle } from '../../lib/blog.ts';
+
+const token = Astro.url.searchParams.get('token') || '';
+const article = await getPreviewArticle(token);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+if (!article) Astro.response.status = 404;
+---
+{article ? <ArticlePage article={article} related={[]} /> : <BaseLayout title="Aperçu expiré | Contestation.ch" description="Cet aperçu n’est plus disponible." noindex={true}><div class="page-shell"><div class="empty-state"><h1>Aperçu expiré ou invalide</h1><p>Générez un nouveau lien depuis l’administration.</p></div></div></BaseLayout>}

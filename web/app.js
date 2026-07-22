@@ -9,7 +9,9 @@ class Component extends DCLogic {
   state = {
     screen: 'landing',
     loyer: '', taux: '', calcLoading: false, calcRes: null, tauxActuel: null,
+    baisseSimLoading: false, baisseSimRes: null, baisseSimError: '',
     parcours: null,
+    flowKind: null,
     step: 0,
     importState: 'upload',
     data: {
@@ -20,6 +22,9 @@ class Component extends DCLogic {
       locNom: '', locPrenom: '', locAdresse: '', locNpa: '', locVille: '', locEmail: '',
       regNom: '', regAdresse: '', regNpa: '', regVille: '',
       signatureData: null,
+      typeBail: 'ordinaire', dateHausse: '', dateEffetHausse: '',
+      loyerAvantHausse: '', loyerApresHausse: '', formuleHausse: 'inconnu',
+      motifHausse: 'inconnu', tauxRefNouveau: '',
     },
     // dossier serveur
     dossierId: null, letterId: null, previewUrl: '',
@@ -38,7 +43,9 @@ class Component extends DCLogic {
 
   constructor() {
     super();
-    this.track('landing_view');
+    if (window.CONTESTATION_START_SCREEN === 'choix') this.state.screen = 'choix';
+    this.applyRequestedFlow();
+    this.track(this.state.screen === 'landing' ? 'landing_view' : 'diagnostic_entry_view');
     this.resumeFromReturn();
     if (!API.isConfigured()) {
       this.state.errorMsg =
@@ -49,6 +56,7 @@ class Component extends DCLogic {
   // ── helpers de format (UI uniquement) ──────────────────────────────
   num(v) { const n = parseFloat(String(v).replace(',', '.').replace(/[^0-9.]/g, '')); return isNaN(n) ? null : n; }
   fmt(n) { return Math.round(n).toLocaleString('fr-CH').replace(/[\u202f\u00a0,]/g, '\u2019'); }
+  fmtMoney(n) { return Number(n).toLocaleString('fr-CH', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
 
   track(name, detail = {}) {
     try {
@@ -56,6 +64,17 @@ class Component extends DCLogic {
       window.dataLayer.push({ event: name, ...detail });
       window.dispatchEvent(new CustomEvent('contestation:analytics', { detail: { event: name, ...detail } }));
     } catch (_) { /* la mesure ne doit jamais bloquer le parcours */ }
+  }
+
+  applyRequestedFlow() {
+    let flow;
+    try { flow = new URLSearchParams(location.search).get('flow'); } catch (_) { return; }
+    if (!['loyer_initial', 'hausse_loyer', 'demande_baisse'].includes(flow)) return;
+    this.state.flowKind = flow;
+    this.state.parcours = flow;
+    if (flow === 'loyer_initial') this.state.screen = 'mode';
+    else if (flow === 'demande_baisse') this.state.screen = 'baisseSim';
+    else this.state.screen = 'altForm';
   }
 
   go(screen) { this.setState({ screen }); }
@@ -72,7 +91,7 @@ class Component extends DCLogic {
   }
   fail(e) {
     console.error(e);
-    this.setState({ busy: false, calcLoading: false, payLoading: false, errorMsg: (e && e.message) || 'Une erreur est survenue.' });
+    this.setState({ busy: false, calcLoading: false, baisseSimLoading: false, payLoading: false, errorMsg: (e && e.message) || 'Une erreur est survenue.' });
   }
 
   // ── persistance légère (survie au round-trip Stripe) ───────────────
@@ -85,13 +104,18 @@ class Component extends DCLogic {
   resumeFromReturn() {
     let q;
     try { q = new URLSearchParams(location.search); } catch (_) { return; }
-    if (!q.get('session_id') && !q.get('paid')) return;
+    // Stripe ajoute toujours session_id à l'URL de succès. Le simple paramètre
+    // `paid=1` n'est pas une preuve de paiement et ne doit jamais suffire.
+    if (!q.get('session_id')) return;
     let s = {};
     try { s = JSON.parse(localStorage.getItem('cc_session') || '{}'); } catch (_) {}
     this.state.screen = 'succes';
-    this.state.offre = s.offre || this.state.offre;
+    // Normalise aussi les anciennes sessions locales créées avant le changement
+    // tarifaire, afin que leur écran de succès conserve le bon type d'offre.
+    this.state.offre = s.offre === '35' ? '4990' : s.offre === '5' ? '1490' : (s.offre || this.state.offre);
     this.state.dossierId = s.dossierId || null;
     this.state.letterId = s.letterId || null;
+    this.state.flowKind = s.flowKind || null;
     try { history.replaceState({}, '', location.pathname); } catch (_) {}
   }
 
@@ -99,13 +123,15 @@ class Component extends DCLogic {
   buildDossier() {
     const d = this.state.data;
     const n = (v) => this.num(v);
+    const kind = this.state.flowKind || 'loyer_initial';
     return {
+      kind,
       canton: d.canton,
       npa: d.npa,
       commune: d.commune,
       adresseImmeuble: d.adresse,
       dateRemiseCles: d.dateCles,
-      loyerNetMensuel: n(d.loyerNet) || 0,
+      loyerNetMensuel: kind === 'hausse_loyer' ? (n(d.loyerAvantHausse) || 0) : (n(d.loyerNet) || 0),
       chargesMensuelles: n(d.charges) || 0,
       formuleOfficielleRecue: d.formule || 'inconnu',
       loyerPrecedentConnu: d.loyerPrecConnu === true,
@@ -116,7 +142,100 @@ class Component extends DCLogic {
       locataire: { nom: d.locNom, prenom: d.locPrenom, adresse: d.locAdresse, npa: d.locNpa, ville: d.locVille, email: d.locEmail },
       bailleur: { nom: d.regNom, adresse: d.regAdresse, npa: d.regNpa, ville: d.regVille },
       signatureDataUrl: d.signatureData || null,
+      typeBail: d.typeBail || 'ordinaire',
+      dateNotificationHausse: d.dateHausse || undefined,
+      dateEffetHausse: d.dateEffetHausse || undefined,
+      loyerAvantHausse: n(d.loyerAvantHausse),
+      loyerApresHausse: n(d.loyerApresHausse),
+      formuleHausseRecue: d.formuleHausse || 'inconnu',
+      motifHausse: d.motifHausse || 'inconnu',
+      tauxReferenceNouveau: n(d.tauxRefNouveau),
     };
+  }
+
+  selectFlow(kind) {
+    this.track('legal_flow_selected', { kind });
+    if (kind === 'loyer_initial') {
+      this.setState({ flowKind: kind, parcours: kind, screen: 'mode' });
+    } else if (kind === 'demande_baisse') {
+      this.setState({
+        flowKind: kind, parcours: kind, screen: 'baisseSim',
+        baisseSimRes: null, baisseSimError: '', stepErrors: {},
+        result: null, dossierId: null, letterId: null,
+      });
+    } else {
+      this.setState({ flowKind: kind, parcours: kind, screen: 'altForm', stepErrors: {}, result: null, dossierId: null, letterId: null });
+    }
+  }
+
+  async runBaisseSimulation() {
+    if (this.state.baisseSimLoading) return;
+    const loyer = this.num(this.state.data.loyerNet);
+    const taux = this.num(this.state.data.tauxRef);
+    if (!loyer || loyer <= 0) {
+      this.setState({ baisseSimError: 'Indiquez votre loyer net mensuel.', baisseSimRes: null });
+      return;
+    }
+    if (!taux || taux <= 0 || taux > 10) {
+      this.setState({ baisseSimError: 'Indiquez le taux de référence qui détermine actuellement votre loyer.', baisseSimRes: null });
+      return;
+    }
+    this.track('rent_reduction_simulation_started');
+    this.setState({ baisseSimLoading: true, baisseSimError: '', baisseSimRes: null, errorMsg: '' });
+    try {
+      const { result } = await API.evaluateBaisse({
+        loyerNetMensuel: loyer,
+        tauxReferenceBail: taux,
+      });
+      // Si l'utilisateur a modifié une valeur pendant la requête, ignorer la
+      // réponse devenue obsolète et lui laisser relancer le calcul.
+      if (this.num(this.state.data.loyerNet) !== loyer || this.num(this.state.data.tauxRef) !== taux) {
+        this.setState({ baisseSimLoading: false, baisseSimRes: null });
+        return;
+      }
+      const baisse = result.baisseEstimeeChf || 0;
+      this.track('rent_reduction_simulation_completed', { eligible: !!result.eligible });
+      this.setState({
+        baisseSimLoading: false,
+        tauxActuel: result.tauxActuel,
+        baisseSimRes: {
+          eligible: !!result.eligible,
+          pct: result.baisseEstimeePct,
+          chf: baisse,
+          annuel: baisse * 12,
+          nouveauLoyer: Math.max(0, loyer - baisse),
+          avertissements: result.avertissements || [],
+        },
+      });
+    } catch (e) { this.fail(e); }
+  }
+
+  continueBaisseFlow() {
+    if (!this.state.baisseSimRes?.eligible) return;
+    this.track('rent_reduction_request_started');
+    this.setState({ screen: 'altForm', stepErrors: {} });
+  }
+
+  validateAltForm() {
+    const d = this.state.data, errors = {};
+    if (!d.adresse.trim()) errors.alt = "Indiquez l'adresse du logement.";
+    else if (!d.canton || !d.commune || !d.npa) errors.alt = "Choisissez une adresse complète à Vaud ou Genève.";
+    if (this.state.flowKind === 'hausse_loyer') {
+      if (!d.dateHausse) errors.alt = 'Indiquez la date à laquelle vous avez reçu la hausse.';
+      else if (!this.num(d.loyerAvantHausse) || !this.num(d.loyerApresHausse)) errors.alt = 'Indiquez le loyer avant et après la hausse.';
+      else if (this.num(d.loyerApresHausse) <= this.num(d.loyerAvantHausse)) errors.alt = 'Le nouveau loyer doit être supérieur au loyer actuel.';
+    } else if (this.state.flowKind === 'demande_baisse') {
+      if (!this.num(d.loyerNet) || !this.num(d.tauxRef)) errors.alt = 'Indiquez votre loyer net et le taux de référence déterminant.';
+    }
+    if (!d.locPrenom.trim() || !d.locNom.trim() || !d.locAdresse.trim() || !d.locNpa.trim() || !d.locVille.trim()) errors.alt = 'Complétez vos coordonnées.';
+    if (!d.regNom.trim() || !d.regAdresse.trim() || !d.regNpa.trim() || !d.regVille.trim()) errors.alt = 'Complétez les coordonnées de la régie ou du propriétaire.';
+    return errors;
+  }
+
+  submitAltForm() {
+    const errors = this.validateAltForm();
+    if (Object.keys(errors).length) { this.setState({ stepErrors: errors }); return; }
+    this.submitDossier();
   }
 
   // ── calculateur landing (POST /evaluate-baisse) ────────────────────
@@ -181,7 +300,7 @@ class Component extends DCLogic {
     try {
       const { dossierId, evaluation } = await API.evaluate(this.buildDossier());
       evaluation.manuel = evaluation.requiertTraitementManuel; // alias attendu par l'UI
-      this.persist({ dossierId });
+      this.persist({ dossierId, flowKind: this.state.flowKind || 'loyer_initial' });
       this.track('diagnostic_completed', {
         parcours: this.state.parcours || 'unknown',
         eligible: !!evaluation.eligible,
@@ -288,12 +407,12 @@ class Component extends DCLogic {
       regVille: s.canton === 'GE' ? 'Genève' : 'Lausanne', signatureData: null,
     };
     this.setState({
-      screen: 'manuel', parcours: 'manuel', step: 0, data,
+      screen: 'manuel', parcours: 'manuel', flowKind: 'loyer_initial', step: 0, data,
       testScenarioName: s.name, stepErrors: {}, errorMsg: '',
       dossierId: null, letterId: null, previewUrl: '', result: null,
     });
   }
-  prev() { this.setState(s => (s.step <= 0 ? { screen: 'choix', stepErrors: {} } : { step: s.step - 1, stepErrors: {} })); }
+  prev() { this.setState(s => (s.step <= 0 ? { screen: 'mode', stepErrors: {} } : { step: s.step - 1, stepErrors: {} })); }
 
   // ── autocomplétion d'adresse (service officiel geo.admin.ch) ────────
   onBuildingAddressInput(value) {
@@ -368,6 +487,9 @@ class Component extends DCLogic {
       canton: selected.canton,
       npa: selected.npa || current.npa,
       commune: selected.city || current.commune,
+      locAdresse: this.state.screen === 'altForm' && !current.locAdresse ? (selected.address || current.adresse) : current.locAdresse,
+      locNpa: this.state.screen === 'altForm' && !current.locNpa ? (selected.npa || current.npa) : current.locNpa,
+      locVille: this.state.screen === 'altForm' && !current.locVille ? (selected.city || current.commune) : current.locVille,
     };
     this.setState({ data, addressSuggestions: [], addressLoading: false, stepErrors: {} });
   }
@@ -406,7 +528,6 @@ class Component extends DCLogic {
         extractionUncertain: Array.isArray(extracted.champs_incertains) ? extracted.champs_incertains : [],
         extractionProvider: extraction && extraction.provider ? extraction.provider : '',
       });
-      this.track('rate_calculator_completed', { eligible: !!result.eligible });
       this.track('import_completed', { champs_incertains: Array.isArray(extracted.champs_incertains) ? extracted.champs_incertains.length : 0 });
     } catch (e) {
       this.track('import_failed', { status: e && e.status ? e.status : 0 });
@@ -475,7 +596,7 @@ class Component extends DCLogic {
     } catch (e) { this.fail(e); }
   }
 
-  // ── signature (flux recommandé 35) ─────────────────────────────────
+  // ── signature (flux recommandé 49,90 CHF) ──────────────────────────
   initSig(node) {
     const ctx = node.getContext('2d');
     ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#12303F';
@@ -488,15 +609,25 @@ class Component extends DCLogic {
     this._sigNode = node; this._sigCtx = ctx;
   }
   clearSig() { if (this._sigNode) this._sigCtx.clearRect(0, 0, this._sigNode.width, this._sigNode.height); this.setState({ sigDrawn: false }); }
-  validateSig() { if (this._sigNode) this.setD('signatureData', this._sigNode.toDataURL()); this.setState({ screen: 'checkout' }); }
+  async validateSig() {
+    if (!this._sigNode || !this.state.sigDrawn) { this.setState({ errorMsg: 'Dessinez votre signature avant de continuer.' }); return; }
+    const signatureDataUrl = this._sigNode.toDataURL('image/png');
+    if (!this.state.dossierId || !this.state.letterId) { this.setState({ errorMsg: 'Lettre non générée.' }); return; }
+    this.setState({ busy: true, errorMsg: '' });
+    try {
+      await API.signLetter({ dossierId: this.state.dossierId, letterId: this.state.letterId, signatureDataUrl });
+      this.state.data.signatureData = signatureDataUrl;
+      this.setState({ busy: false, screen: 'checkout' });
+    } catch (e) { this.fail(e); }
+  }
 
   // ── paiement : Stripe Checkout (POST /create-checkout) ─────────────
   async payNow() {
     if (!this.state.dossierId || !this.state.letterId) { this.setState({ errorMsg: 'Lettre non générée.' }); return; }
-    const offer = this.state.offre === '35' ? 'recommande_35' : 'imprimer_5';
+    const offer = this.state.offre === '4990' ? 'recommande_4990' : 'imprimer_1490';
     this.setState({ payLoading: true, errorMsg: '' });
     try {
-      this.persist({ offre: this.state.offre, dossierId: this.state.dossierId, letterId: this.state.letterId });
+      this.persist({ offre: this.state.offre, dossierId: this.state.dossierId, letterId: this.state.letterId, flowKind: this.state.flowKind || 'loyer_initial' });
       const { url } = await API.createCheckout({ dossierId: this.state.dossierId, letterId: this.state.letterId, offer });
       if (!url) throw new Error('URL de paiement absente.');
       window.location.href = url; // redirection vers Stripe Checkout
@@ -517,13 +648,6 @@ class Component extends DCLogic {
     }
   }
 
-  FORCE_UI = {
-    tres_forte: { label: 'TRÈS FORT', color: '#C43D2E', bg: '#FBEAE7', bar: '#C43D2E' },
-    forte: { label: 'FORT', color: '#7A5406', bg: '#FFF3DF', bar: '#F4A73B' },
-    moyenne: { label: 'MOYEN', color: '#1B4965', bg: '#EAF1F5', bar: '#1B4965' },
-    faible: { label: 'FAIBLE', color: '#5A6A70', bg: '#F1F0EB', bar: '#8A979C' },
-  };
-
   MOTIF_PEDAGOGIE = {
     formule_manquante: "À Vaud et à Genève, le bailleur doit vous remettre un document officiel qui explique comment le loyer a été fixé. Sans ce document, vous n'avez pas pu vérifier le montant demandé : la fixation du loyer peut donc être considérée comme nulle.",
     hausse_sensible: "Une forte hausse entre deux locataires peut indiquer que le nouveau loyer n'est pas justifié, surtout si le logement n'a pas bénéficié de travaux importants. L'autorité peut demander au bailleur d'expliquer précisément cette augmentation.",
@@ -540,16 +664,21 @@ class Component extends DCLogic {
   }
 
   renderVals() {
-    const st = this.state, r = st.calcRes, rr = st.result;
+    const st = this.state, r = st.calcRes, rr = st.result, bs = st.baisseSimRes;
     const motifsUI = rr ? rr.motifs.map(m => ({
       code: m.code,
       libelle: m.libelle,
       explication: m.explication,
       explicationSimple: this.MOTIF_PEDAGOGIE[m.code] || m.explication,
-      ...this.FORCE_UI[m.force],
     })) : [];
-    const aut = rr && rr.autorite;
-    const formuleAClarifier = st.data.formule === 'inconnu';
+    const isInitialFlow = (st.flowKind || (rr && rr.kind) || 'loyer_initial') === 'loyer_initial';
+    const isHausseFlow = (st.flowKind || (rr && rr.kind)) === 'hausse_loyer';
+    const isBaisseFlow = (st.flowKind || (rr && rr.kind)) === 'demande_baisse';
+    const aut = rr && rr.autorite ? rr.autorite : (isBaisseFlow ? {
+      nom: st.data.regNom, adresse: st.data.regAdresse, npa: st.data.regNpa,
+      ville: st.data.regVille, canton: st.data.canton,
+    } : null);
+    const formuleAClarifier = isInitialFlow && st.data.formule === 'inconnu';
     const avertissementsUI = rr
       ? rr.avertissements.filter(a => !/formule officielle (?:non confirmée|à vérifier)/i.test(a))
       : [];
@@ -567,8 +696,21 @@ class Component extends DCLogic {
       diagEligible: !!(rr && rr.eligible && !rr.horsDelai),
       diagHorsDelai: !!(rr && rr.horsDelai),
       diagManuel: !!(rr && rr.manuel && !rr.eligible && !rr.horsDelai),
+      diagNo: !!(rr && !rr.eligible && !rr.horsDelai && !rr.manuel),
+      diagNoTitle: isBaisseFlow ? 'Aucune baisse liée au taux identifiée' : 'Aucune lettre automatisée proposée',
+      diagNoText: isBaisseFlow ? "Le taux déterminant indiqué n'est pas supérieur au taux actuel. Nous ne vous proposons donc pas de lettre payante sur ce fondement." : "Les informations fournies ne permettent pas de proposer une contestation automatisée.",
       diagMotifsCount: motifsUI.length,
       diagMotifsText: motifsUI.length === 1 ? 'un motif pertinent' : `${motifsUI.length} motifs pertinents`,
+      diagTitle: isBaisseFlow ? 'Une demande de baisse paraît possible.' : isHausseFlow ? 'Votre hausse peut être contestée.' : 'Votre dossier paraît solide.',
+      diagSummary: isBaisseFlow
+        ? `Le taux déterminant de votre loyer est supérieur au taux actuel. La lettre demandera une baisse estimée à ${rr && rr.estimationPct != null ? String(rr.estimationPct).replace('.', ',') : ''} %.`
+        : isHausseFlow
+          ? 'Vous êtes encore dans le délai indiqué par les informations fournies. La lettre demandera le contrôle de la forme, du calcul et des motifs de la hausse.'
+          : `Nous avons identifié ${motifsUI.length === 1 ? 'un motif pertinent' : `${motifsUI.length} motifs pertinents`}. Au vu des informations fournies, il vaut la peine de contester votre loyer initial.`,
+      diagLateTitle: isHausseFlow ? 'Le délai de contestation est dépassé' : 'Le délai de 30 jours est dépassé',
+      diagLateText: isHausseFlow ? "Une hausse doit être contestée dans les 30 jours suivant sa réception. Nous ne proposons pas de lettre payante dans cette situation." : "La contestation du loyer initial n'est plus recevable par le parcours ordinaire. Vérifiez plutôt si le taux de référence ouvre un droit à une baisse.",
+      diagSectionTitle: isBaisseFlow ? 'Pourquoi demander une baisse' : 'Vos motifs de contestation',
+      diagSectionIntro: isBaisseFlow ? 'Les éléments qui seront exposés à votre bailleur dans la demande.' : 'Les éléments juridiques et factuels qui seront développés dans votre requête.',
       motifs: motifsUI,
       conclusions: rr ? rr.conclusions : [],
       avertissements: avertissementsUI,
@@ -581,13 +723,15 @@ class Component extends DCLogic {
       autAdresse: aut ? aut.adresse : '',
       autCase: aut && aut.casePostale ? aut.casePostale : '',
       autVille: aut ? `${aut.npa} ${aut.ville}` : '',
-      autType: aut && aut.canton === 'GE' ? 'Commission cantonale de conciliation' : 'Préfecture du district',
+      autType: isBaisseFlow ? 'Régie ou propriétaire' : aut && aut.canton === 'GE' ? 'Commission cantonale de conciliation' : 'Préfecture du district',
       goApercu: () => this.goApercu(),
       // apercu + offres
       isApercu: st.screen === 'apercu',
       previewUrl: st.previewUrl || '',
       hasPreview: !!st.previewUrl,
       noPreview: !st.previewUrl,
+      noPreviewInitial: !st.previewUrl && isInitialFlow,
+      noPreviewAlt: !st.previewUrl && !isInitialFlow,
       wmTiles: Array.from({ length: 40 }, (_, i) => i),
       letterNom: `${st.data.locPrenom || ''} ${st.data.locNom || ''}`.trim(),
       letterAdr: st.data.locAdresse || '',
@@ -599,19 +743,22 @@ class Component extends DCLogic {
       letterMotifs: rr ? rr.motifs : [],
       letterConclusionInstruction: conclusionInstruction,
       letterConclusionsFond: conclusionsFond,
-      letterPieces: [
-        'Copie du contrat de bail et de ses annexes',
-        ...(st.data.formule === 'oui' ? ['Copie de la formule officielle de notification du loyer initial'] : []),
-      ],
-      letterFormuleNonJointe: st.data.formule !== 'oui',
+      letterPieces: isHausseFlow
+        ? ['Copie du contrat de bail', 'Copie de la notification de hausse et de son enveloppe', 'Copie de la dernière fixation de loyer disponible']
+        : isBaisseFlow
+          ? ['Copie du contrat de bail', 'Copie de la dernière notification ayant fixé le loyer et son taux de référence']
+          : ['Copie du contrat de bail et de ses annexes', ...(st.data.formule === 'oui' ? ['Copie de la formule officielle de notification du loyer initial'] : [])],
+      letterFormuleNonJointe: isInitialFlow && st.data.formule !== 'oui',
+      letterObject: isHausseFlow ? 'Contestation de la hausse de loyer' : isBaisseFlow ? 'Demande de baisse de loyer' : 'Requête en contestation du loyer initial',
+      letterIntro: isHausseFlow ? `Je conteste la hausse de ${st.data.loyerAvantHausse || ''} à ${st.data.loyerApresHausse || ''} CHF qui m'a été notifiée.` : isBaisseFlow ? `Je demande une baisse de mon loyer net, fondé sur un taux de ${st.data.tauxRef || ''} %, alors que le taux actuel est de ${tauxActuelStr} %.` : '',
       letterAdresseImmeuble: st.data.adresse || '',
       letterLoyer: st.data.loyerNet || '',
       letterCharges: st.data.charges || '0',
       letterBailleur: st.data.regNom || '',
       letterDateCles: st.data.dateCles ? new Date(st.data.dateCles).toLocaleDateString('fr-CH') : '',
       letterFormule: st.data.formule === 'oui' ? 'La formule officielle a été remise.' : st.data.formule === 'non' ? "La formule officielle n'a pas été remise." : 'La remise de la formule officielle doit encore être clarifiée.',
-      selectOffre5: () => this.setState({ offre: '5', screen: 'checkout' }),
-      selectOffre35: () => this.setState({ offre: '35', screen: 'signature' }),
+      selectOffre5: () => this.setState({ offre: '1490', screen: 'checkout' }),
+      selectOffre35: () => this.setState({ offre: '4990', screen: 'signature' }),
       // signature
       isSignature: st.screen === 'signature',
       sigDrawn: !!st.sigDrawn,
@@ -621,31 +768,56 @@ class Component extends DCLogic {
       // checkout
       isCheckout: st.screen === 'checkout',
       offre: st.offre,
-      offrePrice: st.offre === '35' ? '35.00' : '5.00',
-      offreTitle: st.offre === '35' ? 'Envoi en recommandé' : 'Lettre à imprimer',
-      offreDesc: st.offre === '35' ? "On imprime et on poste pour vous" : 'PDF final à imprimer vous-même',
-      isTwint: st.payMethod !== 'carte',
-      isCarte: st.payMethod === 'carte',
-      twintBorder: st.payMethod !== 'carte' ? '#1B4965' : '#E4E2DB',
-      twintBg: st.payMethod !== 'carte' ? '#EAF1F5' : '#fff',
-      carteBorder: st.payMethod === 'carte' ? '#1B4965' : '#E4E2DB',
-      carteBg: st.payMethod === 'carte' ? '#EAF1F5' : '#fff',
+      offrePrice: st.offre === '4990' ? '49,90' : '14,90',
+      offreTitle: st.offre === '4990' ? 'Envoi en recommandé, tout compris' : 'Lettre personnalisée à imprimer',
+      offreDesc: st.offre === '4990' ? "Impression, affranchissement et suivi inclus" : 'Lettre personnalisée et checklist des pièces',
       trackNum: 'RR ' + '98 072 145 6 CH',
-      setTwint: () => this.setState({ payMethod: 'twint' }),
-      setCarte: () => this.setState({ payMethod: 'carte' }),
       payLoading: !!st.payLoading,
       payNow: () => this.payNow(),
       // succès / dashboard
       isSucces: st.screen === 'succes',
       isDashboard: st.screen === 'dashboard',
-      is35: st.offre === '35',
-      is5: st.offre !== '35',
+      is35: st.offre === '4990',
+      is5: st.offre !== '4990',
+      successPrintText: isBaisseFlow
+        ? "Votre lettre est débloquée. Téléchargez-la, imprimez-la et envoyez-la à votre régie ou propriétaire, de préférence en recommandé."
+        : "Votre lettre est débloquée. Téléchargez-la, imprimez-la et envoyez-la à l'autorité de conciliation.",
       goDashboard: () => this.go('dashboard'),
       goCheckout: () => this.go('checkout'),
       downloadLetter: () => this.downloadLetter(),
       tauxActuel: tauxActuelStr,
       isLanding: st.screen === 'landing',
       isChoix: st.screen === 'choix',
+      isMode: st.screen === 'mode',
+      isBaisseSim: st.screen === 'baisseSim',
+      isAltForm: st.screen === 'altForm',
+      isHausseFlow,
+      isBaisseFlow,
+      isInitialFlow,
+      altTitle: isHausseFlow ? 'Contester une hausse de loyer' : 'Demander une baisse de loyer',
+      altIntro: isHausseFlow ? 'Renseignez la notification reçue et vos coordonnées. Nous vérifierons le délai, la forme et les bases du calcul.' : 'Votre baisse paraît possible. Complétez maintenant les informations nécessaires pour préparer la demande à votre bailleur.',
+      chooseInitialFlow: () => this.selectFlow('loyer_initial'),
+      chooseHausseFlow: () => this.selectFlow('hausse_loyer'),
+      chooseBaisseFlow: () => this.selectFlow('demande_baisse'),
+      backToFlows: () => this.go('choix'),
+      backFromAltForm: () => this.go(isBaisseFlow ? 'baisseSim' : 'choix'),
+      submitAltForm: () => this.submitAltForm(),
+      altError: st.stepErrors && st.stepErrors.alt || '',
+      runBaisseSimulation: () => this.runBaisseSimulation(),
+      continueBaisseFlow: () => this.continueBaisseFlow(),
+      editBaisseSimulation: () => this.setState({ screen: 'baisseSim', baisseSimRes: null, baisseSimError: '' }),
+      onBaisseSimLoyer: (e) => this.setState(s => ({ data: { ...s.data, loyerNet: e.target.value }, baisseSimRes: null, baisseSimError: '' })),
+      onBaisseSimTaux: (e) => this.setState(s => ({ data: { ...s.data, tauxRef: e.target.value }, baisseSimRes: null, baisseSimError: '' })),
+      baisseSimLoading: !!st.baisseSimLoading,
+      baisseSimError: st.baisseSimError || '',
+      baisseSimEligible: !!(bs && bs.eligible),
+      baisseSimNo: !!(bs && !bs.eligible),
+      baisseSimPct: bs && bs.pct != null ? String(bs.pct).replace('.', ',') : '',
+      baisseSimChf: bs ? this.fmtMoney(bs.chf) : '',
+      baisseSimAnnuel: bs ? this.fmtMoney(bs.annuel) : '',
+      baisseSimNouveauLoyer: bs ? this.fmtMoney(bs.nouveauLoyer) : '',
+      baisseSummaryLoyer: this.num(st.data.loyerNet) ? this.fmtMoney(this.num(st.data.loyerNet)) : '',
+      baisseSummaryTaux: st.data.tauxRef ? String(st.data.tauxRef).replace('.', ',') : '',
       isManuel: st.screen === 'manuel',
       isImport: st.screen === 'import',
       // calc
@@ -667,7 +839,7 @@ class Component extends DCLogic {
       },
       goManuel: () => {
         this.track('path_selected', { parcours: 'manuel' });
-        this.setState({ screen: 'manuel', parcours: 'manuel', step: 0, testScenarioName: '' });
+        this.setState({ screen: 'manuel', parcours: 'manuel', flowKind: 'loyer_initial', step: 0, testScenarioName: '' });
       },
       testModeAvailable: this.isLocalTestMode(),
       loadTestScenario: () => this.loadRandomTestScenario(),
@@ -676,7 +848,7 @@ class Component extends DCLogic {
       hasTestScenario: !!st.testScenarioName,
       goImport: () => {
         this.track('path_selected', { parcours: 'import' });
-        this.setState({ screen: 'import', parcours: 'import', importState: 'upload' });
+        this.setState({ screen: 'import', parcours: 'import', flowKind: 'loyer_initial', importState: 'upload' });
       },
       // import flow
       importUpload: st.screen === 'import' && st.importState === 'upload',
@@ -692,7 +864,8 @@ class Component extends DCLogic {
       uploadFormule: () => this.pickFile('formule'),
       startAnalyse: () => this.startAnalyse(),
       an0: (st.analyseStep || 0) >= 1, an1: (st.analyseStep || 0) >= 2, an2: (st.analyseStep || 0) >= 3,
-      goDiagnostic: () => this.submitImportedDossier(),
+      submitImportedDossier: () => this.submitImportedDossier(),
+      backToDiagnostic: () => this.go('diagnostic'),
       importFormuleOui: st.data.formule === 'oui',
       importFormuleNon: st.data.formule === 'non',
       importFormuleInconnue: st.data.formule !== 'oui' && st.data.formule !== 'non',
@@ -743,6 +916,14 @@ class Component extends DCLogic {
       onCharges: (e) => this.setD('charges', e.target.value),
       onLoyerPrec: (e) => this.setD('loyerPrec', e.target.value),
       onTauxRef: (e) => this.setD('tauxRef', e.target.value),
+      onTypeBail: (e) => this.setD('typeBail', e.target.value),
+      onDateHausse: (e) => this.setD('dateHausse', e.target.value),
+      onDateEffetHausse: (e) => this.setD('dateEffetHausse', e.target.value),
+      onLoyerAvantHausse: (e) => this.setD('loyerAvantHausse', e.target.value),
+      onLoyerApresHausse: (e) => this.setD('loyerApresHausse', e.target.value),
+      onFormuleHausse: (e) => this.setD('formuleHausse', e.target.value),
+      onMotifHausse: (e) => this.setD('motifHausse', e.target.value),
+      onTauxRefNouveau: (e) => this.setD('tauxRefNouveau', e.target.value),
       onAnnee: (e) => this.setD('annee', e.target.value),
       onLocNom: (e) => this.setD('locNom', e.target.value),
       onLocPrenom: (e) => this.setD('locPrenom', e.target.value),

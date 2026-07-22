@@ -4,6 +4,9 @@ import {
   resolveAutorite,
   evaluateLoyerInitial,
   evaluateDemandeBaisse,
+  evaluateHausseLoyer,
+  evaluateBaisseDossier,
+  evaluateDossier,
   fetchTauxReference,
   TAUX_REFERENCE,
   GE_AUTHORITY,
@@ -319,7 +322,7 @@ describe('evaluateLoyerInitial — conclusions', () => {
     expect(r.conclusions.join(' ')).toMatch(/après examen des pièces/i);
   });
 
-  it('motifs triés par force décroissante', () => {
+  it('présente les motifs factuels sans modifier leur ordre de détection', () => {
     const r = evaluateLoyerInitial(
       makeDossier({
         formuleOfficielleRecue: 'non',
@@ -328,10 +331,11 @@ describe('evaluateLoyerInitial — conclusions', () => {
       }),
       TODAY,
     );
-    const ordre = { tres_forte: 3, forte: 2, moyenne: 1, faible: 0 } as const;
-    for (let i = 1; i < r.motifs.length; i++) {
-      expect(ordre[r.motifs[i - 1].force]).toBeGreaterThanOrEqual(ordre[r.motifs[i].force]);
-    }
+    expect(r.motifs.map((m) => m.code)).toEqual([
+      'formule_manquante',
+      'hausse_sensible',
+      'presomption_rendement',
+    ]);
   });
 });
 
@@ -347,12 +351,12 @@ describe('evaluateDemandeBaisse', () => {
   });
 
   it('taux du bail > taux actuel → éligible + estimation', () => {
-    // taux actuel = 1.25 ; bail à 1.75 → delta 0.5 pt → ~2 * 2.91 = 5.82 %
+    // taux actuel = 1.25 ; bail à 1.75 → hausse réciproque 6 %, soit baisse 6/106.
     const r = evaluateDemandeBaisse(1.75, 2000);
     expect(r.eligible).toBe(true);
     expect(r.deltaPts).toBe(0.5);
-    expect(r.baisseEstimeePct).toBeCloseTo(5.82, 2);
-    expect(r.baisseEstimeeChf).toBeCloseTo(116.4, 1);
+    expect(r.baisseEstimeePct).toBeCloseTo(5.66, 2);
+    expect(r.baisseEstimeeChf).toBeCloseTo(113.2, 1);
     expect(r.procedure.length).toBeGreaterThan(0);
   });
 
@@ -364,5 +368,65 @@ describe('evaluateDemandeBaisse', () => {
   it('taux du bail < taux actuel → non éligible', () => {
     const r = evaluateDemandeBaisse(1.0, 1800);
     expect(r.eligible).toBe(false);
+  });
+});
+
+describe('evaluateHausseLoyer', () => {
+  const hausse = (over: Partial<DossierContestation> = {}) => makeDossier({
+    kind: 'hausse_loyer', typeBail: 'ordinaire', dateNotificationHausse: '2026-07-01',
+    loyerAvantHausse: 1800, loyerApresHausse: 1890, formuleHausseRecue: 'oui',
+    motifHausse: 'multiple', ...over,
+  });
+
+  it('autorise une contestation reçue depuis moins de 30 jours', () => {
+    const r = evaluateHausseLoyer(hausse(), TODAY);
+    expect(r.kind).toBe('hausse_loyer');
+    expect(r.eligible).toBe(true);
+    expect(r.horsDelai).toBe(false);
+    expect(r.estimationPct).toBe(5);
+    expect(r.destinataireType).toBe('autorite');
+  });
+
+  it('arrête le parcours après 30 jours', () => {
+    const r = evaluateHausseLoyer(hausse({ dateNotificationHausse: '2026-05-01' }), TODAY);
+    expect(r.eligible).toBe(false);
+    expect(r.horsDelai).toBe(true);
+  });
+
+  it('identifie une notification sans formule officielle', () => {
+    const r = evaluateHausseLoyer(hausse({ formuleHausseRecue: 'non' }), TODAY);
+    expect(r.motifs.some((m) => m.code === 'hausse_forme')).toBe(true);
+  });
+
+  it('bloque les régimes spéciaux avant paiement', () => {
+    const r = evaluateHausseLoyer(hausse({ typeBail: 'indexe' }), TODAY);
+    expect(r.eligible).toBe(false);
+    expect(r.requiertTraitementManuel).toBe(true);
+  });
+});
+
+describe('evaluateBaisseDossier', () => {
+  it('prépare une demande au bailleur avec le taux réciproque exact', () => {
+    const r = evaluateBaisseDossier(makeDossier({ kind: 'demande_baisse', typeBail: 'ordinaire', tauxReferenceBail: 1.75, loyerNetMensuel: 2000 }));
+    expect(r.eligible).toBe(true);
+    expect(r.destinataireType).toBe('bailleur');
+    expect(r.estimationPct).toBeCloseTo(5.66, 2);
+    expect(r.estimationChf).toBeCloseTo(113.2, 1);
+  });
+
+  it('ne vend pas de lettre si le taux ne permet pas de baisse', () => {
+    const r = evaluateBaisseDossier(makeDossier({ kind: 'demande_baisse', typeBail: 'ordinaire', tauxReferenceBail: 1.25 }));
+    expect(r.eligible).toBe(false);
+    expect(r.avertissements.join(' ')).toMatch(/pas supérieur/i);
+  });
+
+  it('bloque un loyer subventionné pour vérification humaine', () => {
+    const r = evaluateBaisseDossier(makeDossier({ kind: 'demande_baisse', typeBail: 'subventionne', tauxReferenceBail: 1.75 }));
+    expect(r.eligible).toBe(false);
+    expect(r.requiertTraitementManuel).toBe(true);
+  });
+
+  it('est sélectionné par le dispatcher commun', () => {
+    expect(evaluateDossier(makeDossier({ kind: 'demande_baisse', typeBail: 'ordinaire', tauxReferenceBail: 1.75 })).kind).toBe('demande_baisse');
   });
 });
