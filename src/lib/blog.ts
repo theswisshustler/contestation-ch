@@ -54,15 +54,34 @@ export interface ArticleSummary {
 }
 
 let client: SupabaseClient | null = null;
-export function publicSupabase(): SupabaseClient {
-  if (!client) client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-  return client;
+// Node.js 20 has no native WebSocket; load the `ws` package as transport.
+// We use a top-level variable so the async import runs once per module load.
+// In browser builds Astro tree-shakes the SSR branch away.
+let wsReady: Promise<SupabaseClient> | null = null;
+
+export function publicSupabase(): Promise<SupabaseClient> {
+  if (!wsReady) {
+    wsReady = (async () => {
+      if (client) return client;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let wsImpl: any;
+      if (import.meta.env.SSR) {
+        try { wsImpl = (await import('ws')).default; } catch { /* Node 22+ or browser */ }
+      }
+      client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        ...(wsImpl ? { realtime: { transport: wsImpl } } : {}),
+      });
+      return client;
+    })();
+  }
+  return wsReady;
 }
 
 export async function listPublishedArticles(options: { page?: number; pageSize?: number; topic?: string; author?: string } = {}): Promise<{ articles: PublicBlogArticle[]; count: number }> {
   const page = Math.max(0, options.page || 0);
   const pageSize = Math.min(100, Math.max(1, options.pageSize || 12));
-  let query = publicSupabase().from('blog_public_articles').select('*', { count: 'exact' }).order('published_at', { ascending: false });
+  let query = (await publicSupabase()).from('blog_public_articles').select('*', { count: 'exact' }).order('published_at', { ascending: false });
   if (options.topic) query = query.contains('topics', [{ slug: options.topic }]);
   if (options.author) query = query.eq('author_slug', options.author);
   const result = await query.range(page * pageSize, (page + 1) * pageSize - 1);
@@ -71,33 +90,33 @@ export async function listPublishedArticles(options: { page?: number; pageSize?:
 }
 
 export async function getPublicAuthor(slug: string): Promise<BlogAuthor | null> {
-  const result = await publicSupabase().from('blog_authors')
+  const result = await (await publicSupabase()).from('blog_authors')
     .select('id,kind,name,slug,bio,url,same_as').eq('slug', slug).eq('active', true).maybeSingle();
   if (result.error) throw result.error;
   return result.data as BlogAuthor | null;
 }
 
 export async function getPublishedArticle(slug: string): Promise<PublicBlogArticle | null> {
-  const result = await publicSupabase().from('blog_public_articles').select('*').eq('slug', slug).maybeSingle();
+  const result = await (await publicSupabase()).from('blog_public_articles').select('*').eq('slug', slug).maybeSingle();
   if (result.error) throw result.error;
   return result.data as unknown as PublicBlogArticle | null;
 }
 
 export async function getRelatedArticles(articleId: string, limit = 3): Promise<ArticleSummary[]> {
-  const result = await publicSupabase().rpc('get_related_blog_articles', { target_article: articleId, max_results: limit });
+  const result = await (await publicSupabase()).rpc('get_related_blog_articles', { target_article: articleId, max_results: limit });
   if (result.error) throw result.error;
   return (result.data || []) as ArticleSummary[];
 }
 
 export async function resolveOldSlug(slug: string): Promise<string | null> {
-  const history = await publicSupabase().from('blog_slug_history').select('article_id').eq('slug', slug).maybeSingle();
+  const history = await (await publicSupabase()).from('blog_slug_history').select('article_id').eq('slug', slug).maybeSingle();
   if (history.error || !history.data) return null;
-  const article = await publicSupabase().from('blog_public_articles').select('slug').eq('id', history.data.article_id).maybeSingle();
+  const article = await (await publicSupabase()).from('blog_public_articles').select('slug').eq('id', history.data.article_id).maybeSingle();
   return article.data?.slug || null;
 }
 
 export async function isGoneSlug(slug: string): Promise<boolean> {
-  const result = await publicSupabase().from('blog_tombstones').select('slug').eq('slug', slug).maybeSingle();
+  const result = await (await publicSupabase()).from('blog_tombstones').select('slug').eq('slug', slug).maybeSingle();
   return !!result.data;
 }
 
