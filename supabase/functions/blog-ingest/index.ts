@@ -1,48 +1,11 @@
-import { marked } from 'npm:marked@17.0.1';
 import { json, preflight } from '../_shared/http.ts';
 import { authenticateBlogIngestion, requireScope } from '../_shared/blog/auth.ts';
 import {
-  escapeHtml,
-  htmlToDocument,
-  normalizeDocument,
-  tiptapToDocument,
-  type BlogDocumentV1,
-} from '../_shared/blog/document.ts';
+  BLOG_INGESTION_FORMATS,
+  convertBlogContent,
+  sourceAsString,
+} from '../_shared/blog/ingestion.ts';
 import { publishBlogArticle, saveBlogDraft, type DraftMetadata } from '../_shared/blog/repository.ts';
-
-const FORMATS = new Set(['markdown', 'html', 'rich-text', 'canonical-v1', 'tiptap', 'json', 'plain']);
-
-function sourceAsString(content: unknown): string {
-  return typeof content === 'string' ? content : JSON.stringify(content);
-}
-
-async function convert(format: string, content: unknown, locale: string): Promise<{ document: BlogDocumentV1; warnings: string[] }> {
-  const warnings: string[] = [];
-  if (format === 'canonical-v1') {
-    const parsed = typeof content === 'string' ? JSON.parse(content) : content;
-    return { document: normalizeDocument(parsed), warnings };
-  }
-  if (format === 'tiptap') return { document: tiptapToDocument(typeof content === 'string' ? JSON.parse(content) : content, locale), warnings };
-  if (format === 'json') {
-    const parsed = typeof content === 'string' ? JSON.parse(content) : content;
-    if (parsed && typeof parsed === 'object' && (parsed as Record<string, unknown>).schemaVersion === 1) {
-      return { document: normalizeDocument(parsed), warnings };
-    }
-    if (parsed && typeof parsed === 'object' && (parsed as Record<string, unknown>).type === 'doc') {
-      return { document: tiptapToDocument(parsed, locale), warnings };
-    }
-    throw new Error('JSON inconnu : indiquez canonical-v1 ou tiptap, ou ajoutez un adaptateur fournisseur');
-  }
-  const raw = String(content || '').slice(0, 2_000_000);
-  if (!raw.trim()) throw new Error('Le contenu est vide');
-  let html = raw;
-  if (format === 'markdown') html = await marked.parse(raw, { gfm: true, breaks: false }) as string;
-  if (format === 'plain') html = raw.split(/\n{2,}/).map((part) => `<p>${escapeHtml(part).replace(/\n/g, '<br>')}</p>`).join('');
-  if (/<(?:style|script|iframe|object)\b|\s(?:style|class|on\w+)\s*=/i.test(html)) {
-    warnings.push('Les styles, scripts et attributs de présentation ont été retirés du contenu importé.');
-  }
-  return { document: htmlToDocument(html, locale), warnings };
-}
 
 Deno.serve(async (req) => {
   const pf = preflight(req); if (pf) return pf;
@@ -53,7 +16,7 @@ Deno.serve(async (req) => {
     requireScope(actor, 'articles:import');
     const body = await req.json() as Record<string, unknown>;
     const format = String(body.format || '').toLowerCase();
-    if (!FORMATS.has(format)) throw new Error(`Format non pris en charge: ${format || 'absent'}`);
+    if (!BLOG_INGESTION_FORMATS.has(format)) throw new Error(`Format non pris en charge: ${format || 'absent'}`);
     const intent = body.intent === 'publish' ? 'publish' : 'draft';
     if (intent === 'publish') requireScope(actor, 'articles:publish');
     const source = body.source && typeof body.source === 'object' ? body.source as Record<string, unknown> : {};
@@ -92,7 +55,7 @@ Deno.serve(async (req) => {
 
     const metadata = body.metadata && typeof body.metadata === 'object' ? body.metadata as unknown as DraftMetadata : {} as DraftMetadata;
     const locale = metadata.locale || 'fr-CH';
-    const converted = await convert(format, body.content, locale);
+    const converted = await convertBlogContent(format, body.content, locale);
     const draft = await saveBlogDraft(actor, {
       articleId,
       ingestionId,

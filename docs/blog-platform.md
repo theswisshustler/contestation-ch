@@ -127,6 +127,41 @@ nouvel import ; `Idempotency-Key` empêche de rejouer accidentellement la même
 requête. Une clé `articles:publish` peut demander `"intent": "publish"` ; par
 défaut, toute intégration ne crée que des brouillons.
 
+## Publication automatique depuis Outrank
+
+L’Edge Function `outrank-webhook` adapte directement le contrat webhook
+d’Outrank au format canonique du blog. Elle :
+
+- vérifie l’en-tête `Authorization: Bearer …` avec le secret
+  `OUTRANK_WEBHOOK_TOKEN` ;
+- publie les articles de `publish_articles` et crée une nouvelle révision pour
+  `update_article` ;
+- retrouve un article par son identifiant Outrank, puis par son slug courant ou
+  historique ;
+- transforme les tags en thèmes, `meta_description` en métadonnées SEO et
+  `image_url` en média principal ;
+- journalise chaque livraison et rend les nouvelles tentatives idempotentes.
+
+Configurer un secret long et aléatoire, puis déployer :
+
+```bash
+supabase secrets set OUTRANK_WEBHOOK_TOKEN='votre-secret-long-et-aleatoire'
+supabase functions deploy outrank-webhook --no-verify-jwt
+```
+
+Dans **Outrank → Integrations → Webhook**, renseigner :
+
+```text
+Integration Name: Contestation Blog
+Webhook Endpoint: https://xdyesbnjspixogzhnxrm.supabase.co/functions/v1/outrank-webhook
+Access Token: la même valeur que OUTRANK_WEBHOOK_TOKEN
+```
+
+L’endpoint reste public au niveau de la passerelle Supabase
+(`verify_jwt = false`) afin qu’Outrank puisse l’appeler. La fonction assure
+elle-même l’authentification : HTTP 200 en cas de succès, 401 pour un token
+incorrect et 400 pour un payload non conforme.
+
 ## Sorties automatiques
 
 Pour chaque article publié, le site produit automatiquement : URL et slug,
@@ -148,6 +183,7 @@ Les articles liés sont déterministes : thèmes communs, puis récence. Aucun a
 supabase db push
 supabase functions deploy blog-admin
 supabase functions deploy blog-ingest --no-verify-jwt
+supabase functions deploy outrank-webhook --no-verify-jwt
 supabase functions deploy blog-preview --no-verify-jwt
 supabase functions deploy purge --no-verify-jwt
 ```

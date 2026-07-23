@@ -26,13 +26,13 @@ button, input, textarea, select { font: inherit; }
 :focus-visible { outline: 3px solid rgba(27, 73, 101, .3); outline-offset: 3px; }
 
 .site-header { position: sticky; top: 0; z-index: 30; border-bottom: 1px solid rgba(223, 229, 231, .9); background: rgba(251, 250, 247, .94); backdrop-filter: blur(12px); }
-.site-header__inner, .site-footer__inner { max-width: var(--cc-wide); margin: 0 auto; padding: 15px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.brand { display: inline-flex; align-items: center; gap: 9px; color: var(--cc-ink); text-decoration: none; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; }
-.brand__cross { width: 24px; height: 24px; position: relative; display: inline-block; border-radius: 7px; background: var(--cc-red); }
-.brand__cross::before, .brand__cross::after { content: ''; position: absolute; inset: 50% auto auto 50%; width: 11px; height: 3px; border-radius: 2px; background: #fff; transform: translate(-50%, -50%); }
-.brand__cross::after { width: 3px; height: 11px; }
-.site-nav { display: flex; align-items: center; gap: 24px; font-size: 14px; font-weight: 650; }
+.site-header__inner, .site-footer__inner { max-width: var(--cc-wide); margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.brand { display: inline-flex; flex: 0 0 auto; align-items: center; color: var(--cc-ink); text-decoration: none; }
+.brand__logo { display: block; width: clamp(172px, 18vw, 218px); height: auto; }
+.site-nav { display: flex; align-items: center; gap: clamp(16px, 2.2vw, 28px); font-size: 14px; font-weight: 650; white-space: nowrap; }
 .site-nav a { color: var(--cc-ink); text-decoration: none; }
+.site-nav a:not(.button) { padding: 10px 0; }
+.button__optional { margin-left: .28em; }
 .button { display: inline-flex; justify-content: center; align-items: center; border: 0; border-radius: 10px; padding: 12px 18px; color: #fff !important; background: var(--cc-blue); font-weight: 750; text-decoration: none; cursor: pointer; }
 .button--primary { background: var(--cc-orange); color: #3a2a06 !important; }
 .button--secondary { background: var(--cc-blue); }
@@ -108,18 +108,26 @@ h1, h2, h3, h4 { color: var(--cc-ink); font-family: 'Bricolage Grotesque', sans-
 
 .site-footer { background: var(--cc-ink); color: #b9c9d1; }
 .site-footer__inner { align-items: flex-start; padding-top: 38px; padding-bottom: 38px; }
+.site-footer__about { max-width: 650px; }
+.brand--footer { padding: 5px 11px; border-radius: 10px; background: var(--cc-bg); }
+.brand--footer .brand__logo { width: 190px; }
+.site-footer__nav { flex: 0 0 auto; line-height: 1.9; text-align: right; }
 .site-footer a { color: #d9e3e7; }
-.site-footer p { max-width: 650px; margin: 12px 0 0; font-size: 12px; line-height: 1.6; }
+.site-footer p { max-width: 650px; margin: 16px 0 0; font-size: 12px; line-height: 1.6; }
 .empty-state { padding: 48px; border: 1px dashed #bccad0; border-radius: var(--cc-radius); color: var(--cc-muted); text-align: center; }
 
 @media (max-width: 900px) {
+  .site-header__inner { gap: 20px; }
+  .brand__logo { width: clamp(164px, 24vw, 190px); }
+  .site-nav { gap: 16px; }
   .article-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .article-layout { display: block; }
   .toc { position: static; margin: 0 0 32px; padding: 18px; border: 1px solid var(--cc-border); border-radius: 12px; background: #fff; }
 }
 
 @media (max-width: 680px) {
-  .site-header__inner { padding: 13px 18px; }
+  .site-header__inner { min-height: 64px; padding: 8px 18px; gap: 12px; }
+  .brand__logo { width: clamp(142px, 42vw, 172px); }
   .site-nav > a:not(.button) { display: none; }
   .site-nav { gap: 8px; }
   .button { padding: 10px 13px; font-size: 13px; }
@@ -132,4 +140,11 @@ h1, h2, h3, h4 { color: var(--cc-ink); font-family: 'Bricolage Grotesque', sans-
   .article-content { font-size: 16px; }
   .article-hero { width: calc(100% - 36px); margin-bottom: 34px; border-radius: 14px; }
   .site-footer__inner { display: block; padding: 32px 18px; }
+  .site-footer__nav { margin-top: 26px; text-align: left; }
+}
+
+@media (max-width: 390px) {
+  .site-header__inner { padding-inline: 12px; }
+  .brand__logo { width: 136px; }
+  .button__optional { display: none; }
 }

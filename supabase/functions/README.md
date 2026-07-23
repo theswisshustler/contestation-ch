@@ -23,6 +23,7 @@ de travail.
 |---|---|---|
 | `blog-admin` | CRUD, auteurs, médias, aperçus et clés API | JWT Supabase + `blog_admins` |
 | `blog-ingest` | Normalisation Markdown/HTML/Rich Text/JSON/API | JWT admin ou clé `cc_blog_…` |
+| `outrank-webhook` | Publication/mise à jour automatiques depuis Outrank | Bearer `OUTRANK_WEBHOOK_TOKEN` |
 | `blog-preview` | Lecture temporaire d’une révision non publiée | Jeton aléatoire à usage limité |
 
 Le contrat canonique et le guide d’exploitation sont documentés dans
@@ -67,6 +68,7 @@ supabase functions deploy               # déploie les fonctions appelées par l
 supabase functions deploy stripe-webhook --no-verify-jwt
 supabase functions deploy blog-admin
 supabase functions deploy blog-ingest --no-verify-jwt
+supabase functions deploy outrank-webhook --no-verify-jwt
 supabase functions deploy blog-preview --no-verify-jwt
 supabase functions deploy purge --no-verify-jwt
 supabase secrets set --env-file supabase/functions/.env

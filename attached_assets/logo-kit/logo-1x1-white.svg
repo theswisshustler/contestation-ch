@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512" fill="none">
+  <title>Contestation.ch — pictogramme blanc</title>
+  <g stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M126 82H280L346 148V304C346 358 310 390 254 390H202C150 390 126 360 126 310V82Z"/>
+    <path d="M280 82V148H346"/>
+    <path d="M180 220H284M180 270H270"/>
+    <path d="M382 178V300C382 378 337 424 256 452C224 442 196 429 174 412"/>
+  </g>
+  <path d="M280 82L346 148H280V82Z" fill="#FFFFFF"/>
+</svg>

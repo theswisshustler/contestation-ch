@@ -64,22 +64,26 @@ const safeJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003
     <!-- End Google Tag Manager (noscript) -->
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href="/" aria-label="Contestation.ch — accueil"><span class="brand__cross" aria-hidden="true"></span><span>contestation<span style="color:var(--cc-orange)">.ch</span></span></a>
+        <a class="brand" href="/" aria-label="Contestation.ch — accueil">
+          <img class="brand__logo" src="/assets/logo-contestation-color.svg" alt="Contestation.ch" />
+        </a>
         <nav class="site-nav" aria-label="Navigation principale">
           <a href="/#parcours">Solutions</a>
           <a href="/blog">Guides</a>
-          <a class="button button--secondary" href="/diagnostic">Vérifier mon loyer</a>
+          <a class="button button--secondary" href="/diagnostic">Vérifier <span class="button__optional">mon loyer</span></a>
         </nav>
       </div>
     </header>
     <main><slot /></main>
     <footer class="site-footer">
       <div class="site-footer__inner">
-        <div>
-          <a class="brand" href="/"><span class="brand__cross" aria-hidden="true"></span><span style="color:white">contestation.ch</span></a>
+        <div class="site-footer__about">
+          <a class="brand brand--footer" href="/" aria-label="Contestation.ch — accueil">
+            <img class="brand__logo" src="/assets/logo-contestation-color.svg" alt="Contestation.ch" />
+          </a>
           <p>Service indépendant d’aide à la rédaction — ni autorité publique, ni cabinet d’avocats, ni conseil juridique individualisé.</p>
         </div>
-        <nav aria-label="Liens légaux"><a href="/?legal=cgv">CGV</a><br /><a href="/?legal=privacy">Confidentialité et mentions légales</a><br /><a href="/rss.xml">Flux RSS</a></nav>
+        <nav class="site-footer__nav" aria-label="Liens légaux"><a href="/?legal=cgv">CGV</a><br /><a href="/?legal=privacy">Confidentialité et mentions légales</a><br /><a href="/rss.xml">Flux RSS</a></nav>
       </div>
     </footer>
   </body>

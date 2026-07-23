@@ -10,10 +10,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <!-- End Google Tag Manager -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-visual">
-<title>contestation.ch — Comprendre et contester votre loyer</title>
-<meta name="description" content="Vérifiez gratuitement si votre loyer initial peut être contesté à Vaud ou Genève, puis préparez une requête adaptée à votre situation.">
-<meta property="og:title" content="Votre nouveau loyer est-il contestable ?">
-<meta property="og:description" content="Diagnostic gratuit pour Vaud et Genève. Vérifiez le délai, les motifs et l'autorité compétente.">
+<title>contestation.ch — Découvrez si vous pouvez payer moins de loyer</title>
+<meta name="description" content="Découvrez gratuitement si votre loyer peut être réduit à Vaud ou Genève et obtenez la démarche adaptée à votre situation.">
+<meta property="og:title" content="Payez-vous trop de loyer chaque mois ?">
+<meta property="og:description" content="Découvrez en quelques minutes si votre loyer peut être réduit et comment agir.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://contestation.ch/">
 <meta property="og:image" content="https://contestation.ch/assets/hero-lettre-contestation.png">
@@ -30,6 +30,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   a:hover{color:#F4A73B;}
   input,button,textarea,select{font-family:inherit;}
   .cc-scroll::-webkit-scrollbar{width:0;background:transparent;}
+  .cc-brand{display:inline-flex;align-items:center;flex:none;line-height:0;}
+  .cc-brand-logo{display:block;width:clamp(142px,42vw,172px);height:auto;}
+  .cc-brand-footer{padding:0;}
+  .cc-brand-footer .cc-brand-logo{width:172px;}
+  .cc-nav-actions{display:flex;align-items:center;gap:12px;min-width:0;}
+  .cc-nav-cta{white-space:nowrap;}
   details summary{list-style:none;cursor:pointer;}
   details summary::-webkit-details-marker{display:none;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -72,11 +78,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   .cc-eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#58717D;margin-bottom:12px;}
   .cc-section-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(27px,3vw,38px);line-height:1.15;color:#12303F;margin:0;letter-spacing:-.015em;}
   .cc-section-intro{font-size:16px;line-height:1.65;color:#5A6A70;max-width:650px;margin:12px 0 32px;}
-  .cc-paths,.cc-cases{display:grid;grid-template-columns:1fr;gap:14px;align-items:start;}
-  .cc-path{background:#fff;border:1px solid #DDE3E5;border-radius:16px;padding:22px;display:flex;flex-direction:column;box-shadow:0 8px 24px -22px rgba(18,48,63,.45);}
+  .cc-paths,.cc-cases{display:grid;grid-template-columns:1fr;gap:14px;}
+  .cc-paths{align-items:stretch;}
+  .cc-cases{align-items:start;}
+  .cc-path{background:#fff;border:1px solid #DDE3E5;border-radius:16px;padding:22px;display:flex;flex-direction:column;box-shadow:0 8px 24px -22px rgba(18,48,63,.45);height:100%;}
   .cc-path-number{width:30px;height:30px;border:1px solid #CBD8DE;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#1B4965;font-size:12px;font-weight:700;margin-bottom:18px;}
-  .cc-path h3{font-size:18px;color:#12303F;margin:0 0 8px;}.cc-path p{font-size:14px;line-height:1.55;color:#5A6A70;margin:0 0 18px;flex:1;}
-  .cc-path a,.cc-path button{font-size:14px;font-weight:700;color:#1B4965;background:none;border:0;padding:0;text-align:left;cursor:pointer;}
+  .cc-path h3{font-family:'Bricolage Grotesque',sans-serif;font-size:20px;line-height:1.18;letter-spacing:-.015em;color:#12303F;margin:0 0 10px;}.cc-path p{font-size:15px;line-height:1.6;color:#5A6A70;margin:0 0 22px;flex:1;}
+  .cc-path a,.cc-path button{font-size:15px;line-height:1.35;font-weight:750;color:#1B4965;background:none;border:0;padding:0;text-align:left;cursor:pointer;}
   .cc-case{background:#fff;border:1px solid #E2E6E7;border-radius:14px;padding:0 20px;transition:border-color .18s ease,box-shadow .18s ease;}.cc-case[open]{border-color:#B8CBD4;box-shadow:0 14px 34px -28px rgba(18,48,63,.55);}.cc-case summary{padding:18px 0;display:flex;justify-content:space-between;align-items:center;gap:16px;font-weight:700;color:#12303F;}.cc-case summary span{transition:transform .18s ease;}.cc-case[open] summary span{transform:rotate(45deg);}.cc-case p{margin:0 0 18px;color:#5A6A70;font-size:14px;line-height:1.6;}.cc-case strong{color:#12303F;}
   .cc-case-kicker{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#6C7E85;margin:2px 0 6px;}
   .cc-case-block{padding:14px 0;border-top:1px solid #EEF0F1;}.cc-case-block:first-of-type{padding-top:0;border-top:0;}.cc-case-block p{margin:0;}
@@ -91,6 +99,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
     /* Nav */
     .cc-nav{position:sticky;top:0;z-index:100;}
+    .cc-brand-logo{width:210px;}
+    .cc-nav-actions{gap:20px;}
 
     /* Conteneur intérieur centré pour toutes les sections */
     .cc-inner{max-width:1140px;margin:0 auto;padding-left:48px;padding-right:48px;}
@@ -107,6 +117,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     .cc-hero-right{width:410px;flex:none;margin-top:0;}
     .cc-hero-right img{width:115% !important;max-width:none;margin-left:-7.5%;}
     .cc-paths,.cc-cases{grid-template-columns:repeat(3,1fr);}
+    .cc-path{padding:28px;}
+    .cc-path-number{width:36px;height:36px;font-size:14px;margin-bottom:24px;}
+    .cc-path h3{font-size:22px;}
     .cc-case summary{align-items:flex-start;}
     .cc-nav-links{display:flex !important;}
 
@@ -135,6 +148,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     /* Sections — padding desktop restauré */
     .cc-section-pad{padding-top:72px !important;padding-bottom:72px !important;}
   }
+  @media(max-width:430px){
+    .cc-nav{padding-left:12px !important;padding-right:12px !important;}
+    .cc-brand-logo{width:136px;}
+    .cc-nav-cta{padding:10px 12px !important;font-size:13px !important;}
+    .cc-nav-cta-long{display:none;}
+  }
 </style>
 </head>
 <body>
@@ -148,18 +167,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="cc-outer cc-static-fallback">
     <div class="cc-phone">
       <nav class="cc-nav" aria-label="Navigation principale" style="display:flex;align-items:center;justify-content:space-between;padding:16px max(20px,calc((100vw - 1140px)/2 + 48px));background:#FBFAF7;border-bottom:1px solid #E4E7E6;">
-        <a href="/" style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#12303F;">contestation<span style="color:#F4A73B;">.ch</span></a>
+        <a class="cc-brand" href="/" aria-label="Contestation.ch — accueil"><img class="cc-brand-logo" src="/assets/logo-contestation-color.svg" alt="Contestation.ch"></a>
         <div style="display:flex;align-items:center;gap:18px;font-size:14px;font-weight:700;"><a href="#parcours">Solutions</a><a href="/blog">Guides</a><a href="/diagnostic" style="padding:10px 16px;border-radius:8px;background:#1B4965;color:#fff;">Commencer</a></div>
       </nav>
       <main>
         <section style="background:linear-gradient(160deg,#EEF4F9 0%,#F5F3EE 55%,#FBFAF7 100%);"><div class="cc-inner"><div class="cc-hero-row">
-          <div class="cc-hero-left"><div class="cc-eyebrow">Loyer initial · hausse · demande de baisse</div><h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:38px;line-height:1.06;margin:0 0 16px;color:#12303F;">Votre loyer est peut-être contestable. <span style="color:#178A5B;">Vérifiez-le.</span></h1><p style="font-size:16px;line-height:1.6;color:#4A5A60;">Identifiez la bonne démarche, obtenez un diagnostic gratuit puis préparez une lettre personnalisée adaptée à votre situation.</p><a href="/diagnostic" style="display:inline-block;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:17px;padding:16px 24px;border-radius:13px;">Vérifier mon loyer →</a><p style="font-size:13px;color:#5A6A70;">Environ 5 minutes · Sans inscription · Aucun paiement avant le diagnostic</p></div>
+          <div class="cc-hero-left"><div class="cc-eyebrow">Loyer initial · hausse · demande de baisse</div><h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:38px;line-height:1.06;margin:0 0 16px;color:#12303F;">Payez-vous trop de loyer <span style="color:#178A5B;">chaque mois&nbsp;?</span></h1><p style="font-size:16px;line-height:1.6;color:#4A5A60;">Découvrez en quelques minutes si votre loyer peut être réduit et quelle démarche peut vous faire économiser durablement.</p><a href="/diagnostic" style="display:inline-block;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:17px;padding:16px 24px;border-radius:13px;">Découvrir combien je peux économiser →</a><p style="font-size:13px;color:#5A6A70;">Résultat en 5 minutes · Gratuit · Sans inscription</p></div>
           <div class="cc-hero-right"><img src="./assets/hero-lettre-contestation.png" alt="Lettre de contestation préparée" width="1254" height="1254" fetchpriority="high" style="display:block;width:100%;height:auto;"></div>
         </div></div></section>
-        <section id="parcours"><div class="cc-inner cc-section-pad"><div class="cc-eyebrow">Choisir la bonne démarche</div><h2 class="cc-section-title">Trois situations, trois parcours distincts</h2><p class="cc-section-intro">Le point de départ dépend de ce qui vient de se produire dans votre bail.</p><div class="cc-paths">
-          <article class="cc-path"><span class="cc-path-number">01</span><h3>Contester un loyer initial</h3><p>Vous venez d'emménager et souhaitez faire examiner le montant fixé. Le délai est limité à 30 jours dès la remise des clés.</p><a href="/diagnostic?flow=loyer_initial">Vérifier mon loyer initial →</a></article>
-          <article class="cc-path"><span class="cc-path-number">02</span><h3>Contester une hausse</h3><p>Votre bailleur vous a notifié une augmentation pendant le bail. Vérifiez sa forme, son calcul et ses motifs.</p><a href="/diagnostic?flow=hausse_loyer">Vérifier la hausse →</a></article>
-          <article class="cc-path"><span class="cc-path-number">03</span><h3>Demander une baisse</h3><p>Le taux qui fonde votre loyer est supérieur au taux actuel. Commencez par estimer la baisse mensuelle possible.</p><a href="/diagnostic?flow=demande_baisse">Simuler ma baisse →</a></article>
+        <section id="parcours"><div class="cc-inner cc-section-pad"><div class="cc-eyebrow">Votre situation</div><h2 class="cc-section-title">La bonne action dépend de votre bail</h2><p class="cc-section-intro">Choisissez ce qui vient de vous arriver. Nous vous guidons vers la démarche adaptée.</p><div class="cc-paths">
+          <article class="cc-path"><span class="cc-path-number">01</span><h3>Vous venez d’emménager</h3><p>Votre nouveau loyer vous semble trop élevé&nbsp;? Découvrez s’il peut être contesté. Vous avez généralement 30 jours dès la remise des clés pour agir.</p><a href="/diagnostic?flow=loyer_initial">Découvrir mon économie potentielle →</a></article>
+          <article class="cc-path"><span class="cc-path-number">02</span><h3>Votre loyer augmente</h3><p>Votre bailleur vient de vous notifier une hausse&nbsp;? Contrôlez son calcul, ses motifs et sa validité avant l’échéance.</p><a href="/diagnostic?flow=hausse_loyer">Vérifier si cette hausse est justifiée →</a></article>
+          <article class="cc-path"><span class="cc-path-number">03</span><h3>Vous voulez payer moins</h3><p>Le taux de référence de votre bail est peut-être supérieur au taux actuel. Estimez la baisse que vous pourriez demander.</p><a href="/diagnostic?flow=demande_baisse">Calculer ma baisse mensuelle →</a></article>
         </div></div></section>
         <section style="background:#F4F8FA;"><div class="cc-inner cc-section-pad"><div class="cc-eyebrow">Guides pratiques</div><h2 class="cc-section-title">Comprendre avant d'agir</h2><p class="cc-section-intro">Consultez nos explications fondées sur les sources officielles suisses : délais, calculs, documents et démarches.</p><a href="/blog" style="font-weight:800;">Découvrir tous les guides →</a></div></section>
         <section><div class="cc-inner cc-section-pad"><h2 class="cc-section-title">Questions fréquentes</h2><details class="cc-case" open><summary>Est-ce légal de contester son loyer ? <span>+</span></summary><p>Oui. Le droit du bail prévoit des mécanismes distincts pour le loyer initial, une hausse reçue pendant le bail et une demande de baisse.</p></details><details class="cc-case"><summary>Le diagnostic est-il payant ? <span>+</span></summary><p>Non. Une offre payante n'est proposée qu'après l'analyse lorsqu'une lettre peut être préparée.</p></details></div></section>
@@ -230,11 +249,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
     <div class="cc-scroll cc-landing-screen" data-screen-label="landing" style="flex:1;overflow-y:auto;">
       <div class="cc-nav" style="display:flex;align-items:center;justify-content:space-between;padding:16px max(20px,calc((100vw - 1140px)/2 + 48px));position:sticky;top:0;background:rgba(251,250,247,.94);backdrop-filter:blur(10px);border-bottom:1px solid #E4E7E6;z-index:5;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="position:relative;width:24px;height:24px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:11px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:11px;background:#fff;border-radius:1px;"></span></span>
-          <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#12303F;">contestation<span style="color:#F4A73B;">.ch</span></span>
-        </div>
-        <div style="display:flex;align-items:center;gap:20px;"><div class="cc-nav-links" style="display:none;gap:22px;font-size:14px;font-weight:600;"><a href="#resultat">Ce que vous obtenez</a><a href="#parcours">Solutions</a><a href="/blog">Guides</a><a href="#faq">FAQ</a></div><button onClick="{{ goChoix }}" style="background:#1B4965;color:#fff;font-weight:700;font-size:14px;padding:11px 18px;border:none;border-radius:8px;cursor:pointer;">Commencer le diagnostic</button></div>
+        <a class="cc-brand" href="/" aria-label="Contestation.ch — accueil"><img class="cc-brand-logo" src="/assets/logo-contestation-color.svg" alt="Contestation.ch"></a>
+        <div class="cc-nav-actions"><div class="cc-nav-links" style="display:none;gap:22px;font-size:14px;font-weight:600;"><a href="#resultat">Ce que vous obtenez</a><a href="#parcours">Solutions</a><a href="/blog">Guides</a><a href="#faq">FAQ</a></div><button class="cc-nav-cta" onClick="{{ goChoix }}" style="background:#1B4965;color:#fff;font-weight:700;font-size:14px;padding:11px 18px;border:none;border-radius:8px;cursor:pointer;">Commencer<span class="cc-nav-cta-long"> le diagnostic</span></button></div>
       </div>
 
       <div class="cc-landing-body">
@@ -246,12 +262,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <!-- Texte gauche -->
               <div class="cc-hero-left">
                 <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:#EAF1F5;color:#1B4965;font-size:12px;font-weight:600;margin-bottom:20px;">Nouveau bail dans le canton de Vaud ou de Genève</div>
-                <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:38px;line-height:1.06;margin:0 0 16px;color:#12303F;letter-spacing:-.02em;">Votre nouveau loyer est peut-être abusif. <span style="color:#178A5B;">Vérifiez-le.</span></h1>
-                <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#4A5A60;">En quelques clics, nous vérifions si votre loyer peut être contesté. Si c'est le cas, votre lettre personnalisée est préparée automatiquement, prête à envoyer.</p>
-                <button onClick="{{ goChoix }}" style="background:#F4A73B;color:#3A2A06;font-weight:800;font-size:17px;padding:16px 24px;border:none;border-radius:13px;box-shadow:0 9px 20px -9px rgba(244,167,59,.9);cursor:pointer;margin-bottom:13px;">Vérifier si mon loyer est contestable →</button>
-                <div style="font-size:13px;color:#5A6A70;margin-bottom:17px;">Environ 5 minutes · Diagnostic gratuit · Sans inscription · Lettre dès 14,90 CHF</div>
+                <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:38px;line-height:1.06;margin:0 0 16px;color:#12303F;letter-spacing:-.02em;">Payez-vous trop de loyer <span style="color:#178A5B;">chaque mois&nbsp;?</span></h1>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#4A5A60;">Découvrez en quelques minutes si votre loyer peut être réduit et quelle démarche peut vous faire économiser durablement.</p>
+                <button onClick="{{ goChoix }}" style="background:#F4A73B;color:#3A2A06;font-weight:800;font-size:17px;padding:16px 24px;border:none;border-radius:13px;box-shadow:0 9px 20px -9px rgba(244,167,59,.9);cursor:pointer;margin-bottom:13px;">Découvrir combien je peux économiser →</button>
+                <div style="font-size:13px;color:#5A6A70;margin-bottom:17px;">Résultat en 5 minutes · Gratuit · Sans inscription</div>
                 <div style="display:flex;flex-wrap:wrap;gap:10px 16px;">
-                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Aucun paiement avant le diagnostic</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Une réponse adaptée à votre bail</span>
                   <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#5A6A70;"><span style="color:#178A5B;font-weight:700;">✓</span> Documents supprimés après 7 jours</span>
                 </div>
               </div>
@@ -266,13 +282,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <!-- ===== TROIS PARCOURS ===== -->
         <section id="parcours">
           <div class="cc-inner cc-section-pad">
-            <div class="cc-eyebrow">Choisir la bonne démarche</div>
-            <h2 class="cc-section-title">Trois situations, trois parcours distincts</h2>
-            <p class="cc-section-intro">Le point de départ n'est pas le même selon que vous venez d'emménager, que vous recevez une hausse ou que le taux de référence a baissé.</p>
+            <div class="cc-eyebrow">Votre situation</div>
+            <h2 class="cc-section-title">La bonne action dépend de votre bail</h2>
+            <p class="cc-section-intro">Choisissez ce qui vient de vous arriver. Nous vous guidons vers la démarche adaptée.</p>
             <div class="cc-paths">
-              <article class="cc-path"><span class="cc-path-number">01</span><h3>Contester un loyer initial</h3><p>Vous venez de recevoir les clés, le nouveau loyer semble excessif ou la formule officielle manque. Vous avez 30 jours dès la remise des clés pour contester.</p><button onClick="{{ goChoix }}">Vérifier mon loyer initial →</button></article>
-              <article class="cc-path"><span class="cc-path-number">02</span><h3>Contester une hausse</h3><p>Votre bailleur vous notifie une augmentation. Vérifiez la forme, les motifs annoncés et le délai avant d'agir.</p><a href="#hausse-guide">Comprendre la marche à suivre →</a></article>
-              <article class="cc-path"><span class="cc-path-number">03</span><h3>Demander une baisse</h3><p>Le taux de référence indiqué sur votre bail est supérieur au taux actuel. Estimez d'abord la baisse potentielle.</p><a href="#calcul-baisse">Faire une estimation →</a></article>
+              <article class="cc-path"><span class="cc-path-number">01</span><h3>Vous venez d’emménager</h3><p>Votre nouveau loyer vous semble trop élevé&nbsp;? Découvrez s’il peut être contesté. Vous avez généralement 30 jours dès la remise des clés pour agir.</p><button onClick="{{ goChoix }}">Découvrir mon économie potentielle →</button></article>
+              <article class="cc-path"><span class="cc-path-number">02</span><h3>Votre loyer augmente</h3><p>Votre bailleur vient de vous notifier une hausse&nbsp;? Contrôlez son calcul, ses motifs et sa validité avant l’échéance.</p><a href="#hausse-guide">Vérifier si cette hausse est justifiée →</a></article>
+              <article class="cc-path"><span class="cc-path-number">03</span><h3>Vous voulez payer moins</h3><p>Le taux de référence de votre bail est peut-être supérieur au taux actuel. Estimez la baisse que vous pourriez demander.</p><a href="#calcul-baisse">Calculer ma baisse mensuelle →</a></article>
             </div>
           </div>
         </section>
@@ -298,19 +314,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <!-- ===== BANDEAU STAT ===== -->
         <div style="background:#12303F;color:#fff;">
           <div class="cc-inner" style="padding-top:52px;padding-bottom:52px;">
-            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,3vw,34px);line-height:1.15;max-width:700px;">Des démarches encadrées, des délais à respecter.</div>
-            <p style="margin:14px 0 0;font-size:16px;line-height:1.6;color:#B9C9D1;max-width:680px;">Le droit du bail prévoit des voies différentes selon la situation. Notre rôle est de rendre les premières vérifications compréhensibles et de vous orienter vers l'autorité compétente.</p>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,3vw,34px);line-height:1.15;max-width:700px;">Chaque mois d’attente peut être un mois payé trop cher.</div>
+            <p style="margin:14px 0 0;font-size:16px;line-height:1.6;color:#B9C9D1;max-width:680px;">Les délais sont courts et la bonne démarche dépend de votre situation. Nous vous aidons à vérifier l’essentiel et à agir sans vous perdre dans le jargon.</p>
           </div>
         </div>
 
         <!-- ===== COMMENT ÇA MARCHE ===== -->
         <div>
           <div class="cc-inner cc-section-pad" style="padding-top:72px;padding-bottom:72px;">
-            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,2.5vw,30px);color:#12303F;margin-bottom:36px;">Comment ça marche</div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,2.5vw,30px);color:#12303F;margin-bottom:36px;">De votre bail à la bonne démarche, en 3 étapes</div>
             <div class="cc-steps-list" style="display:flex;flex-direction:column;gap:16px;">
-              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">1</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">Vous répondez, ou importez votre bail</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Quelques questions simples, ou un import automatique. 5 minutes.</div></div></div>
-              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">2</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">On prépare votre lettre</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Adressée à la bonne autorité, avec les bons motifs juridiques.</div></div></div>
-              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">3</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">Vous l'envoyez — ou on l'envoie</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Imprimez-la, ou laissez-nous l'expédier en recommandé.</div></div></div>
+              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">1</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">Partagez les informations utiles</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Répondez à quelques questions ou importez votre bail. Comptez environ 5 minutes.</div></div></div>
+              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">2</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">Découvrez vos possibilités</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Obtenez une réponse claire sur votre situation, vos délais et la démarche à suivre.</div></div></div>
+              <div style="display:flex;gap:16px;align-items:flex-start;"><span style="flex:none;width:38px;height:38px;border-radius:12px;background:#EAF1F5;color:#1B4965;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;">3</span><div><div style="font-weight:700;color:#12303F;font-size:16px;margin-bottom:4px;">Passez à l’action</div><div style="font-size:14px;color:#5A6A70;line-height:1.5;">Si votre dossier s’y prête, obtenez une lettre personnalisée prête à être envoyée.</div></div></div>
             </div>
           </div>
         </div>
@@ -335,7 +351,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <h2 class="cc-section-title">À chaque situation, les bons réflexes</h2>
             <p class="cc-section-intro">Trois exemples simples pour comprendre ce que le service peut vous aider à vérifier.</p>
             <div class="cc-cases">
-              <details class="cc-case" open>
+              <details class="cc-case">
                 <summary>Vous emménagez et le loyer a bondi <span style="color:#F4A73B;">+</span></summary>
                 <div class="cc-case-block"><div class="cc-case-kicker">Imaginez</div><p>Vous venez de recevoir les clés. Votre loyer est de 1'900 CHF alors que la personne avant vous payait 1'650 CHF, et aucun travail important ne semble expliquer l'écart.</p></div>
                 <div class="cc-case-block"><div class="cc-case-kicker">Ce que cela peut signifier</div><p>Une hausse entre deux locataires n'est pas automatiquement interdite. Mais un écart sensible, la pression du marché lors de votre recherche ou une formule officielle absente peuvent permettre de demander à l'autorité d'examiner le loyer.</p></div>
@@ -379,7 +395,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <div style="background:#fff;border:1px solid #E4E2DB;border-radius:18px;padding:24px;"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:12px;"><span style="font-weight:700;color:#12303F;font-size:17px;">Lettre personnalisée</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#12303F;white-space:nowrap;">14,90 CHF</span></div><div style="font-size:14px;color:#5A6A70;line-height:1.55;margin-bottom:13px;">Une contestation adaptée à votre situation, structurée pour présenter vos arguments clairement et maximiser vos chances d'obtenir une réduction.</div><div style="font-size:13px;color:#3E5560;line-height:1.7;"><div>✓ Lettre finalisée au format PDF</div><div>✓ Checklist des pièces à joindre</div><div>✓ Instructions pour l'envoyer vous-même</div></div></div>
               <div style="background:#12303F;border-radius:18px;padding:24px;position:relative;"><span style="position:absolute;top:-11px;right:18px;background:#F4A73B;color:#3A2A06;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">RECOMMANDÉ · ZÉRO DÉPLACEMENT</span><div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:12px;"><span style="font-weight:700;color:#fff;font-size:17px;">On s'occupe de tout</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#F4A73B;white-space:nowrap;">49,90 CHF</span></div><div style="font-size:14px;color:#D2DEE3;line-height:1.55;margin-bottom:13px;">Signez en ligne : nous imprimons, affranchissons et déposons votre contestation en recommandé. Pas de file d'attente, pas de timbre, pas de déplacement.</div><div style="font-size:13px;color:#CFE0E8;line-height:1.7;"><div>✓ Tout le contenu de l'offre PDF</div><div>✓ Impression et affranchissement inclus</div><div>✓ Preuve d'envoi et numéro de suivi</div></div></div>
             </div>
-            <div style="max-width:800px;margin:18px auto 0;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:14px;padding:17px 20px;display:flex;gap:13px;align-items:flex-start;"><span style="font-size:20px;">✓</span><div><div style="font-weight:800;color:#0C5638;font-size:15px;margin-bottom:4px;">Notre garantie utile ou remboursée</div><div style="font-size:13px;color:#376B55;line-height:1.55;">Si votre contestation n'aboutit pas à une réduction de loyer supérieure au prix payé pour notre service, nous vous remboursons ce prix. Sur justificatif, selon les conditions de la garantie.</div></div></div>
+            <div style="max-width:800px;margin:18px auto 0;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:14px;padding:17px 20px;display:flex;gap:13px;align-items:flex-start;"><span style="font-size:20px;">✓</span><div><div style="font-weight:800;color:#0C5638;font-size:15px;margin-bottom:4px;">Notre garantie utile ou remboursée</div><div style="font-size:13px;color:#376B55;line-height:1.55;">Votre contestation ne vous permet pas d'économiser plus que le prix du service&nbsp;? Envoyez-nous simplement un email&nbsp;: nous vous remboursons, sans justificatif et sans poser de question.</div></div></div>
           </div>
         </div>
 
@@ -405,9 +421,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div style="background:linear-gradient(135deg,#F4F8FA 0%,#EAF1F5 100%);border-top:1px solid #E4E2DB;">
           <div class="cc-inner cc-section-pad" style="padding-top:72px;padding-bottom:72px;">
             <div class="cc-cta-wrap">
-              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,3vw,38px);color:#12303F;margin-bottom:12px;line-height:1.1;">Vous venez de signer votre bail&nbsp;?</div>
-              <p style="font-size:15px;color:#5A6A70;margin:0 0 28px;line-height:1.5;">Vérifiez votre loyer initial et les délais applicables, sans inscription.</p>
-              <button onClick="{{ goChoix }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:18px 32px;border:none;border-radius:14px;box-shadow:0 10px 24px -8px rgba(244,167,59,.8);cursor:pointer;">Commencer le diagnostic gratuit →</button>
+              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(24px,3vw,38px);color:#12303F;margin-bottom:12px;line-height:1.1;">Et si vous pouviez payer moins dès les prochains mois&nbsp;?</div>
+              <p style="font-size:16px;color:#5A6A70;margin:0 0 28px;line-height:1.6;">Prenez 5 minutes pour découvrir ce que votre bail vous permet de demander.</p>
+              <button onClick="{{ goChoix }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:750;font-size:17px;padding:18px 32px;border:none;border-radius:14px;box-shadow:0 10px 24px -8px rgba(244,167,59,.8);cursor:pointer;">Découvrir combien je peux économiser →</button>
             </div>
           </div>
         </div>
@@ -415,7 +431,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <!-- ===== FOOTER ===== -->
         <div style="background:#12303F;color:#8FA6B0;">
           <div class="cc-inner" style="padding-top:36px;padding-bottom:36px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;"><span style="position:relative;width:22px;height:22px;border-radius:6px;background:#E1251B;display:inline-flex;align-items:center;justify-content:center;"><span style="position:absolute;width:10px;height:3px;background:#fff;border-radius:1px;"></span><span style="position:absolute;width:3px;height:10px;background:#fff;border-radius:1px;"></span></span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#fff;">contestation.ch</span></div>
+            <a class="cc-brand cc-brand-footer" href="/" aria-label="Contestation.ch — accueil" style="margin-bottom:16px;"><img class="cc-brand-logo" src="/assets/logo-contestation-white.svg" alt="Contestation.ch"></a>
             <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;margin-bottom:16px;"><a href="/blog" style="color:#B9C9D1;">Guides</a><a href="/rss.xml" style="color:#B9C9D1;">RSS</a><a onClick="{{ goCgv }}" style="color:#B9C9D1;cursor:pointer;">CGV</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Confidentialité</a><a onClick="{{ goPrivacy }}" style="color:#B9C9D1;cursor:pointer;">Mentions légales</a></div>
             <p style="margin:0;font-size:12px;line-height:1.6;">Service indépendant d'aide à la rédaction — ni autorité publique, ni cabinet d'avocats, ni conseil juridique individualisé. Pour les cas complexes, adressez-vous à l'ASLOCA.</p>
           </div>
@@ -1104,7 +1120,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <button onClick="{{ selectOffre35 }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:800;font-size:16px;padding:14px;border:none;border-radius:12px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Choisir — 49,90 CHF</button>
         </div>
 
-        <div style="margin-top:14px;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:14px;padding:15px;"><div style="font-size:14px;font-weight:800;color:#0C5638;margin-bottom:4px;">✓ Utile ou remboursée</div><div style="font-size:12.5px;color:#376B55;line-height:1.5;">Si la réduction obtenue ne dépasse pas le prix de votre formule, nous vous la remboursons. Sur justificatif, selon les conditions de la garantie.</div></div>
+        <div style="margin-top:14px;background:#E3F3EB;border:1px solid #B7E0CB;border-radius:14px;padding:15px;"><div style="font-size:14px;font-weight:800;color:#0C5638;margin-bottom:4px;">✓ Utile ou remboursée</div><div style="font-size:12.5px;color:#376B55;line-height:1.5;">Votre économie ne dépasse pas le prix de votre formule&nbsp;? Un simple email suffit&nbsp;: nous vous remboursons sans justificatif et sans poser de question.</div></div>
 
         <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
           <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5A6A70;font-weight:600;">🔒 Paiement sécurisé</span>
@@ -1248,7 +1264,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">1. Objet</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Le service génère une lettre de contestation de loyer initial personnalisée, à partir des informations que vous fournissez, pour les cantons de Vaud et Genève.</p></div>
           <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">2. Prix et prestations</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Formule à 14,90 CHF&nbsp;: lettre personnalisée au format PDF, checklist des pièces et instructions pour l'imprimer et l'envoyer soi-même. Formule à 49,90 CHF&nbsp;: mêmes éléments, avec impression, affranchissement et envoi en recommandé par nos soins, le locataire figurant comme expéditeur.</p></div>
           <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">3. Responsabilité</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Vous restez seul responsable du suivi de votre démarche&nbsp;: respect des délais, réception par l'autorité, suites de la procédure. Pour tout cas complexe, adressez-vous à l'<strong>ASLOCA</strong>.</p></div>
-          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">4. Rétractation et garantie de remboursement</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">La lettre étant générée sur mesure, le droit de rétractation ne s'applique pas une fois le document débloqué. En cas d'échec technique de génération ou d'envoi imputable à contestation.ch, le prix est intégralement remboursé. Il est également remboursé si la démarche menée avec la lettre n'aboutit pas à une réduction de loyer supérieure au prix payé. Cette garantie suppose que la lettre ait été envoyée dans le délai indiqué, que les informations fournies soient exactes et que le demandeur présente le justificatif de l'issue obtenue. Elle ne couvre pas une démarche abandonnée, envoyée hors délai ou modifiée après génération.</p></div>
+          <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">4. Rétractation et garantie de remboursement</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">La lettre étant générée sur mesure, le droit de rétractation ne s'applique pas une fois le document débloqué. En cas d'échec technique de génération ou d'envoi imputable à contestation.ch, le prix est intégralement remboursé. Il est également remboursé si la démarche menée avec la lettre n'aboutit pas à une réduction de loyer supérieure au prix payé. Pour activer cette garantie, il suffit d'en faire la demande par email&nbsp;: aucun justificatif n'est exigé et aucune question n'est posée.</p></div>
           <div><div style="font-weight:700;color:#12303F;font-size:15px;margin-bottom:6px;">5. Données</div><p style="margin:0;font-size:14px;color:#5A6A70;line-height:1.55;">Vos données et documents sont traités uniquement pour fournir le service et supprimés automatiquement 7 jours après la clôture du dossier. Voir la politique de confidentialité pour les prestataires utilisés.</p></div>
         </div>
       </div>

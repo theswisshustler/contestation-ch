@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.blog-ingest]
 verify_jwt = false
 
+[functions.outrank-webhook]
+verify_jwt = false
+
 [functions.blog-preview]
 verify_jwt = false
 

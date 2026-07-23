@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" fill="none">
+  <title>Contestation.ch — comparaison des proportions horizontales</title>
+  <rect width="1600" height="1600" fill="#FBFAF7"/>
+  <style>
+    .label { fill:#65777F; font:700 22px Arial,Helvetica,sans-serif; letter-spacing:1px }
+    .word { fill:#12303F; font-family:Arial,Helvetica,sans-serif; font-weight:700; letter-spacing:-3px }
+    .rule { stroke:#DFE5E7; stroke-width:2 }
+  </style>
+
+  <text x="90" y="82" class="label">A — ÉQUILIBRÉE</text>
+  <g transform="translate(115 92) scale(.55)">
+    <g stroke="#12303F" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M126 82H280L346 148V304C346 358 310 390 254 390H202C150 390 126 360 126 310V82Z"/>
+      <path d="M280 82V148H346"/>
+      <path d="M180 220H284M180 270H270"/>
+      <path d="M382 178V300C382 378 337 424 256 452C224 442 196 429 174 412"/>
+    </g>
+    <path d="M280 82L346 148H280V82Z" fill="#E1251B"/>
+  </g>
+  <text x="400" y="285" class="word" font-size="112">contestation.ch</text>
+  <line x1="90" y1="385" x2="1510" y2="385" class="rule"/>
+
+  <text x="90" y="462" class="label">B — MOT-SYMBOLE RENFORCÉ</text>
+  <g transform="translate(130 488) scale(.48)">
+    <g stroke="#12303F" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M126 82H280L346 148V304C346 358 310 390 254 390H202C150 390 126 360 126 310V82Z"/>
+      <path d="M280 82V148H346"/>
+      <path d="M180 220H284M180 270H270"/>
+      <path d="M382 178V300C382 378 337 424 256 452C224 442 196 429 174 412"/>
+    </g>
+    <path d="M280 82L346 148H280V82Z" fill="#E1251B"/>
+  </g>
+  <text x="380" y="665" class="word" font-size="122">contestation.ch</text>
+  <line x1="90" y1="770" x2="1510" y2="770" class="rule"/>
+
+  <text x="90" y="847" class="label">C — TYPOGRAPHIQUE</text>
+  <g transform="translate(142 884) scale(.41)">
+    <g stroke="#12303F" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M126 82H280L346 148V304C346 358 310 390 254 390H202C150 390 126 360 126 310V82Z"/>
+      <path d="M280 82V148H346"/>
+      <path d="M180 220H284M180 270H270"/>
+      <path d="M382 178V300C382 378 337 424 256 452C224 442 196 429 174 412"/>
+    </g>
+    <path d="M280 82L346 148H280V82Z" fill="#E1251B"/>
+  </g>
+  <text x="355" y="1048" class="word" font-size="132">contestation.ch</text>
+  <line x1="90" y1="1155" x2="1510" y2="1155" class="rule"/>
+
+  <text x="90" y="1232" class="label">D — COMPACTE</text>
+  <g transform="translate(150 1270) scale(.36)">
+    <g stroke="#12303F" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M126 82H280L346 148V304C346 358 310 390 254 390H202C150 390 126 360 126 310V82Z"/>
+      <path d="M280 82V148H346"/>
+      <path d="M180 220H284M180 270H270"/>
+      <path d="M382 178V300C382 378 337 424 256 452C224 442 196 429 174 412"/>
+    </g>
+    <path d="M280 82L346 148H280V82Z" fill="#E1251B"/>
+  </g>
+  <text x="340" y="1425" class="word" font-size="140">contestation.ch</text>
+</svg>
