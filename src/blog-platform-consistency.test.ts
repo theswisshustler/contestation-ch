@@ -41,6 +41,9 @@ describe('plateforme de publication', () => {
   it('rend la Home compréhensible sans JavaScript et relie le blog', () => {
     expect(home).toContain('Contenu de secours pré-rendu');
     expect(home).toContain('href="/blog"');
+    expect(home).toContain('Guide et articles');
+    expect(layout).toContain('<a href="/blog">Guide et articles</a>');
+    expect(layout).not.toContain('<a href="/#parcours">Solutions</a>');
     expect(home).toContain('href="/diagnostic?flow=loyer_initial"');
   });
 
