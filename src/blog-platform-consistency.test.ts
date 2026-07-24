@@ -60,7 +60,10 @@ describe('plateforme de publication', () => {
     expect(ai).toContain("type: 'web_search'");
     expect(ai).toContain("type: 'json_schema'");
     expect(ai).toContain('requiresHumanReview: true');
+    expect(ai).toContain("'enrich-sources'");
     expect(admin).toContain('/functions/v1/blog-ai');
+    expect(admin).toContain('Enrichir avec des sources');
+    expect(admin).toContain('mergeSources(article.sources)');
   });
 
   it('conserve un thème éditorial par révision sans injecter de design dans le document', () => {

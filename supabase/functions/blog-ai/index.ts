@@ -99,9 +99,18 @@ Deno.serve(async (req) => {
     const sourceUrls = Array.isArray(body.sourceUrls)
       ? body.sourceUrls.map((url) => sanitizeUrl(url)).filter((url) => /^https?:\/\//.test(url)).slice(0, 20)
       : [];
+    const requestedMode = body.mode === 'enrich-sources'
+      ? 'enrich-sources'
+      : body.mode === 'improve'
+      ? 'improve'
+      : 'create';
     const research = body.research !== false;
-    const webEnabled = research || sourceUrls.length > 0;
-    const mode = body.mode === 'improve' ? 'améliorer le brouillon existant' : 'rédiger un nouvel article';
+    const webEnabled = requestedMode === 'enrich-sources' || research || sourceUrls.length > 0;
+    const mode = requestedMode === 'enrich-sources'
+      ? 'enrichir le brouillon existant avec des liens et des sources vérifiables sans en changer inutilement le fond'
+      : requestedMode === 'improve'
+      ? 'améliorer le brouillon existant'
+      : 'rédiger un nouvel article';
     if (!brief && !existingContent) throw new Error('Décrivez le sujet ou fournissez un brouillon à améliorer');
 
     const model = Deno.env.get('OPENAI_BLOG_MODEL') || 'gpt-5.6-luna';
@@ -114,10 +123,16 @@ Règles impératives :
 - N'invente aucune loi, jurisprudence, statistique, date, délai ou autorité.
 - Appuie les affirmations vérifiables sur des sources fiables, en priorité admin.ch, fedlex.admin.ch, bwo.admin.ch, vd.ch, ge.ch et les autorités de conciliation.
 - Ajoute des liens Markdown contextuels vers les sources pertinentes, sans lien artificiel ni bourrage SEO.
+- Chaque lien ajouté doit soutenir directement la phrase ou l'affirmation à laquelle il est attaché.
+- N'utilise jamais une URL inventée, approximative ou non consultée.
 - Termine par une section "Sources" uniquement si cela améliore la lecture ; dans tous les cas, renseigne le tableau JSON sources.
 - Structure le Markdown avec des H2/H3, paragraphes courts, listes, tableau si utile, FAQ et appel à l'action vers /diagnostic si pertinent.
 - Le H1 ne doit pas apparaître dans le Markdown : il est fourni séparément dans title.
-- Ne publie rien : retourne seulement un brouillon structuré à relire humainement.`;
+- Ne publie rien : retourne seulement un brouillon structuré à relire humainement.
+${requestedMode === 'enrich-sources' ? `- Préserve le plan, le ton, les conclusions et la longueur du brouillon autant que possible.
+- Ne réécris que ce qui est nécessaire pour intégrer naturellement un lien, corriger une affirmation non étayée ou lever une ambiguïté.
+- Conserve les liens existants pertinents et remplace uniquement ceux qui sont cassés, faibles ou hors sujet.
+- Le tableau sources doit contenir toutes les références ajoutées ou conservées dans le texte.` : ''}`;
 
     const input = [
       `Brief éditorial :\n${brief || 'Améliorer le brouillon fourni.'}`,
@@ -169,7 +184,7 @@ Règles impératives :
       detail: {
         model,
         research: webEnabled,
-        mode: body.mode === 'improve' ? 'improve' : 'create',
+        mode: requestedMode,
         sourceCount: article.sources.length,
         responseId: cleanText(payload.id, 200),
       },

@@ -70,7 +70,11 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
                   <label>Action<select id="ai-mode"><option value="create">Créer un nouvel article</option><option value="improve">Améliorer le contenu actuel</option></select></label>
                   <label class="admin-check"><input id="ai-research" type="checkbox" checked /> Rechercher des sources sur le web</label>
                 </div>
-                <div class="admin-actions"><button id="ai-generate" class="button button--secondary" type="button">✦ Générer le brouillon</button><span id="ai-status" class="admin-status" aria-live="polite"></span></div>
+                <div class="admin-actions">
+                  <button id="ai-generate" class="button button--secondary" type="button">✦ Générer le brouillon</button>
+                  <button id="ai-enrich-sources" class="button button--ghost" type="button">↗ Enrichir avec des sources</button>
+                  <span id="ai-status" class="admin-status" aria-live="polite"></span>
+                </div>
               </div>
             </details>
 
@@ -409,6 +413,48 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
       }
     }
 
+    function mergeSources(generatedSources) {
+      const merged = [...parseSources(), ...(generatedSources || [])];
+      return [...new Map(merged.map((source) => [source.url, source])).values()];
+    }
+
+    async function enrichWithSources() {
+      const content = sourceValue().trim();
+      if (!content) return status('Collez ou rédigez d’abord le texte à enrichir.', true, '#ai-status');
+      if (!confirm('L’article sera remplacé par une version enrichie. Le titre et les réglages éditoriaux seront conservés. Continuer ?')) return;
+      const button = $('#ai-enrich-sources');
+      button.disabled = true;
+      status('Recherche de sources fiables et ajout des liens…', false, '#ai-status');
+      try {
+        const currentSources = parseSources();
+        const data = await aiCall({
+          mode: 'enrich-sources',
+          research: true,
+          brief: `Titre actuel : ${$('#title').value.trim() || 'Article sans titre'}. Préserve le fond et enrichis uniquement avec des références pertinentes.`,
+          existingContent: content,
+          sourceUrls: [
+            ...currentSources.map((source) => source.url),
+            ...$('#ai-source-urls').value.split('\n').map((url) => url.trim()).filter(Boolean),
+          ],
+        });
+        const article = data.article;
+        $('#format').value = 'markdown';
+        $('#source-content').value = article.markdown;
+        const sources = mergeSources(article.sources);
+        $('#sources').value = sources.map((source) => `${source.label} | ${source.url}`).join('\n');
+        if (!$('#excerpt').value.trim()) $('#excerpt').value = article.excerpt;
+        if (!$('#seo-title').value.trim()) $('#seo-title').value = article.seoTitle;
+        if (!$('#seo-description').value.trim()) $('#seo-description').value = article.seoDescription;
+        if (!$('#topics').value.trim()) $('#topics').value = article.topics.join(', ');
+        updateFormat();
+        status(`${sources.length} source(s) intégrée(s). Vérifiez les liens avant d’enregistrer.`, false, '#ai-status');
+      } catch (error) {
+        status(error.message, true, '#ai-status');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     async function importFile(file) {
       const ext = file.name.split('.').pop().toLowerCase(); const map = { md: 'markdown', markdown: 'markdown', html: 'html', htm: 'html', json: 'json', txt: 'plain' };
       $('#format').value = map[ext] || 'plain'; $('#source-content').value = await file.text(); updateFormat(); status(`Fichier ${file.name} importé dans l’éditeur.`);
@@ -507,6 +553,7 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     $('#image-file').addEventListener('change', (event) => event.target.files[0] && uploadImage(event.target.files[0]));
     $('#create-api-key').addEventListener('click', createApiKey);
     $('#ai-generate').addEventListener('click', generateWithAi);
+    $('#ai-enrich-sources').addEventListener('click', enrichWithSources);
     $('#article-theme').addEventListener('change', updateThemePreview);
     $('#article-accent').addEventListener('input', updateThemePreview);
     const recoveryRequested = new URLSearchParams(location.search).get('mode') === 'recovery';

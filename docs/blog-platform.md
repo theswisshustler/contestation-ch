@@ -99,6 +99,12 @@ améliorer le brouillon en cours. L’Edge Function `blog-ai` :
 - retourne du Markdown, les champs SEO, les thèmes et une liste de sources ;
 - ne publie jamais : le résultat reste un brouillon soumis à relecture humaine.
 
+Le bouton **Enrichir avec des sources** est optimisé pour un article déjà
+rédigé : il préserve le titre, le plan et les réglages éditoriaux, recherche des
+références fiables, ajoute des liens Markdown au niveau des affirmations
+concernées et fusionne la bibliographie existante sans doublons. Les liens
+doivent être vérifiés dans l’aperçu avant publication.
+
 Configurer le secret et, facultativement, le modèle :
 
 ```bash
