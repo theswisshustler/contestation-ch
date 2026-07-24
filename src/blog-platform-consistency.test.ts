@@ -71,6 +71,8 @@ describe('plateforme de publication', () => {
     expect(admin).toContain('theme: {');
     expect(admin).toContain('...currentMetadata');
     expect(admin).toContain('article-list-gap');
+    expect(admin).toContain('theme-preview__content');
+    expect(admin).toContain("preview.dataset.hero = $('#article-hero-style').value");
     expect(article).toContain('article-theme--');
     expect(article).toContain('rawTheme.showToc !== false');
     expect(article).toContain('--article-list-gap');

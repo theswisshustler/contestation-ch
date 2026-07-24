@@ -107,7 +107,36 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
                     <label>Largeur du contenu <output id="article-content-width-value">720 px</output><input id="article-content-width" type="range" min="600" max="900" step="10" value="720" /></label>
                   </div>
                 </fieldset>
-                <div id="theme-preview" class="theme-preview" data-theme="reference"><span></span><strong>Aperçu du style</strong><p>Un article clair et lisible.</p><ul><li>Premier point de la liste</li><li>Deuxième point de la liste</li></ul></div>
+                <div class="theme-preview-stage">
+                  <div class="theme-preview-toolbar">
+                    <strong>Aperçu de l’article</strong>
+                    <span id="theme-preview-width">Largeur de lecture : 720 px</span>
+                  </div>
+                  <div id="theme-preview" class="theme-preview" data-theme="reference" data-hero="rounded" data-toc="visible">
+                    <header class="theme-preview__header">
+                      <small>GUIDE PRATIQUE</small>
+                      <h2>Comment préparer votre demande</h2>
+                      <p>Les étapes essentielles pour constituer un dossier clair et complet.</p>
+                    </header>
+                    <div class="theme-preview__hero" aria-hidden="true"><span></span></div>
+                    <div class="theme-preview__layout">
+                      <div class="theme-preview__content">
+                        <p>Avant de commencer, rassemblez les informations utiles concernant votre logement et votre bail.</p>
+                        <p>Une demande bien documentée facilite son traitement et limite les échanges inutiles.</p>
+                        <h3>Documents à préparer</h3>
+                        <p>Munissez-vous notamment des éléments suivants :</p>
+                        <ul>
+                          <li>le contrat de bail actuel ;</li>
+                          <li>les dernières notifications reçues ;</li>
+                          <li>une copie de votre demande.</li>
+                        </ul>
+                        <h3>Étape suivante</h3>
+                        <p>Vérifiez ensuite les délais applicables avant d’envoyer votre courrier.</p>
+                      </div>
+                      <aside class="theme-preview__toc"><strong>Sommaire</strong><span>Documents à préparer</span><span>Étape suivante</span></aside>
+                    </div>
+                  </div>
+                </div>
               </div>
             </details>
 
@@ -306,6 +335,8 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     function updateThemePreview() {
       const preview = $('#theme-preview');
       preview.dataset.theme = $('#article-theme').value;
+      preview.dataset.hero = $('#article-hero-style').value;
+      preview.dataset.toc = $('#article-show-toc').checked ? 'visible' : 'hidden';
       preview.style.setProperty('--preview-accent', $('#article-accent').value);
       const controls = [
         ['article-list-gap', 'article-list-gap-value', '--preview-list-gap'],
@@ -319,6 +350,7 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
         $(`#${outputId}`).textContent = `${value} px`;
         preview.style.setProperty(property, `${value}px`);
       });
+      $('#theme-preview-width').textContent = `Largeur de lecture : ${$('#article-content-width').value} px`;
     }
 
     function updateFormat() {
@@ -597,6 +629,8 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     $('#ai-enrich-sources').addEventListener('click', enrichWithSources);
     $('#article-theme').addEventListener('change', updateThemePreview);
     $('#article-accent').addEventListener('input', updateThemePreview);
+    $('#article-hero-style').addEventListener('change', updateThemePreview);
+    $('#article-show-toc').addEventListener('change', updateThemePreview);
     ['article-list-gap', 'article-paragraph-gap', 'article-section-gap', 'article-font-size', 'article-content-width']
       .forEach((id) => $(`#${id}`).addEventListener('input', updateThemePreview));
     const recoveryRequested = new URLSearchParams(location.search).get('mode') === 'recovery';
@@ -673,20 +707,42 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .layout-controls label { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; }
     .layout-controls output { color: var(--cc-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
     .layout-controls input { grid-column: 1 / -1; padding: 0; accent-color: var(--cc-blue); }
-    .theme-preview { --preview-accent: #1b4965; --preview-list-gap: 6px; --preview-paragraph-gap: 18px; --preview-font-size: 17px; width: min(100%, var(--preview-content-width, 720px)); padding: 20px; border: 1px solid var(--cc-border); border-left: 6px solid var(--preview-accent); border-radius: 12px; background: #fff; font-size: var(--preview-font-size); }
-    .theme-preview span { display: block; width: 42px; height: 5px; margin-bottom: 12px; border-radius: 9px; background: var(--preview-accent); }
-    .theme-preview p { margin: 6px 0 var(--preview-paragraph-gap); color: var(--cc-muted); }
-    .theme-preview ul { margin: 0; padding-left: 24px; }
-    .theme-preview li { margin: var(--preview-list-gap) 0; }
-    .theme-preview[data-theme="editorial"] { font-family: Georgia, serif; background: #fffdf8; }
-    .theme-preview[data-theme="compact"] { padding-block: 13px; font-size: 13px; }
-    .theme-preview[data-theme="accessible"] { font-size: 18px; line-height: 1.7; }
+    .theme-preview-stage { overflow: hidden; border: 1px solid var(--cc-border); border-radius: 14px; background: #edf2f4; }
+    .theme-preview-toolbar { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--cc-border); background: #f8fafb; color: var(--cc-ink); font-size: 12px; }
+    .theme-preview-toolbar span { color: var(--cc-muted); font-variant-numeric: tabular-nums; }
+    .theme-preview { --preview-accent: #1b4965; --preview-list-gap: 6px; --preview-paragraph-gap: 18px; --preview-section-gap: 44px; --preview-font-size: 17px; width: min(100%, var(--preview-content-width, 720px)); min-width: 0; margin: 18px auto; border: 1px solid #d7e0e4; border-radius: 12px; background: #fff; box-shadow: 0 8px 24px rgba(18,48,63,.08); overflow: hidden; color: #314e5b; font-size: var(--preview-font-size); transition: width .15s ease, font-size .15s ease; }
+    .theme-preview__header { padding: 25px 32px 20px; text-align: center; }
+    .theme-preview__header small { color: var(--preview-accent); font-size: .62em; font-weight: 800; letter-spacing: .08em; }
+    .theme-preview__header h2 { margin: 8px 0; color: var(--cc-ink); font-size: 1.75em; line-height: 1.08; }
+    .theme-preview__header p { max-width: 520px; margin: 0 auto; color: var(--cc-muted); font-size: .92em; line-height: 1.5; }
+    .theme-preview__hero { height: 82px; margin: 0 28px 24px; border-radius: 10px; background: linear-gradient(135deg, color-mix(in srgb, var(--preview-accent) 15%, white), color-mix(in srgb, var(--preview-accent) 38%, white)); overflow: hidden; }
+    .theme-preview__hero span { display: block; width: 38%; height: 100%; margin-left: auto; background: color-mix(in srgb, var(--preview-accent) 28%, transparent); clip-path: polygon(45% 0, 100% 0, 100% 100%, 0 100%); }
+    .theme-preview[data-hero="full"] .theme-preview__hero { margin-inline: 0; border-radius: 0; }
+    .theme-preview[data-hero="hidden"] .theme-preview__hero { display: none; }
+    .theme-preview__layout { display: grid; grid-template-columns: minmax(0, 1fr) 116px; gap: 26px; padding: 0 32px 34px; }
+    .theme-preview__content { min-width: 0; line-height: 1.72; }
+    .theme-preview__content p { margin: 0 0 var(--preview-paragraph-gap); color: #46606b; }
+    .theme-preview__content h3 { margin: var(--preview-section-gap) 0 10px; color: var(--cc-ink); font-size: 1.35em; line-height: 1.18; }
+    .theme-preview__content > :first-child { margin-top: 0; }
+    .theme-preview__content ul { margin: 0; padding-left: 23px; }
+    .theme-preview__content li { margin: var(--preview-list-gap) 0; padding-left: 3px; }
+    .theme-preview__toc { border-left: 1px solid #d8e1e5; padding-left: 12px; color: var(--cc-muted); font-size: .68em; line-height: 1.35; }
+    .theme-preview__toc strong, .theme-preview__toc span { display: block; margin-bottom: 9px; }
+    .theme-preview__toc strong { color: var(--cc-ink); text-transform: uppercase; letter-spacing: .05em; }
+    .theme-preview[data-toc="hidden"] .theme-preview__layout { grid-template-columns: minmax(0, 1fr); }
+    .theme-preview[data-toc="hidden"] .theme-preview__toc { display: none; }
+    .theme-preview[data-theme="editorial"] { background: #fffdf8; }
+    .theme-preview[data-theme="editorial"] .theme-preview__header h2, .theme-preview[data-theme="editorial"] .theme-preview__content { font-family: Georgia, serif; }
+    .theme-preview[data-theme="editorial"] .theme-preview__content { line-height: 1.9; }
+    .theme-preview[data-theme="compact"] .theme-preview__header { padding-block: 18px 14px; }
+    .theme-preview[data-theme="compact"] .theme-preview__content { line-height: 1.52; }
+    .theme-preview[data-theme="accessible"] .theme-preview__content { line-height: 1.95; }
     .admin-status { min-height: 22px; margin: 0; color: var(--cc-green); font-size: 13px; font-weight: 650; }
     .is-error { color: #a92e25 !important; }
     .admin-api { margin-top: 24px; }
     .api-key-output { overflow-x: auto; padding: 14px; border-radius: 9px; background: #102a36; color: #fff; user-select: all; }
     .api-key-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--cc-border); font-size: 13px; }
     @media (max-width: 900px) { .admin-layout { grid-template-columns: 1fr; }.admin-list-panel { position: static; max-height: 320px; }.admin-topbar { display: block; }.admin-topbar .admin-actions { margin-top: 18px; } }
-    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns, .layout-controls__grid { grid-template-columns: 1fr; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; } }
+    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns, .layout-controls__grid { grid-template-columns: 1fr; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; }.theme-preview-toolbar { display: grid; }.theme-preview { margin-block: 10px; border-radius: 0; }.theme-preview__header, .theme-preview__layout { padding-inline: 18px; }.theme-preview__layout { grid-template-columns: minmax(0, 1fr); }.theme-preview__toc { display: none; } }
   </style>
 </BaseLayout>
