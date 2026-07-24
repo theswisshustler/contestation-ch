@@ -8,6 +8,7 @@ describe('plateforme de publication', () => {
   const article = readFileSync('src/components/blog/ArticlePage.astro', 'utf8');
   const articleCard = readFileSync('src/components/blog/ArticleCard.astro', 'utf8');
   const admin = readFileSync('src/pages/admin/index.astro', 'utf8');
+  const middleware = readFileSync('src/middleware.ts', 'utf8');
   const http = readFileSync('supabase/functions/_shared/http.ts', 'utf8');
   const ai = readFileSync('src/pages/api/admin/blog-ai.ts', 'utf8');
 
@@ -45,6 +46,12 @@ describe('plateforme de publication', () => {
     expect(layout).toContain('<a href="/blog">Guide et articles</a>');
     expect(layout).not.toContain('<a href="/#parcours">Solutions</a>');
     expect(home).toContain('href="/diagnostic?flow=loyer_initial"');
+  });
+
+  it('redirige définitivement www vers le domaine canonique en conservant le chemin', () => {
+    expect(middleware).toContain("requestHost === `www.${canonicalHost}`");
+    expect(middleware).toContain("destination.hostname = canonicalHost");
+    expect(middleware).toContain("context.redirect(destination.toString(), 308)");
   });
 
   it('propose une récupération de mot de passe Supabase complète', () => {
