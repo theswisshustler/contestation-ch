@@ -97,7 +97,17 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
                   <label>Présentation de l’image<select id="article-hero-style"><option value="rounded">Arrondie</option><option value="full">Pleine largeur</option><option value="hidden">Masquée</option></select></label>
                   <label class="admin-check"><input id="article-show-toc" type="checkbox" checked /> Afficher le sommaire</label>
                 </div>
-                <div id="theme-preview" class="theme-preview" data-theme="reference"><span></span><strong>Aperçu du style</strong><p>Un article clair, lisible et cohérent avec Contestation.ch.</p></div>
+                <fieldset class="layout-controls">
+                  <legend>Mise en page du contenu</legend>
+                  <div class="layout-controls__grid">
+                    <label>Espacement des puces <output id="article-list-gap-value">6 px</output><input id="article-list-gap" type="range" min="0" max="24" step="1" value="6" /></label>
+                    <label>Espacement des paragraphes <output id="article-paragraph-gap-value">18 px</output><input id="article-paragraph-gap" type="range" min="8" max="32" step="1" value="18" /></label>
+                    <label>Espacement des sections <output id="article-section-gap-value">44 px</output><input id="article-section-gap" type="range" min="24" max="72" step="2" value="44" /></label>
+                    <label>Taille du texte <output id="article-font-size-value">17 px</output><input id="article-font-size" type="range" min="15" max="22" step="1" value="17" /></label>
+                    <label>Largeur du contenu <output id="article-content-width-value">720 px</output><input id="article-content-width" type="range" min="600" max="900" step="10" value="720" /></label>
+                  </div>
+                </fieldset>
+                <div id="theme-preview" class="theme-preview" data-theme="reference"><span></span><strong>Aperçu du style</strong><p>Un article clair et lisible.</p><ul><li>Premier point de la liste</li><li>Deuxième point de la liste</li></ul></div>
               </div>
             </details>
 
@@ -276,15 +286,39 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
             accent: $('#article-accent').value,
             heroStyle: $('#article-hero-style').value,
             showToc: $('#article-show-toc').checked,
+            layout: {
+              listGap: Number($('#article-list-gap').value),
+              paragraphGap: Number($('#article-paragraph-gap').value),
+              sectionGap: Number($('#article-section-gap').value),
+              fontSize: Number($('#article-font-size').value),
+              contentWidth: Number($('#article-content-width').value),
+            },
           },
         },
       };
+    }
+
+    function layoutValue(value, min, max, fallback) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
     }
 
     function updateThemePreview() {
       const preview = $('#theme-preview');
       preview.dataset.theme = $('#article-theme').value;
       preview.style.setProperty('--preview-accent', $('#article-accent').value);
+      const controls = [
+        ['article-list-gap', 'article-list-gap-value', '--preview-list-gap'],
+        ['article-paragraph-gap', 'article-paragraph-gap-value', '--preview-paragraph-gap'],
+        ['article-section-gap', 'article-section-gap-value', '--preview-section-gap'],
+        ['article-font-size', 'article-font-size-value', '--preview-font-size'],
+        ['article-content-width', 'article-content-width-value', '--preview-content-width'],
+      ];
+      controls.forEach(([inputId, outputId, property]) => {
+        const value = Number($(`#${inputId}`).value);
+        $(`#${outputId}`).textContent = `${value} px`;
+        preview.style.setProperty(property, `${value}px`);
+      });
     }
 
     function updateFormat() {
@@ -342,6 +376,12 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
         $('#article-accent').value = /^#[0-9a-f]{6}$/i.test(theme.accent || '') ? theme.accent : '#1b4965';
         $('#article-hero-style').value = ['rounded', 'full', 'hidden'].includes(theme.heroStyle) ? theme.heroStyle : 'rounded';
         $('#article-show-toc').checked = theme.showToc !== false;
+        const layout = theme.layout && typeof theme.layout === 'object' ? theme.layout : {};
+        $('#article-list-gap').value = layoutValue(layout.listGap, 0, 24, 6);
+        $('#article-paragraph-gap').value = layoutValue(layout.paragraphGap, 8, 32, 18);
+        $('#article-section-gap').value = layoutValue(layout.sectionGap, 24, 72, 44);
+        $('#article-font-size').value = layoutValue(layout.fontSize, 15, 22, 17);
+        $('#article-content-width').value = layoutValue(layout.contentWidth, 600, 900, 720);
         $('#format').value = revision.source_format || 'canonical-v1';
         const source = revision.source_content || JSON.stringify(revision.document, null, 2);
         $('#source-content').value = source; $('#rich-editor').innerHTML = $('#format').value === 'rich-text' ? source : '';
@@ -557,6 +597,8 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     $('#ai-enrich-sources').addEventListener('click', enrichWithSources);
     $('#article-theme').addEventListener('change', updateThemePreview);
     $('#article-accent').addEventListener('input', updateThemePreview);
+    ['article-list-gap', 'article-paragraph-gap', 'article-section-gap', 'article-font-size', 'article-content-width']
+      .forEach((id) => $(`#${id}`).addEventListener('input', updateThemePreview));
     const recoveryRequested = new URLSearchParams(location.search).get('mode') === 'recovery';
     supabase.auth.onAuthStateChange((event, nextSession) => {
       session = nextSession;
@@ -625,9 +667,17 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-ai summary { color: var(--cc-blue); }
     .admin-check { display: flex !important; align-items: center; align-self: end; grid-template-columns: auto 1fr !important; min-height: 48px; }
     .admin-check input { width: 18px !important; height: 18px; }
-    .theme-preview { --preview-accent: #1b4965; padding: 20px; border: 1px solid var(--cc-border); border-left: 6px solid var(--preview-accent); border-radius: 12px; background: #fff; }
+    .layout-controls { margin: 0; padding: 16px; border: 1px solid var(--cc-border); border-radius: 12px; }
+    .layout-controls legend { padding: 0 6px; color: var(--cc-ink); font-weight: 750; }
+    .layout-controls__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 22px; }
+    .layout-controls label { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; }
+    .layout-controls output { color: var(--cc-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .layout-controls input { grid-column: 1 / -1; padding: 0; accent-color: var(--cc-blue); }
+    .theme-preview { --preview-accent: #1b4965; --preview-list-gap: 6px; --preview-paragraph-gap: 18px; --preview-font-size: 17px; width: min(100%, var(--preview-content-width, 720px)); padding: 20px; border: 1px solid var(--cc-border); border-left: 6px solid var(--preview-accent); border-radius: 12px; background: #fff; font-size: var(--preview-font-size); }
     .theme-preview span { display: block; width: 42px; height: 5px; margin-bottom: 12px; border-radius: 9px; background: var(--preview-accent); }
-    .theme-preview p { margin: 6px 0 0; color: var(--cc-muted); }
+    .theme-preview p { margin: 6px 0 var(--preview-paragraph-gap); color: var(--cc-muted); }
+    .theme-preview ul { margin: 0; padding-left: 24px; }
+    .theme-preview li { margin: var(--preview-list-gap) 0; }
     .theme-preview[data-theme="editorial"] { font-family: Georgia, serif; background: #fffdf8; }
     .theme-preview[data-theme="compact"] { padding-block: 13px; font-size: 13px; }
     .theme-preview[data-theme="accessible"] { font-size: 18px; line-height: 1.7; }
@@ -637,6 +687,6 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .api-key-output { overflow-x: auto; padding: 14px; border-radius: 9px; background: #102a36; color: #fff; user-select: all; }
     .api-key-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--cc-border); font-size: 13px; }
     @media (max-width: 900px) { .admin-layout { grid-template-columns: 1fr; }.admin-list-panel { position: static; max-height: 320px; }.admin-topbar { display: block; }.admin-topbar .admin-actions { margin-top: 18px; } }
-    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns { grid-template-columns: 1fr; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; } }
+    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns, .layout-controls__grid { grid-template-columns: 1fr; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; } }
   </style>
 </BaseLayout>

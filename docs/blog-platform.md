@@ -123,7 +123,10 @@ porter dans ses métadonnées un thème validé par le renderer :
 - `accessible` : corps et interlignage agrandis.
 
 L’éditeur peut aussi choisir une couleur d’accent, la présentation de l’image
-principale et l’affichage du sommaire. Les valeurs sont filtrées côté Astro ;
+principale, l’affichage du sommaire et régler la mise en page : espacement des
+puces, des paragraphes et des sections, taille du texte et largeur de lecture.
+Ces réglages sont propres à chaque révision et visibles immédiatement dans
+l’aperçu de l’administration. Les valeurs sont bornées et filtrées côté Astro ;
 les classes CSS ou styles arbitraires restent interdits dans le contenu.
 
 ## Import par API

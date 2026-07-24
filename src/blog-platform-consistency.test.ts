@@ -70,7 +70,10 @@ describe('plateforme de publication', () => {
   it('conserve un thème éditorial par révision sans injecter de design dans le document', () => {
     expect(admin).toContain('theme: {');
     expect(admin).toContain('...currentMetadata');
+    expect(admin).toContain('article-list-gap');
     expect(article).toContain('article-theme--');
     expect(article).toContain('rawTheme.showToc !== false');
+    expect(article).toContain('--article-list-gap');
+    expect(readFileSync('src/styles/global.css', 'utf8')).toContain('.article-content li > p:last-child');
   });
 });

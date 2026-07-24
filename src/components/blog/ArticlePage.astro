@@ -24,6 +24,28 @@ const themePreset = ['reference', 'editorial', 'compact', 'accessible'].includes
 const themeAccent = /^#[0-9a-f]{6}$/i.test(String(rawTheme.accent || '')) ? String(rawTheme.accent) : '#1b4965';
 const heroStyle = ['rounded', 'full', 'hidden'].includes(String(rawTheme.heroStyle)) ? String(rawTheme.heroStyle) : 'rounded';
 const showToc = rawTheme.showToc !== false && toc.length > 0;
+const rawLayout = rawTheme.layout && typeof rawTheme.layout === 'object'
+  ? rawTheme.layout as Record<string, unknown>
+  : {};
+const layoutValue = (value: unknown, min: number, max: number, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+};
+const articleLayout = {
+  listGap: layoutValue(rawLayout.listGap, 0, 24, 6),
+  paragraphGap: layoutValue(rawLayout.paragraphGap, 8, 32, 18),
+  sectionGap: layoutValue(rawLayout.sectionGap, 24, 72, 44),
+  fontSize: layoutValue(rawLayout.fontSize, 15, 22, 17),
+  contentWidth: layoutValue(rawLayout.contentWidth, 600, 900, 720),
+};
+const articleStyle = [
+  `--article-accent:${themeAccent}`,
+  `--article-list-gap:${articleLayout.listGap}px`,
+  `--article-paragraph-gap:${articleLayout.paragraphGap}px`,
+  `--article-section-gap:${articleLayout.sectionGap}px`,
+  `--article-font-size:${articleLayout.fontSize}px`,
+  `--article-content-width:${articleLayout.contentWidth}px`,
+].join(';');
 const canonicalPath = `/blog/${article.slug}`;
 const image = article.featured_image || '/assets/hero-lettre-contestation.png';
 const author = article.author_kind === 'person'
@@ -52,7 +74,7 @@ const faqSchema = faq.length ? {
 const schemas = preview ? [] : [articleSchema, breadcrumbSchema, ...(faqSchema ? [faqSchema] : [])];
 ---
 <BaseLayout title={article.seo_title} description={article.seo_description} canonicalPath={canonicalPath} image={image} type="article" noindex={preview} jsonLd={schemas}>
-  <div class={`article-theme article-theme--${themePreset} article-theme--hero-${heroStyle}`} style={`--article-accent:${themeAccent}`}>
+  <div class={`article-theme article-theme--${themePreset} article-theme--hero-${heroStyle}`} style={articleStyle}>
     {preview && <div class="preview-banner">Aperçu privé — cette version n’est pas indexable</div>}
     <article>
     <header class="article-header">
