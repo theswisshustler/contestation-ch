@@ -51,7 +51,8 @@ describe('plateforme de publication', () => {
 
   it('autorise la sauvegarde idempotente depuis le navigateur', () => {
     expect(http).toContain('idempotency-key');
-    expect(admin).toContain("'Idempotency-Key': crypto.randomUUID()");
+    expect(admin).toContain('idempotencyKey: crypto.randomUUID()');
+    expect(admin).not.toContain("'Idempotency-Key': crypto.randomUUID()");
   });
 
   it('génère des brouillons IA côté serveur avec sources et validation humaine', () => {

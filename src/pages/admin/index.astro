@@ -219,7 +219,11 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     }
 
     async function ingest(payload) {
-      const response = await fetch(`${supabaseUrl}/functions/v1/blog-ingest`, { method: 'POST', headers: { ...(await authHeaders()), 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) });
+      const response = await fetch(`${supabaseUrl}/functions/v1/blog-ingest`, {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({ ...payload, idempotencyKey: crypto.randomUUID() }),
+      });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
       return body;
