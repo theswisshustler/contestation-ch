@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.57.4';
 import { adminClient } from '../supabase.ts';
 import { sha256Hex } from './document.ts';
 

@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.57.4';
 
 /**
  * Client service_role : contourne RLS. À n'utiliser QUE côté serveur (Edge
