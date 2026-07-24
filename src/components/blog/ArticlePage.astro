@@ -15,6 +15,15 @@ const modifiedDate = article.updated_at || article.published_at || publishedDate
 const dateFormat = new Intl.DateTimeFormat('fr-CH', { day: 'numeric', month: 'long', year: 'numeric' });
 const toc = deriveToc(article.document);
 const minutes = estimateReadingMinutes(article.document);
+const rawTheme = article.metadata?.theme && typeof article.metadata.theme === 'object'
+  ? article.metadata.theme as Record<string, unknown>
+  : {};
+const themePreset = ['reference', 'editorial', 'compact', 'accessible'].includes(String(rawTheme.preset))
+  ? String(rawTheme.preset)
+  : 'reference';
+const themeAccent = /^#[0-9a-f]{6}$/i.test(String(rawTheme.accent || '')) ? String(rawTheme.accent) : '#1b4965';
+const heroStyle = ['rounded', 'full', 'hidden'].includes(String(rawTheme.heroStyle)) ? String(rawTheme.heroStyle) : 'rounded';
+const showToc = rawTheme.showToc !== false && toc.length > 0;
 const canonicalPath = `/blog/${article.slug}`;
 const image = article.featured_image || '/assets/hero-lettre-contestation.png';
 const author = article.author_kind === 'person'
@@ -43,8 +52,9 @@ const faqSchema = faq.length ? {
 const schemas = preview ? [] : [articleSchema, breadcrumbSchema, ...(faqSchema ? [faqSchema] : [])];
 ---
 <BaseLayout title={article.seo_title} description={article.seo_description} canonicalPath={canonicalPath} image={image} type="article" noindex={preview} jsonLd={schemas}>
-  {preview && <div class="preview-banner">Aperçu privé — cette version n’est pas indexable</div>}
-  <article>
+  <div class={`article-theme article-theme--${themePreset} article-theme--hero-${heroStyle}`} style={`--article-accent:${themeAccent}`}>
+    {preview && <div class="preview-banner">Aperçu privé — cette version n’est pas indexable</div>}
+    <article>
     <header class="article-header">
       {article.topics?.length > 0 && <div class="topic-list">{article.topics.map((topic) => <a class="topic-pill" href={`/blog/categorie/${topic.slug}`}>{topic.name}</a>)}</div>}
       <h1>{article.title}</h1>
@@ -57,12 +67,13 @@ const schemas = preview ? [] : [articleSchema, breadcrumbSchema, ...(faqSchema ?
       </div>
       {(article.reviewer_name || article.reviewed_at) && <div class="article-meta" style="margin-top:8px"><span>Vérifié{article.reviewer_name ? ` par ${article.reviewer_name}` : ''}{article.reviewed_at ? ` le ${dateFormat.format(new Date(article.reviewed_at))}` : ''}</span></div>}
     </header>
-    {article.featured_image && <img class="article-hero" src={article.featured_image} alt="" fetchpriority="high" />}
-    <div class="article-layout">
+    {article.featured_image && heroStyle !== 'hidden' && <img class="article-hero" src={article.featured_image} alt="" fetchpriority="high" />}
+    <div class:list={['article-layout', { 'article-layout--without-toc': !showToc }]}>
       <div class="article-content"><ArticleBlocks blocks={article.document.blocks} /></div>
-      <TableOfContents entries={toc} />
+      {showToc && <TableOfContents entries={toc} />}
     </div>
     {article.sources?.length > 0 && <section class="source-list" aria-labelledby="sources-title"><div class="source-list__inner"><h2 id="sources-title">Sources et références</h2><ul>{article.sources.map((source) => <li><a href={source.url} rel="noopener">{source.label}</a></li>)}</ul></div></section>}
-  </article>
-  {!preview && related.length > 0 && <section class="related" aria-labelledby="related-title"><h2 id="related-title">À lire également</h2><div class="article-grid">{related.map((entry) => <ArticleCard article={entry} headingLevel={3} />)}</div></section>}
+    </article>
+    {!preview && related.length > 0 && <section class="related" aria-labelledby="related-title"><h2 id="related-title">À lire également</h2><div class="article-grid">{related.map((entry) => <ArticleCard article={entry} headingLevel={3} />)}</div></section>}
+  </div>
 </BaseLayout>

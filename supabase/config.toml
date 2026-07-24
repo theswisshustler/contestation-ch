@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.blog-admin]
 verify_jwt = true
+
+[functions.blog-ai]
+verify_jwt = false

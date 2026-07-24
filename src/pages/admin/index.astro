@@ -60,6 +60,20 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
             </div>
             <label>Introduction / extrait<textarea id="excerpt" rows="3" maxlength="320" placeholder="Généré automatiquement si ce champ reste vide"></textarea></label>
 
+            <details class="admin-details admin-ai">
+              <summary>✦ Rédiger avec OpenAI</summary>
+              <div class="admin-details-content">
+                <p class="admin-help">Crée un brouillon à relire, avec recherche web facultative, liens contextuels et liste de sources. Rien n’est publié automatiquement.</p>
+                <label>Brief éditorial<textarea id="ai-brief" rows="5" maxlength="12000" placeholder="Ex. Rédige un guide pratique sur la contestation du loyer initial à Genève, pour une personne qui vient de recevoir ses clés…"></textarea></label>
+                <label>Sources imposées <textarea id="ai-source-urls" rows="3" placeholder="Une URL par ligne, par exemple https://www.fedlex.admin.ch/…"></textarea></label>
+                <div class="admin-columns">
+                  <label>Action<select id="ai-mode"><option value="create">Créer un nouvel article</option><option value="improve">Améliorer le contenu actuel</option></select></label>
+                  <label class="admin-check"><input id="ai-research" type="checkbox" checked /> Rechercher des sources sur le web</label>
+                </div>
+                <div class="admin-actions"><button id="ai-generate" class="button button--secondary" type="button">✦ Générer le brouillon</button><span id="ai-status" class="admin-status" aria-live="polite"></span></div>
+              </div>
+            </details>
+
             <div class="admin-source-bar">
               <label>Format d’entrée<select id="format"><option value="markdown">Markdown</option><option value="html">HTML</option><option value="rich-text">Rich Text</option><option value="plain">Texte simple</option><option value="canonical-v1">JSON canonique v1</option><option value="tiptap">JSON Tiptap</option><option value="json">JSON auto-détecté</option></select></label>
               <label class="button button--ghost admin-file-button">Importer un fichier<input id="import-file" type="file" accept=".md,.markdown,.html,.htm,.json,.txt" hidden /></label>
@@ -67,6 +81,21 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
             </div>
             <label id="source-label">Contenu<textarea id="source-content" rows="22" required spellcheck="true" placeholder="Collez ou écrivez le contenu ici…"></textarea></label>
             <div id="rich-editor" class="rich-editor" contenteditable="true" hidden aria-label="Éditeur Rich Text"></div>
+
+            <details class="admin-details">
+              <summary>Design et thème de l’article</summary>
+              <div class="admin-details-content">
+                <div class="admin-columns">
+                  <label>Style visuel<select id="article-theme"><option value="reference">Référence — clair et institutionnel</option><option value="editorial">Éditorial — lecture magazine</option><option value="compact">Pratique — dense et direct</option><option value="accessible">Accessible — texte agrandi</option></select></label>
+                  <label>Couleur d’accent<input id="article-accent" type="color" value="#1b4965" /></label>
+                </div>
+                <div class="admin-columns">
+                  <label>Présentation de l’image<select id="article-hero-style"><option value="rounded">Arrondie</option><option value="full">Pleine largeur</option><option value="hidden">Masquée</option></select></label>
+                  <label class="admin-check"><input id="article-show-toc" type="checkbox" checked /> Afficher le sommaire</label>
+                </div>
+                <div id="theme-preview" class="theme-preview" data-theme="reference"><span></span><strong>Aperçu du style</strong><p>Un article clair, lisible et cohérent avec Contestation.ch.</p></div>
+              </div>
+            </details>
 
             <details class="admin-details">
               <summary>SEO, auteur et vérification</summary>
@@ -124,6 +153,7 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     let session = null;
     let adminRole = null;
     let currentStatus = 'draft';
+    let currentMetadata = {};
 
     function status(message, error = false, target = '#editor-status') {
       const node = $(target); node.textContent = message || ''; node.classList.toggle('is-error', error);
@@ -195,6 +225,17 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
       return body;
     }
 
+    async function aiCall(payload) {
+      const response = await fetch(`${supabaseUrl}/functions/v1/blog-ai`, {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
+      return body;
+    }
+
     function sourceValue() {
       return $('#format').value === 'rich-text' ? $('#rich-editor').innerHTML : $('#source-content').value;
     }
@@ -219,7 +260,22 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
         reviewedAt: $('#reviewed-at').value ? `${$('#reviewed-at').value}T12:00:00+02:00` : undefined,
         nextReviewAt: $('#next-review-at').value || undefined,
         sources: parseSources(),
+        extra: {
+          ...currentMetadata,
+          theme: {
+            preset: $('#article-theme').value,
+            accent: $('#article-accent').value,
+            heroStyle: $('#article-hero-style').value,
+            showToc: $('#article-show-toc').checked,
+          },
+        },
       };
+    }
+
+    function updateThemePreview() {
+      const preview = $('#theme-preview');
+      preview.dataset.theme = $('#article-theme').value;
+      preview.style.setProperty('--preview-accent', $('#article-accent').value);
     }
 
     function updateFormat() {
@@ -232,7 +288,7 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     function resetEditor() {
       $('#article-form').reset(); $('#article-id').value = ''; $('#revision-id').value = ''; $('#featured-media-id').value = '';
       $('#source-content').value = ''; $('#rich-editor').innerHTML = ''; $('#editor-title').textContent = 'Nouvel article';
-      currentStatus = 'draft'; $('#article-state').textContent = 'Brouillon'; status(''); updateFormat();
+      currentMetadata = {}; currentStatus = 'draft'; $('#article-state').textContent = 'Brouillon'; status(''); updateFormat(); updateThemePreview();
     }
 
     function articleButton(article) {
@@ -271,11 +327,17 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
         $('#reviewer-id').value = revision.reviewed_by_id || ''; $('#reviewed-at').value = revision.reviewed_at?.slice(0, 10) || '';
         $('#next-review-at').value = revision.next_review_at || '';
         $('#sources').value = (revision.sources || []).map((source) => `${source.label} | ${source.url}`).join('\n');
+        currentMetadata = revision.metadata && typeof revision.metadata === 'object' ? revision.metadata : {};
+        const theme = revision.metadata?.theme || {};
+        $('#article-theme').value = ['reference', 'editorial', 'compact', 'accessible'].includes(theme.preset) ? theme.preset : 'reference';
+        $('#article-accent').value = /^#[0-9a-f]{6}$/i.test(theme.accent || '') ? theme.accent : '#1b4965';
+        $('#article-hero-style').value = ['rounded', 'full', 'hidden'].includes(theme.heroStyle) ? theme.heroStyle : 'rounded';
+        $('#article-show-toc').checked = theme.showToc !== false;
         $('#format').value = revision.source_format || 'canonical-v1';
         const source = revision.source_content || JSON.stringify(revision.document, null, 2);
         $('#source-content').value = source; $('#rich-editor').innerHTML = $('#format').value === 'rich-text' ? source : '';
         currentStatus = data.article.status; $('#article-state').textContent = currentStatus === 'published' ? 'Publié' : currentStatus === 'archived' ? 'Archivé' : 'Brouillon';
-        $('#editor-title').textContent = revision.title; updateFormat(); status('Article chargé.');
+        $('#editor-title').textContent = revision.title; updateFormat(); updateThemePreview(); status('Article chargé.');
       } catch (error) { status(error.message, true); }
     }
 
@@ -307,6 +369,40 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     async function deleteArticle() {
       const id = $('#article-id').value; if (!id || !confirm('Supprimer cet article ? Un article déjà publié sera retiré et son URL renverra 410.')) return;
       try { await adminCall('delete', { articleId: id }); resetEditor(); status('Article supprimé.'); await refreshList(); } catch (error) { status(error.message, true); }
+    }
+
+    async function generateWithAi() {
+      const button = $('#ai-generate');
+      const brief = $('#ai-brief').value.trim();
+      const existingContent = sourceValue().trim();
+      if (!brief && !existingContent) return status('Ajoutez un brief ou un contenu à améliorer.', true, '#ai-status');
+      if (existingContent && $('#ai-mode').value === 'create' && !confirm('Le brouillon généré remplacera le contenu actuel. Continuer ?')) return;
+      button.disabled = true;
+      status('Recherche et rédaction en cours… Cela peut prendre une minute.', false, '#ai-status');
+      try {
+        const data = await aiCall({
+          brief,
+          existingContent: $('#ai-mode').value === 'improve' ? existingContent : '',
+          mode: $('#ai-mode').value,
+          research: $('#ai-research').checked,
+          sourceUrls: $('#ai-source-urls').value.split('\n').map((url) => url.trim()).filter(Boolean),
+        });
+        const article = data.article;
+        $('#title').value = article.title;
+        $('#excerpt').value = article.excerpt;
+        $('#seo-title').value = article.seoTitle;
+        $('#seo-description').value = article.seoDescription;
+        $('#topics').value = article.topics.join(', ');
+        $('#format').value = 'markdown';
+        $('#source-content').value = article.markdown;
+        $('#sources').value = article.sources.map((source) => `${source.label} | ${source.url}`).join('\n');
+        updateFormat();
+        status(`Brouillon généré avec ${data.model}. Vérifiez les faits et les sources avant publication.`, false, '#ai-status');
+      } catch (error) {
+        status(error.message, true, '#ai-status');
+      } finally {
+        button.disabled = false;
+      }
     }
 
     async function importFile(file) {
@@ -406,6 +502,9 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     $('#import-file').addEventListener('change', (event) => event.target.files[0] && importFile(event.target.files[0]));
     $('#image-file').addEventListener('change', (event) => event.target.files[0] && uploadImage(event.target.files[0]));
     $('#create-api-key').addEventListener('click', createApiKey);
+    $('#ai-generate').addEventListener('click', generateWithAi);
+    $('#article-theme').addEventListener('change', updateThemePreview);
+    $('#article-accent').addEventListener('input', updateThemePreview);
     const recoveryRequested = new URLSearchParams(location.search).get('mode') === 'recovery';
     supabase.auth.onAuthStateChange((event, nextSession) => {
       session = nextSession;
@@ -413,8 +512,17 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     });
     const initial = await supabase.auth.getSession();
     session = initial.data.session;
+    const authParams = new URLSearchParams(location.search);
+    const authErrorCode = authParams.get('error_code');
+    const authError = authParams.get('error');
     if (recoveryRequested) showRecovery(session ? '' : 'Ce lien est invalide ou a expiré. Demandez un nouveau lien depuis la page de connexion.');
     else if (session) enterAdmin();
+    else if (authError || authErrorCode) {
+      status(authErrorCode === 'otp_expired'
+        ? 'Ce lien de connexion a expiré ou a déjà été utilisé. Demandez un nouveau lien magique.'
+        : 'Le lien de connexion est invalide. Demandez un nouveau lien magique.', true, '#auth-status');
+      history.replaceState({}, '', '/admin');
+    }
   </script>
 
   <style>
@@ -461,6 +569,16 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-details { margin-top: 6px; border: 1px solid var(--cc-border); border-radius: 12px; }
     .admin-details summary { padding: 15px; color: var(--cc-ink); font-weight: 750; cursor: pointer; }
     .admin-details-content { display: grid; gap: 16px; padding: 0 16px 18px; }
+    .admin-ai { border-color: #b8cbd4; background: linear-gradient(145deg, #f4f8fa, #fff); }
+    .admin-ai summary { color: var(--cc-blue); }
+    .admin-check { display: flex !important; align-items: center; align-self: end; grid-template-columns: auto 1fr !important; min-height: 48px; }
+    .admin-check input { width: 18px !important; height: 18px; }
+    .theme-preview { --preview-accent: #1b4965; padding: 20px; border: 1px solid var(--cc-border); border-left: 6px solid var(--preview-accent); border-radius: 12px; background: #fff; }
+    .theme-preview span { display: block; width: 42px; height: 5px; margin-bottom: 12px; border-radius: 9px; background: var(--preview-accent); }
+    .theme-preview p { margin: 6px 0 0; color: var(--cc-muted); }
+    .theme-preview[data-theme="editorial"] { font-family: Georgia, serif; background: #fffdf8; }
+    .theme-preview[data-theme="compact"] { padding-block: 13px; font-size: 13px; }
+    .theme-preview[data-theme="accessible"] { font-size: 18px; line-height: 1.7; }
     .admin-status { min-height: 22px; margin: 0; color: var(--cc-green); font-size: 13px; font-weight: 650; }
     .is-error { color: #a92e25 !important; }
     .admin-api { margin-top: 24px; }

@@ -88,6 +88,46 @@ on conflict (user_id) do update set role = excluded.role;
 Les imports, images, brouillons et publications passent tous par les fonctions
 serveur. Le navigateur n’obtient jamais la `service_role`.
 
+### Assistant de rédaction OpenAI
+
+La section **Rédiger avec OpenAI** de `/admin` peut créer un article ou
+améliorer le brouillon en cours. L’Edge Function `blog-ai` :
+
+- authentifie l’administrateur avec son JWT Supabase ;
+- appelle la Responses API côté serveur, sans exposer `OPENAI_API_KEY` ;
+- peut utiliser la recherche web et des URL imposées par l’éditeur ;
+- retourne du Markdown, les champs SEO, les thèmes et une liste de sources ;
+- ne publie jamais : le résultat reste un brouillon soumis à relecture humaine.
+
+Configurer le secret et, facultativement, le modèle :
+
+```bash
+supabase secrets set OPENAI_API_KEY='sk-…'
+supabase secrets set OPENAI_BLOG_MODEL='gpt-5.6-luna'
+supabase functions deploy blog-ai --no-verify-jwt
+```
+
+`--no-verify-jwt` désactive seulement la validation JWT de la passerelle, afin
+de rester compatible avec les clés Supabase publiables. `blog-ai` valide
+elle-même la session et l’appartenance à `blog_admins` avant tout appel OpenAI.
+Le modèle par défaut privilégie le coût ; il peut être remplacé par un autre
+modèle compatible avec la Responses API, la recherche web et les sorties
+structurées.
+
+### Thèmes visuels
+
+Le design ne rentre jamais dans le document canonique. Chaque révision peut
+porter dans ses métadonnées un thème validé par le renderer :
+
+- `reference` : style clair et institutionnel ;
+- `editorial` : lecture magazine ;
+- `compact` : présentation pratique plus dense ;
+- `accessible` : corps et interlignage agrandis.
+
+L’éditeur peut aussi choisir une couleur d’accent, la présentation de l’image
+principale et l’affichage du sommaire. Les valeurs sont filtrées côté Astro ;
+les classes CSS ou styles arbitraires restent interdits dans le contenu.
+
 ## Import par API
 
 Un propriétaire crée une clé dans `/admin`, section **Intégrations API**. Elle
@@ -183,6 +223,7 @@ Les articles liés sont déterministes : thèmes communs, puis récence. Aucun a
 supabase db push
 supabase functions deploy blog-admin
 supabase functions deploy blog-ingest --no-verify-jwt
+supabase functions deploy blog-ai --no-verify-jwt
 supabase functions deploy outrank-webhook --no-verify-jwt
 supabase functions deploy blog-preview --no-verify-jwt
 supabase functions deploy purge --no-verify-jwt
@@ -190,8 +231,9 @@ supabase functions deploy purge --no-verify-jwt
 
 `blog-ingest` est public au niveau de la passerelle uniquement pour accepter sa
 clé API dédiée ; la fonction refuse toute requête sans JWT administrateur ou clé
-`cc_blog_…` valide. Les jetons d’aperçu sont aléatoires, expirent et ne donnent
-accès qu’à une révision. `blog-admin` reste protégé par JWT Supabase.
+`cc_blog_…` valide. `blog-ai` applique la même défense en profondeur et n’accepte
+que les administrateurs. Les jetons d’aperçu sont aléatoires, expirent et ne
+donnent accès qu’à une révision. `blog-admin` reste protégé par JWT Supabase.
 
 Le déploiement Replit doit ensuite utiliser `.replit` avec **Autoscale**. Après
 publication, vérifier `/blog`, `/sitemap.xml`, `/rss.xml`, `/admin`, puis créer

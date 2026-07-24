@@ -7,6 +7,8 @@ describe('plateforme de publication', () => {
   const layout = readFileSync('src/layouts/BaseLayout.astro', 'utf8');
   const article = readFileSync('src/components/blog/ArticlePage.astro', 'utf8');
   const admin = readFileSync('src/pages/admin/index.astro', 'utf8');
+  const http = readFileSync('supabase/functions/_shared/http.ts', 'utf8');
+  const ai = readFileSync('supabase/functions/blog-ai/index.ts', 'utf8');
 
   it('sépare révision de brouillon et révision publiée', () => {
     expect(migration).toContain('published_revision_id uuid');
@@ -44,5 +46,26 @@ describe('plateforme de publication', () => {
     expect(admin).toContain("error?.code === 'over_email_send_rate_limit'");
     expect(admin).toContain('startEmailCooldown(button)');
     expect(admin).toContain('Trop de liens ont été demandés en peu de temps.');
+    expect(admin).toContain("authErrorCode === 'otp_expired'");
+  });
+
+  it('autorise la sauvegarde idempotente depuis le navigateur', () => {
+    expect(http).toContain('idempotency-key');
+    expect(admin).toContain("'Idempotency-Key': crypto.randomUUID()");
+  });
+
+  it('génère des brouillons IA côté serveur avec sources et validation humaine', () => {
+    expect(ai).toContain("Deno.env.get('OPENAI_API_KEY')");
+    expect(ai).toContain("type: 'web_search'");
+    expect(ai).toContain("type: 'json_schema'");
+    expect(ai).toContain('requiresHumanReview: true');
+    expect(admin).toContain('/functions/v1/blog-ai');
+  });
+
+  it('conserve un thème éditorial par révision sans injecter de design dans le document', () => {
+    expect(admin).toContain('theme: {');
+    expect(admin).toContain('...currentMetadata');
+    expect(article).toContain('article-theme--');
+    expect(article).toContain('rawTheme.showToc !== false');
   });
 });
