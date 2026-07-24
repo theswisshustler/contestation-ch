@@ -45,12 +45,16 @@ h1, h2, h3, h4 { color: var(--cc-ink); font-family: 'Bricolage Grotesque', sans-
 .page-intro p { margin: 0; max-width: 680px; color: var(--cc-muted); font-size: 18px; line-height: 1.65; }
 
 .article-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-.article-card { display: flex; min-height: 100%; flex-direction: column; overflow: hidden; border: 1px solid var(--cc-border); border-radius: var(--cc-radius); background: var(--cc-surface); box-shadow: 0 16px 40px -36px rgba(18,48,63,.65); }
-.article-card__image { aspect-ratio: 16 / 9; object-fit: cover; background: var(--cc-soft); }
+.article-card { position: relative; display: flex; min-height: 100%; flex-direction: column; overflow: hidden; border: 1px solid var(--cc-border); border-radius: var(--cc-radius); background: var(--cc-surface); box-shadow: 0 16px 40px -36px rgba(18,48,63,.65); cursor: pointer; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.article-card:hover { border-color: color-mix(in srgb, var(--cc-blue) 38%, var(--cc-border)); box-shadow: 0 22px 48px -32px rgba(18,48,63,.5); transform: translateY(-3px); }
+.article-card:has(.article-card__link:focus-visible) { outline: 3px solid color-mix(in srgb, var(--cc-blue) 42%, white); outline-offset: 3px; }
+.article-card__image { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--cc-soft); }
 .article-card__body { display: flex; flex: 1; flex-direction: column; padding: 22px; }
 .article-card__topics { color: var(--cc-green); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
 .article-card h2, .article-card h3 { margin: 9px 0 10px; font-size: 22px; line-height: 1.14; }
 .article-card h2 a, .article-card h3 a { color: var(--cc-ink); text-decoration: none; }
+.article-card__link::after { position: absolute; inset: 0; content: ""; }
+.article-card__link:focus-visible { outline: 0; }
 .article-card p { margin: 0 0 18px; color: var(--cc-muted); line-height: 1.58; }
 .article-card time { margin-top: auto; color: #7b898e; font-size: 13px; }
 .pagination { display: flex; justify-content: center; gap: 14px; margin-top: 42px; }

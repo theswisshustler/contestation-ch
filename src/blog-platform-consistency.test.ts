@@ -6,6 +6,7 @@ describe('plateforme de publication', () => {
   const home = readFileSync('web/index.html', 'utf8');
   const layout = readFileSync('src/layouts/BaseLayout.astro', 'utf8');
   const article = readFileSync('src/components/blog/ArticlePage.astro', 'utf8');
+  const articleCard = readFileSync('src/components/blog/ArticleCard.astro', 'utf8');
   const admin = readFileSync('src/pages/admin/index.astro', 'utf8');
   const http = readFileSync('supabase/functions/_shared/http.ts', 'utf8');
   const ai = readFileSync('src/pages/api/admin/blog-ai.ts', 'utf8');
@@ -29,6 +30,12 @@ describe('plateforme de publication', () => {
     expect(article).toContain("'@type': 'FAQPage'");
     expect(readFileSync('src/pages/sitemap.xml.ts', 'utf8')).toContain('<urlset');
     expect(readFileSync('src/pages/rss.xml.ts', 'utf8')).toContain('<rss version="2.0"');
+  });
+
+  it('rend toute la surface des cartes de blog cliquable et accessible au clavier', () => {
+    expect(articleCard).toContain('class="article-card__link"');
+    expect(readFileSync('src/styles/global.css', 'utf8')).toContain('.article-card__link::after');
+    expect(readFileSync('src/styles/global.css', 'utf8')).toContain(':focus-visible');
   });
 
   it('rend la Home compréhensible sans JavaScript et relie le blog', () => {
