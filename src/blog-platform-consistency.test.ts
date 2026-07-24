@@ -8,7 +8,7 @@ describe('plateforme de publication', () => {
   const article = readFileSync('src/components/blog/ArticlePage.astro', 'utf8');
   const admin = readFileSync('src/pages/admin/index.astro', 'utf8');
   const http = readFileSync('supabase/functions/_shared/http.ts', 'utf8');
-  const ai = readFileSync('supabase/functions/blog-ai/index.ts', 'utf8');
+  const ai = readFileSync('src/pages/api/admin/blog-ai.ts', 'utf8');
 
   it('sépare révision de brouillon et révision publiée', () => {
     expect(migration).toContain('published_revision_id uuid');
@@ -56,12 +56,13 @@ describe('plateforme de publication', () => {
   });
 
   it('génère des brouillons IA côté serveur avec sources et validation humaine', () => {
-    expect(ai).toContain("Deno.env.get('OPENAI_API_KEY')");
+    expect(ai).toContain('process.env.OPENAI_API_KEY');
+    expect(ai).toContain("body: JSON.stringify({ action: 'me' })");
     expect(ai).toContain("type: 'web_search'");
     expect(ai).toContain("type: 'json_schema'");
     expect(ai).toContain('requiresHumanReview: true');
     expect(ai).toContain("'enrich-sources'");
-    expect(admin).toContain('/functions/v1/blog-ai');
+    expect(admin).toContain('/api/admin/blog-ai');
     expect(admin).toContain('Enrichir avec des sources');
     expect(admin).toContain('mergeSources(article.sources)');
   });

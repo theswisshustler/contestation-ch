@@ -234,9 +234,10 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     }
 
     async function aiCall(payload) {
-      const response = await fetch(`${supabaseUrl}/functions/v1/blog-ai`, {
+      const headers = await authHeaders();
+      const response = await fetch('/api/admin/blog-ai', {
         method: 'POST',
-        headers: await authHeaders(),
+        headers,
         body: JSON.stringify(payload),
       });
       const body = await response.json().catch(() => ({}));

@@ -1,6 +1,8 @@
-import { json, preflight } from '../_shared/http.ts';
-import { requireBlogAdmin } from '../_shared/blog/auth.ts';
-import { sanitizeUrl } from '../_shared/blog/document.ts';
+import type { APIRoute } from 'astro';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../../lib/blog.ts';
+import { sanitizeUrl } from '../../../../supabase/functions/_shared/blog/document.ts';
+
+export const prerender = false;
 
 interface GeneratedArticle {
   title: string;
@@ -38,6 +40,17 @@ const ARTICLE_SCHEMA = {
     },
   },
 };
+
+function response(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, no-store',
+      'X-Robots-Tag': 'noindex, nofollow',
+    },
+  });
+}
 
 function cleanText(value: unknown, max: number): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -83,17 +96,29 @@ function cleanGenerated(value: unknown): GeneratedArticle {
   };
 }
 
-Deno.serve(async (req) => {
-  const pf = preflight(req);
-  if (pf) return pf;
-  if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405);
+async function authenticateAdmin(authorization: string): Promise<void> {
+  if (!/^Bearer\s+\S+$/i.test(authorization)) throw new Error('Session administrateur requise');
+  const check = await fetch(`${SUPABASE_URL}/functions/v1/blog-admin`, {
+    method: 'POST',
+    headers: {
+      Authorization: authorization,
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'me' }),
+  });
+  if (!check.ok) throw new Error(check.status === 401 || check.status === 403
+    ? 'Accès administrateur refusé'
+    : 'Vérification administrateur indisponible');
+}
 
+export const POST: APIRoute = async ({ request }) => {
   try {
-    const actor = await requireBlogAdmin(req);
-    const apiKey = Deno.env.get('OPENAI_API_KEY') || '';
-    if (!apiKey) return json({ error: 'OPENAI_API_KEY n’est pas configurée dans les secrets Supabase.' }, 503);
+    await authenticateAdmin(request.headers.get('authorization') || '');
+    const apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || '';
+    if (!apiKey) return response({ error: 'Ajoutez OPENAI_API_KEY dans les Secrets du déploiement Replit.' }, 503);
 
-    const body = await req.json() as Record<string, unknown>;
+    const body = await request.json() as Record<string, unknown>;
     const brief = cleanText(body.brief, 12_000);
     const existingContent = cleanText(body.existingContent, 100_000);
     const sourceUrls = Array.isArray(body.sourceUrls)
@@ -104,6 +129,8 @@ Deno.serve(async (req) => {
       : body.mode === 'improve'
       ? 'improve'
       : 'create';
+    if (!brief && !existingContent) throw new Error('Décrivez le sujet ou fournissez un brouillon à améliorer');
+
     const research = body.research !== false;
     const webEnabled = requestedMode === 'enrich-sources' || research || sourceUrls.length > 0;
     const mode = requestedMode === 'enrich-sources'
@@ -111,42 +138,35 @@ Deno.serve(async (req) => {
       : requestedMode === 'improve'
       ? 'améliorer le brouillon existant'
       : 'rédiger un nouvel article';
-    if (!brief && !existingContent) throw new Error('Décrivez le sujet ou fournissez un brouillon à améliorer');
+    const model = process.env.OPENAI_BLOG_MODEL || import.meta.env.OPENAI_BLOG_MODEL || 'gpt-5.6-luna';
 
-    const model = Deno.env.get('OPENAI_BLOG_MODEL') || 'gpt-5.6-luna';
     const instructions = `Tu es le rédacteur en chef de Contestation.ch, un service suisse indépendant d'information sur le droit du bail.
 Ta mission est de ${mode} en français de Suisse, avec un style clair, factuel et utile.
 
 Règles impératives :
 - Ne présente jamais le texte comme un conseil juridique individualisé.
 - Distingue clairement loyer initial, hausse de loyer et demande de baisse.
-- N'invente aucune loi, jurisprudence, statistique, date, délai ou autorité.
+- N'invente aucune loi, jurisprudence, statistique, date, délai, autorité ou URL.
 - Appuie les affirmations vérifiables sur des sources fiables, en priorité admin.ch, fedlex.admin.ch, bwo.admin.ch, vd.ch, ge.ch et les autorités de conciliation.
 - Ajoute des liens Markdown contextuels vers les sources pertinentes, sans lien artificiel ni bourrage SEO.
-- Chaque lien ajouté doit soutenir directement la phrase ou l'affirmation à laquelle il est attaché.
-- N'utilise jamais une URL inventée, approximative ou non consultée.
-- Termine par une section "Sources" uniquement si cela améliore la lecture ; dans tous les cas, renseigne le tableau JSON sources.
+- Chaque lien doit soutenir directement la phrase à laquelle il est attaché.
+- Renseigne le tableau JSON sources avec toutes les références utilisées.
 - Structure le Markdown avec des H2/H3, paragraphes courts, listes, tableau si utile, FAQ et appel à l'action vers /diagnostic si pertinent.
 - Le H1 ne doit pas apparaître dans le Markdown : il est fourni séparément dans title.
 - Ne publie rien : retourne seulement un brouillon structuré à relire humainement.
 ${requestedMode === 'enrich-sources' ? `- Préserve le plan, le ton, les conclusions et la longueur du brouillon autant que possible.
-- Ne réécris que ce qui est nécessaire pour intégrer naturellement un lien, corriger une affirmation non étayée ou lever une ambiguïté.
-- Conserve les liens existants pertinents et remplace uniquement ceux qui sont cassés, faibles ou hors sujet.
-- Le tableau sources doit contenir toutes les références ajoutées ou conservées dans le texte.` : ''}`;
+- Ne réécris que ce qui est nécessaire pour intégrer un lien, corriger une affirmation non étayée ou lever une ambiguïté.
+- Conserve les liens existants pertinents et remplace uniquement ceux qui sont cassés, faibles ou hors sujet.` : ''}`;
 
     const input = [
       `Brief éditorial :\n${brief || 'Améliorer le brouillon fourni.'}`,
       existingContent ? `\nBrouillon existant :\n${existingContent}` : '',
       sourceUrls.length ? `\nSources imposées à consulter et citer si pertinentes :\n${sourceUrls.join('\n')}` : '',
-      `\nRecherche web autorisée : ${webEnabled ? 'oui' : 'non'}.`,
     ].join('');
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    const openai = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
         instructions,
@@ -157,43 +177,27 @@ ${requestedMode === 'enrich-sources' ? `- Préserve le plan, le ton, les conclus
         ...(webEnabled ? { tools: [{ type: 'web_search' }] } : {}),
         text: {
           verbosity: 'medium',
-          format: {
-            type: 'json_schema',
-            name: 'blog_article_draft',
-            strict: true,
-            schema: ARTICLE_SCHEMA,
-          },
+          format: { type: 'json_schema', name: 'blog_article_draft', strict: true, schema: ARTICLE_SCHEMA },
         },
       }),
     });
-
-    const payload = await response.json() as Record<string, unknown>;
-    if (!response.ok) {
+    const payload = await openai.json() as Record<string, unknown>;
+    if (!openai.ok) {
       const apiError = payload.error && typeof payload.error === 'object'
         ? cleanText((payload.error as Record<string, unknown>).message, 1_000)
         : '';
-      throw new Error(apiError || `OpenAI a répondu avec le statut ${response.status}`);
+      throw new Error(apiError || `OpenAI a répondu avec le statut ${openai.status}`);
     }
     const outputText = extractOutputText(payload);
     if (!outputText) throw new Error('OpenAI n’a retourné aucun contenu');
-    const article = cleanGenerated(JSON.parse(outputText));
-
-    await actor.db.from('blog_audit_log').insert({
-      actor_id: actor.userId,
-      action: 'ai.draft.generated',
-      detail: {
-        model,
-        research: webEnabled,
-        mode: requestedMode,
-        sourceCount: article.sources.length,
-        responseId: cleanText(payload.id, 200),
-      },
+    return response({
+      article: cleanGenerated(JSON.parse(outputText)),
+      model,
+      requiresHumanReview: true,
     });
-    return json({ article, model, requiresHumanReview: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Génération IA impossible';
-    console.error('blog_ai_error', message);
-    const status = /Authentification|Session/.test(message) ? 401 : /Accès/.test(message) ? 403 : 400;
-    return json({ error: message }, status);
+    const status = /Session/.test(message) ? 401 : /Accès/.test(message) ? 403 : 400;
+    return response({ error: message }, status);
   }
-});
+};

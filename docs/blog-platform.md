@@ -91,7 +91,7 @@ serveur. Le navigateur n’obtient jamais la `service_role`.
 ### Assistant de rédaction OpenAI
 
 La section **Rédiger avec OpenAI** de `/admin` peut créer un article ou
-améliorer le brouillon en cours. L’Edge Function `blog-ai` :
+améliorer le brouillon en cours. La route Astro serveur `/api/admin/blog-ai` :
 
 - authentifie l’administrateur avec son JWT Supabase ;
 - appelle la Responses API côté serveur, sans exposer `OPENAI_API_KEY` ;
@@ -105,20 +105,12 @@ références fiables, ajoute des liens Markdown au niveau des affirmations
 concernées et fusionne la bibliographie existante sans doublons. Les liens
 doivent être vérifiés dans l’aperçu avant publication.
 
-Configurer le secret et, facultativement, le modèle :
-
-```bash
-supabase secrets set OPENAI_API_KEY='sk-…'
-supabase secrets set OPENAI_BLOG_MODEL='gpt-5.6-luna'
-supabase functions deploy blog-ai --no-verify-jwt
-```
-
-`--no-verify-jwt` désactive seulement la validation JWT de la passerelle, afin
-de rester compatible avec les clés Supabase publiables. `blog-ai` valide
-elle-même la session et l’appartenance à `blog_admins` avant tout appel OpenAI.
-Le modèle par défaut privilégie le coût ; il peut être remplacé par un autre
-modèle compatible avec la Responses API, la recherche web et les sorties
-structurées.
+Configurer une seule fois `OPENAI_API_KEY` dans **Replit → Secrets**, et
+facultativement `OPENAI_BLOG_MODEL=gpt-5.6-luna`. La route valide elle-même la
+session et l’appartenance à `blog_admins` avant tout appel OpenAI. Ensuite,
+l’assistant est livré avec le site par le workflow habituel
+**commit → push → Republish** ; aucune Edge Function supplémentaire n’est à
+déployer.
 
 ### Thèmes visuels
 
@@ -229,7 +221,6 @@ Les articles liés sont déterministes : thèmes communs, puis récence. Aucun a
 supabase db push
 supabase functions deploy blog-admin
 supabase functions deploy blog-ingest --no-verify-jwt
-supabase functions deploy blog-ai --no-verify-jwt
 supabase functions deploy outrank-webhook --no-verify-jwt
 supabase functions deploy blog-preview --no-verify-jwt
 supabase functions deploy purge --no-verify-jwt
@@ -237,8 +228,8 @@ supabase functions deploy purge --no-verify-jwt
 
 `blog-ingest` est public au niveau de la passerelle uniquement pour accepter sa
 clé API dédiée ; la fonction refuse toute requête sans JWT administrateur ou clé
-`cc_blog_…` valide. `blog-ai` applique la même défense en profondeur et n’accepte
-que les administrateurs. Les jetons d’aperçu sont aléatoires, expirent et ne
+`cc_blog_…` valide. La route Astro de rédaction IA n’accepte que les
+administrateurs. Les jetons d’aperçu sont aléatoires, expirent et ne
 donnent accès qu’à une révision. `blog-admin` reste protégé par JWT Supabase.
 
 Le déploiement Replit doit ensuite utiliser `.replit` avec **Autoscale**. Après

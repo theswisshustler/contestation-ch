@@ -23,7 +23,6 @@ de travail.
 |---|---|---|
 | `blog-admin` | CRUD, auteurs, médias, aperçus et clés API | JWT Supabase + `blog_admins` |
 | `blog-ingest` | Normalisation Markdown/HTML/Rich Text/JSON/API | JWT admin ou clé `cc_blog_…` |
-| `blog-ai` | Brouillons OpenAI avec recherche web, sources et liens | JWT Supabase + `blog_admins` |
 | `outrank-webhook` | Publication/mise à jour automatiques depuis Outrank | Bearer `OUTRANK_WEBHOOK_TOKEN` |
 | `blog-preview` | Lecture temporaire d’une révision non publiée | Jeton aléatoire à usage limité |
 
@@ -69,7 +68,6 @@ supabase functions deploy               # déploie les fonctions appelées par l
 supabase functions deploy stripe-webhook --no-verify-jwt
 supabase functions deploy blog-admin
 supabase functions deploy blog-ingest --no-verify-jwt
-supabase functions deploy blog-ai --no-verify-jwt
 supabase functions deploy outrank-webhook --no-verify-jwt
 supabase functions deploy blog-preview --no-verify-jwt
 supabase functions deploy purge --no-verify-jwt
