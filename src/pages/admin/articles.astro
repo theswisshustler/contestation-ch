@@ -1,0 +1,214 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../lib/blog.ts';
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+<BaseLayout title="Tous les articles | Administration Contestation.ch" description="Suivi des articles et de leur statut." noindex={true}>
+  <div id="articles-admin" data-supabase-url={SUPABASE_URL} data-supabase-key={SUPABASE_PUBLISHABLE_KEY}>
+    <section id="loading" class="message"><p>Chargement des articles…</p></section>
+    <section id="denied" class="message" hidden>
+      <p class="eyebrow">Accès privé</p>
+      <h1>Connexion requise</h1>
+      <p>Connectez-vous à l’administration pour consulter les articles.</p>
+      <a class="button button--secondary" href="/admin">Se connecter</a>
+    </section>
+
+    <section id="panel" class="articles-shell" hidden>
+      <header class="articles-topbar">
+        <div>
+          <p class="eyebrow">Plateforme de publication</p>
+          <h1>Tous les articles</h1>
+          <p>Voyez en un coup d’œil ce qui est publié, en brouillon ou archivé.</p>
+        </div>
+        <div class="actions">
+          <a class="button button--ghost" href="/admin">Retour à l’éditeur</a>
+          <a class="button button--ghost" href="/admin/seo">Analyse SEO</a>
+          <a class="button button--primary" href="/admin#writing-assistant">Nouvel article</a>
+        </div>
+      </header>
+
+      <div id="status-cards" class="status-cards" aria-label="Résumé des statuts"></div>
+
+      <section class="articles-card">
+        <div class="toolbar">
+          <label class="search">
+            <span class="sr-only">Rechercher un article</span>
+            <input id="article-search" type="search" placeholder="Rechercher par titre ou extrait…" />
+          </label>
+          <div id="status-filters" class="filters" aria-label="Filtrer par statut"></div>
+          <button id="refresh" class="button button--ghost" type="button">Actualiser</button>
+        </div>
+        <p id="result-count" class="result-count" aria-live="polite"></p>
+        <div id="table-wrap" class="table-wrap">
+          <table>
+            <thead><tr><th>Article</th><th>Statut</th><th>Modification</th><th>Publication</th><th><span class="sr-only">Action</span></th></tr></thead>
+            <tbody id="articles-body"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty" hidden><h2>Aucun article trouvé</h2><p>Essayez un autre statut ou modifiez votre recherche.</p></div>
+        <p id="error" class="error" hidden></p>
+      </section>
+    </section>
+  </div>
+
+  <script>
+    // @ts-nocheck — vue DOM légère, protégée par la même API que l’éditeur.
+    import { createClient } from '@supabase/supabase-js';
+
+    const root = document.querySelector('#articles-admin');
+    const supabaseUrl = root.dataset.supabaseUrl;
+    const publishableKey = root.dataset.supabaseKey;
+    const supabase = createClient(supabaseUrl, publishableKey);
+    const $ = (selector) => document.querySelector(selector);
+    const statuses = {
+      published: { label: 'Publié', help: 'En ligne' },
+      draft: { label: 'Brouillon', help: 'À finaliser' },
+      archived: { label: 'Archivé', help: 'Retiré du site' },
+    };
+    let articles = [];
+    let activeStatus = 'all';
+
+    async function adminCall(action, payload = {}) {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error('Session expirée');
+      const response = await fetch(`${supabaseUrl}/functions/v1/blog-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: publishableKey, Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify({ action, ...payload }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
+      return body;
+    }
+
+    const contentOf = (article) => article.draft || article.published || {};
+    const formatDate = (value) => value
+      ? new Intl.DateTimeFormat('fr-CH', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value))
+      : '—';
+
+    function statusBadge(status) {
+      const badge = document.createElement('span');
+      badge.className = `article-status article-status--${status}`;
+      badge.innerHTML = '<i aria-hidden="true">●</i><strong></strong>';
+      badge.querySelector('strong').textContent = statuses[status]?.label || status;
+      return badge;
+    }
+
+    function selectStatus(status) {
+      activeStatus = status;
+      document.querySelectorAll('[data-status]').forEach((node) => {
+        const active = node.dataset.status === status;
+        node.classList.toggle('is-active', active);
+        if (node.classList.contains('filter')) node.setAttribute('aria-pressed', String(active));
+      });
+      renderRows();
+    }
+
+    function renderOverview() {
+      $('#status-cards').replaceChildren(...Object.entries(statuses).map(([status, meta]) => {
+        const count = articles.filter((article) => article.status === status).length;
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = `status-card status-card--${status}`; button.dataset.status = status;
+        button.innerHTML = '<i aria-hidden="true">●</i><span><strong></strong><small></small></span><b></b>';
+        button.querySelector('strong').textContent = meta.label;
+        button.querySelector('small').textContent = meta.help;
+        button.querySelector('b').textContent = count;
+        button.onclick = () => selectStatus(status);
+        return button;
+      }));
+      const options = [{ key: 'all', label: 'Tous' }, ...Object.entries(statuses).map(([key, meta]) => ({ key, label: meta.label }))];
+      $('#status-filters').replaceChildren(...options.map(({ key, label }) => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'filter'; button.dataset.status = key; button.textContent = label;
+        button.onclick = () => selectStatus(key);
+        return button;
+      }));
+      selectStatus(activeStatus);
+    }
+
+    function renderRows() {
+      const query = $('#article-search').value.trim().toLocaleLowerCase('fr');
+      const filtered = articles.filter((article) => {
+        const content = contentOf(article);
+        const text = `${content.title || ''} ${content.excerpt || ''} ${article.current_slug || ''}`.toLocaleLowerCase('fr');
+        return (activeStatus === 'all' || article.status === activeStatus) && (!query || text.includes(query));
+      });
+      $('#articles-body').replaceChildren(...filtered.map((article) => {
+        const content = contentOf(article);
+        const editUrl = `/admin?article=${encodeURIComponent(article.id)}`;
+        const row = document.createElement('tr');
+        row.innerHTML = '<td><a class="article-title"></a><span class="excerpt"></span></td><td class="status-cell"></td><td></td><td></td><td><a class="edit">Modifier →</a></td>';
+        const title = row.querySelector('.article-title'); title.href = editUrl; title.textContent = content.title || 'Sans titre';
+        row.querySelector('.excerpt').textContent = content.excerpt || `/${content.slug || article.current_slug || ''}`;
+        row.querySelector('.status-cell').append(statusBadge(article.status));
+        row.children[2].textContent = formatDate(article.updated_at);
+        row.children[3].textContent = formatDate(article.published_at);
+        row.querySelector('.edit').href = editUrl;
+        return row;
+      }));
+      $('#result-count').textContent = `${filtered.length} article${filtered.length > 1 ? 's' : ''} affiché${filtered.length > 1 ? 's' : ''}`;
+      $('#empty').hidden = filtered.length > 0;
+      $('#table-wrap').hidden = filtered.length === 0;
+    }
+
+    async function loadArticles() {
+      $('#error').hidden = true; $('#refresh').disabled = true;
+      try {
+        const data = await adminCall('list', { pageSize: 100 });
+        articles = data.articles || [];
+        renderOverview();
+      } catch (error) {
+        $('#error').textContent = error.message; $('#error').hidden = false;
+      } finally { $('#refresh').disabled = false; }
+    }
+
+    $('#article-search').addEventListener('input', renderRows);
+    $('#refresh').addEventListener('click', loadArticles);
+    const { data } = await supabase.auth.getSession();
+    $('#loading').hidden = true;
+    if (!data.session) $('#denied').hidden = false;
+    else {
+      try { await adminCall('me'); $('#panel').hidden = false; await loadArticles(); }
+      catch (_) { $('#denied').hidden = false; }
+    }
+  </script>
+
+  <style>
+    #articles-admin { min-height: 72vh; background: #f7f8f6; }
+    .articles-shell { max-width: 1320px; margin: 0 auto; padding: 42px 24px 80px; }
+    .message { width: min(520px, calc(100% - 36px)); margin: 72px auto; padding: 34px; border: 1px solid var(--cc-border); border-radius: 18px; background: #fff; }
+    .message h1, .articles-topbar h1 { margin: 0 0 9px; }
+    .articles-topbar { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+    .articles-topbar h1 { font-size: clamp(30px, 4vw, 44px); }
+    .articles-topbar p { margin: 0; color: var(--cc-muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .button--ghost { border: 1px solid var(--cc-border); background: #fff; color: var(--cc-blue) !important; }
+    .status-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; }
+    .status-card { display: grid; grid-template-columns: auto 1fr auto; gap: 13px; align-items: center; padding: 18px; border: 1px solid var(--cc-border); border-radius: 15px; background: #fff; color: var(--cc-ink); text-align: left; cursor: pointer; }
+    .status-card:hover, .status-card.is-active { border-color: var(--cc-blue); box-shadow: 0 8px 25px -19px rgba(18,48,63,.7); }
+    .status-card i { font-style: normal; }.status-card strong, .status-card small { display: block; }.status-card small { margin-top: 2px; color: var(--cc-muted); }.status-card b { font-size: 28px; }
+    .status-card--published i { color: #14805a; }.status-card--draft i { color: #b96b09; }.status-card--archived i { color: #687780; }
+    .articles-card { overflow: hidden; border: 1px solid var(--cc-border); border-radius: 16px; background: #fff; }
+    .toolbar { display: flex; align-items: center; gap: 14px; padding: 18px; border-bottom: 1px solid var(--cc-border); }
+    .search { flex: 1; }.search input { width: 100%; min-width: 220px; border: 1.5px solid #d4dde1; border-radius: 10px; padding: 11px 13px; font-size: 14px; }
+    .filters { display: flex; gap: 5px; padding: 4px; border-radius: 10px; background: #f0f3f3; }
+    .filter { border: 0; border-radius: 7px; padding: 8px 11px; background: transparent; color: var(--cc-muted); font-weight: 700; cursor: pointer; }
+    .filter.is-active { background: #fff; color: var(--cc-blue); box-shadow: 0 1px 4px rgba(18,48,63,.13); }
+    .result-count { margin: 0; padding: 12px 18px 0; color: var(--cc-muted); font-size: 12px; font-weight: 650; }
+    .table-wrap { overflow-x: auto; padding: 6px 18px 18px; }table { width: 100%; border-collapse: collapse; }
+    th { padding: 13px 12px; border-bottom: 1px solid var(--cc-border); color: var(--cc-muted); font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 16px 12px; border-bottom: 1px solid #edf0f1; color: var(--cc-muted); font-size: 13px; }tbody tr:hover { background: #fafbf9; }
+    .article-title { display: block; max-width: 480px; color: var(--cc-ink); font-weight: 780; text-decoration: none; }.article-title:hover { text-decoration: underline; }
+    .excerpt { display: block; max-width: 480px; margin-top: 4px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .article-status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 9px; font-size: 11px; white-space: nowrap; }.article-status i { font-style: normal; }
+    .article-status--published { background: #e5f4ec; color: #126342; }.article-status--draft { background: #fff2da; color: #8a4d00; }.article-status--archived { background: #edf0f1; color: #526068; }
+    .edit { color: var(--cc-blue); font-weight: 750; text-decoration: none; white-space: nowrap; }
+    .empty { padding: 60px 24px; text-align: center; }.empty h2 { margin: 0 0 5px; }.empty p { margin: 0; color: var(--cc-muted); }
+    .error { margin: 18px; padding: 14px; border-radius: 10px; background: #fff0ee; color: #a92e25; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+    @media (max-width: 900px) { .articles-topbar { display: block; }.actions { margin-top: 18px; }.toolbar { flex-wrap: wrap; }.search { flex-basis: 100%; }.filters { overflow-x: auto; } }
+    @media (max-width: 680px) { .articles-shell { padding: 28px 12px 60px; }.status-cards { grid-template-columns: 1fr; }.actions .button { flex: 1; }th:nth-child(3), td:nth-child(3), th:nth-child(4), td:nth-child(4) { display: none; }.toolbar > .button { width: 100%; } }
+  </style>
+</BaseLayout>

@@ -11,6 +11,8 @@ describe('plateforme de publication', () => {
   const middleware = readFileSync('src/middleware.ts', 'utf8');
   const http = readFileSync('supabase/functions/_shared/http.ts', 'utf8');
   const ai = readFileSync('src/pages/api/admin/blog-ai.ts', 'utf8');
+  const seoAdmin = readFileSync('src/pages/admin/seo.astro', 'utf8');
+  const seoAnalyzer = readFileSync('supabase/functions/seo-analyzer/index.ts', 'utf8');
 
   it('sépare révision de brouillon et révision publiée', () => {
     expect(migration).toContain('published_revision_id uuid');
@@ -94,5 +96,15 @@ describe('plateforme de publication', () => {
     expect(article).toContain('rawTheme.showToc !== false');
     expect(article).toContain('--article-list-gap');
     expect(readFileSync('src/styles/global.css', 'utf8')).toContain('.article-content li > p:last-child');
+  });
+
+  it('propose une analyse SEO protégée sans inventer les volumes absents', () => {
+    expect(admin).toContain('href="/admin/seo"');
+    expect(seoAdmin).toContain('/functions/v1/seo-analyzer');
+    expect(seoAdmin).toContain("value == null ? '—'");
+    expect(seoAnalyzer).toContain('requireBlogAdmin(req)');
+    expect(seoAnalyzer).toContain("host.endsWith('.ch')");
+    expect(seoAnalyzer).toContain("source: metric ? 'dataforseo' : 'heuristic'");
+    expect(seoAnalyzer).toContain('BRAVE_SEARCH_API_KEY');
   });
 });

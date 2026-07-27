@@ -72,6 +72,24 @@ le navigateur enregistre le nouveau mot de passe directement avec Supabase Auth.
 Le mot de passe et le jeton de récupération ne transitent jamais par les Edge
 Functions de l’application.
 
+### Analyse SEO et plan éditorial
+
+`/admin/seo` analyse le corpus des articles, jusqu’à cinq concurrents suisses
+en `.ch`, puis classe les opportunités de mots-clés et prépare des briefs
+réutilisables dans l’assistant de rédaction. Sans fournisseur externe, les
+scores sont explicitement indiqués comme estimations heuristiques et aucun
+volume de recherche n’est inventé.
+
+Deux connecteurs serveur optionnels enrichissent l’analyse :
+
+- `BRAVE_SEARCH_API_KEY` : résultats de recherche ciblés sur la Suisse ;
+- `DATAFORSEO_LOGIN` et `DATAFORSEO_PASSWORD` : idées, volumes et concurrence.
+
+Ces secrets restent dans les Edge Functions et ne sont jamais envoyés au
+navigateur. Les concurrents sont limités aux URL HTTPS en `.ch`, les adresses
+IP et hôtes locaux sont refusés, et le crawl est plafonné à huit pages par
+domaine.
+
 Pour initialiser le premier propriétaire :
 
 1. créer son utilisateur dans **Supabase → Authentication → Users** ;
@@ -226,6 +244,7 @@ supabase functions deploy blog-admin
 supabase functions deploy blog-ingest --no-verify-jwt
 supabase functions deploy outrank-webhook --no-verify-jwt
 supabase functions deploy blog-preview --no-verify-jwt
+supabase functions deploy seo-analyzer
 supabase functions deploy purge --no-verify-jwt
 ```
 

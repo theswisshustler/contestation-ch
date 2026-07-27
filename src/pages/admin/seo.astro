@@ -1,0 +1,192 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../../lib/blog.ts';
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+<BaseLayout title="Analyse SEO | Administration Contestation.ch" description="Analyse de mots-clés et recommandations éditoriales." noindex={true}>
+  <div id="seo-admin" data-supabase-url={SUPABASE_URL} data-supabase-key={SUPABASE_PUBLISHABLE_KEY}>
+    <section id="loading" class="message"><p>Vérification de votre accès…</p></section>
+    <section id="denied" class="message" hidden><p class="eyebrow">Accès privé</p><h1>Connexion requise</h1><p>Connectez-vous à l’administration pour utiliser l’analyse SEO.</p><a class="button button--secondary" href="/admin">Se connecter</a></section>
+
+    <section id="panel" class="seo-shell" hidden>
+      <header class="seo-topbar">
+        <div><p class="eyebrow">Stratégie éditoriale</p><h1>Analyse SEO et idées de contenu</h1><p>Détectez les sujets manquants et priorisez les prochains articles pour la Suisse romande.</p></div>
+        <div class="actions"><a class="button button--ghost" href="/admin/articles">Tous les articles</a><a class="button button--ghost" href="/admin">Retour à l’éditeur</a></div>
+      </header>
+
+      <section class="analysis-form card">
+        <div>
+          <label>Mots-clés de départ<textarea id="seeds" rows="4" placeholder="baisse de loyer&#10;contester hausse de loyer&#10;taux hypothécaire suisse"></textarea></label>
+          <small>Un mot-clé par ligne ou séparé par une virgule, 20 maximum.</small>
+        </div>
+        <div>
+          <label>Sites concurrents suisses<textarea id="competitors" rows="4" placeholder="asloca.ch&#10;droit-bail.ch"></textarea></label>
+          <small>Un domaine <code>.ch</code> par ligne, 5 maximum. Le sitemap et quelques pages seront analysés.</small>
+        </div>
+        <div class="analysis-submit">
+          <button id="analyze" class="button button--primary" type="button">Lancer l’analyse</button>
+          <p id="analysis-status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="results" hidden>
+        <div id="summary" class="summary-grid"></div>
+        <div class="provider-note card"><strong>Données utilisées</strong><span id="provider-status"></span></div>
+
+        <section class="card section-card">
+          <div class="section-heading"><div><p class="eyebrow">Opportunités</p><h2>Mots-clés recommandés</h2></div><label>Filtrer <input id="keyword-filter" type="search" placeholder="Rechercher…" /></label></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Mot-clé</th><th>Priorité</th><th>Volume CH</th><th>Site</th><th>Concurrents</th><th>Source</th></tr></thead>
+              <tbody id="keyword-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-heading"><div><p class="eyebrow">Plan éditorial</p><h2>Idées d’articles</h2></div></div>
+          <div id="idea-grid" class="idea-grid"></div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading"><div><p class="eyebrow">Veille</p><h2>Sites concurrents analysés</h2></div></div>
+          <div id="competitor-list" class="competitor-list"></div>
+        </section>
+      </section>
+    </section>
+  </div>
+
+  <script>
+    // @ts-nocheck
+    import { createClient } from '@supabase/supabase-js';
+    const root = document.querySelector('#seo-admin');
+    const supabaseUrl = root.dataset.supabaseUrl;
+    const publishableKey = root.dataset.supabaseKey;
+    const supabase = createClient(supabaseUrl, publishableKey);
+    const $ = (selector) => document.querySelector(selector);
+    let analysis = null;
+
+    async function seoCall(payload) {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error('Session expirée');
+      const response = await fetch(`${supabaseUrl}/functions/v1/seo-analyzer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: publishableKey, Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
+      return body;
+    }
+
+    function values(selector) {
+      return $(selector).value.split(/[,\n]/).map((value) => value.trim()).filter(Boolean);
+    }
+    function number(value) { return value == null ? '—' : new Intl.NumberFormat('fr-CH').format(value); }
+    function scoreClass(score) { return score >= 75 ? 'high' : score >= 55 ? 'medium' : 'low'; }
+
+    function renderSummary() {
+      const cards = [
+        ['Articles analysés', analysis.site.articles, 'Contenu du site'],
+        ['Termes couverts', analysis.site.coveredTerms, 'Corpus éditorial'],
+        ['Opportunités', analysis.keywords.length, 'Mots-clés classés'],
+        ['Idées prioritaires', analysis.ideas.length, 'Prêtes à rédiger'],
+      ];
+      $('#summary').replaceChildren(...cards.map(([label, value, help]) => {
+        const card = document.createElement('div'); card.className = 'summary-card card';
+        card.innerHTML = '<span></span><strong></strong><small></small>';
+        card.querySelector('span').textContent = label; card.querySelector('strong').textContent = value; card.querySelector('small').textContent = help;
+        return card;
+      }));
+      $('#provider-status').textContent = `SERP : ${analysis.providers.serp} · Volumes : ${analysis.providers.volume}. Les valeurs absentes sont affichées « — » et ne sont jamais inventées.`;
+    }
+
+    function renderKeywords() {
+      const query = $('#keyword-filter').value.trim().toLocaleLowerCase('fr');
+      const rows = analysis.keywords.filter((row) => row.keyword.toLocaleLowerCase('fr').includes(query));
+      $('#keyword-body').replaceChildren(...rows.map((keyword) => {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td><strong></strong></td><td><span class="score"></span></td><td></td><td></td><td></td><td><small></small></td>';
+        row.querySelector('strong').textContent = keyword.keyword;
+        const score = row.querySelector('.score'); score.textContent = `${keyword.score}/100`; score.classList.add(`score--${scoreClass(keyword.score)}`);
+        row.children[2].textContent = number(keyword.volume);
+        row.children[3].textContent = keyword.siteMentions ? `${keyword.siteMentions} mention(s)` : 'Non traité';
+        row.children[4].textContent = `${keyword.competitorMentions} mention(s)`;
+        row.querySelector('small').textContent = keyword.source === 'dataforseo' ? 'API' : 'Estimé';
+        return row;
+      }));
+    }
+
+    function startArticle(idea) {
+      localStorage.setItem('cc-seo-brief', JSON.stringify(idea));
+      location.assign('/admin#writing-assistant');
+    }
+
+    function renderIdeas() {
+      $('#idea-grid').replaceChildren(...analysis.ideas.map((idea) => {
+        const card = document.createElement('article'); card.className = 'idea-card card';
+        card.innerHTML = '<div class="idea-score"></div><p></p><h3></h3><span></span><button class="button button--secondary" type="button">Rédiger cet article</button>';
+        card.querySelector('.idea-score').textContent = `${idea.score}/100`;
+        card.querySelector('p').textContent = idea.keyword;
+        card.querySelector('h3').textContent = idea.title;
+        card.querySelector('span').textContent = idea.angle;
+        card.querySelector('button').onclick = () => startArticle(idea);
+        return card;
+      }));
+    }
+
+    function renderCompetitors() {
+      const list = analysis.competitors || [];
+      $('#competitor-list').replaceChildren(...list.map((item) => {
+        const row = document.createElement('div'); row.className = 'competitor-row';
+        row.innerHTML = '<strong></strong><span></span>';
+        row.querySelector('strong').textContent = item.domain;
+        row.querySelector('span').textContent = item.error ? `Échec : ${item.error}` : `${item.pages} page(s) analysée(s)`;
+        if (item.error) row.classList.add('is-error');
+        return row;
+      }));
+      if (!list.length) $('#competitor-list').innerHTML = '<p>Aucun concurrent renseigné.</p>';
+    }
+
+    async function runAnalysis() {
+      const seeds = values('#seeds'); const competitors = values('#competitors');
+      if (!seeds.length) { $('#analysis-status').textContent = 'Ajoutez au moins un mot-clé.'; $('#analysis-status').className = 'is-error'; return; }
+      $('#analyze').disabled = true; $('#analysis-status').className = ''; $('#analysis-status').textContent = 'Analyse du site, des concurrents et des données SEO…';
+      try {
+        analysis = await seoCall({ seeds, competitors });
+        renderSummary(); renderKeywords(); renderIdeas(); renderCompetitors();
+        $('#results').hidden = false; $('#analysis-status').textContent = `Analyse terminée le ${new Intl.DateTimeFormat('fr-CH', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(analysis.generatedAt))}.`;
+      } catch (error) { $('#analysis-status').textContent = error.message; $('#analysis-status').className = 'is-error'; }
+      finally { $('#analyze').disabled = false; }
+    }
+
+    $('#analyze').addEventListener('click', runAnalysis);
+    $('#keyword-filter').addEventListener('input', () => analysis && renderKeywords());
+    const { data } = await supabase.auth.getSession();
+    $('#loading').hidden = true;
+    if (!data.session) $('#denied').hidden = false;
+    else { $('#panel').hidden = false; }
+  </script>
+
+  <style>
+    #seo-admin { min-height: 72vh; background: #f7f8f6; }
+    .seo-shell { max-width: 1320px; margin: 0 auto; padding: 42px 24px 80px; }
+    .message { width: min(520px, calc(100% - 36px)); margin: 72px auto; padding: 34px; border: 1px solid var(--cc-border); border-radius: 18px; background: #fff; }
+    .seo-topbar { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 26px; }.seo-topbar h1 { max-width: 760px; margin: 0 0 9px; font-size: clamp(30px, 4vw, 44px); }.seo-topbar p { margin: 0; color: var(--cc-muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }.button--ghost { border: 1px solid var(--cc-border); background: #fff; color: var(--cc-blue) !important; }
+    .card { border: 1px solid var(--cc-border); border-radius: 16px; background: #fff; }
+    .analysis-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 18px; align-items: end; padding: 20px; }
+    label { display: grid; gap: 7px; color: var(--cc-ink); font-size: 13px; font-weight: 750; }textarea, input { width: 100%; border: 1.5px solid #d4dde1; border-radius: 10px; padding: 11px 13px; font: inherit; }.analysis-form small { display: block; margin-top: 6px; color: var(--cc-muted); }.analysis-submit { min-width: 170px; }.analysis-submit .button { width: 100%; }.analysis-submit p { min-height: 34px; margin: 8px 0 0; color: var(--cc-green); font-size: 12px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 22px; }.summary-card { padding: 18px; }.summary-card span, .summary-card small { display: block; color: var(--cc-muted); }.summary-card strong { display: block; margin: 5px 0; color: var(--cc-ink); font-size: 30px; }
+    .provider-note { display: flex; gap: 12px; margin-top: 14px; padding: 14px 17px; color: var(--cc-muted); font-size: 12px; }.provider-note strong { color: var(--cc-ink); white-space: nowrap; }
+    .section-card { margin-top: 22px; }.card.section-card { overflow: hidden; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 20px; }.section-heading h2 { margin: 0; }.section-heading .eyebrow { margin-bottom: 4px; }.section-heading label { display: flex; align-items: center; }.section-heading input { width: 220px; }
+    .table-wrap { overflow-x: auto; padding: 0 18px 18px; }table { width: 100%; border-collapse: collapse; }th { padding: 12px; border-bottom: 1px solid var(--cc-border); color: var(--cc-muted); font-size: 11px; text-align: left; text-transform: uppercase; }td { padding: 14px 12px; border-bottom: 1px solid #edf0f1; color: var(--cc-muted); font-size: 13px; }.score { display: inline-block; border-radius: 999px; padding: 5px 8px; font-weight: 800; }.score--high { background: #e5f4ec; color: #126342; }.score--medium { background: #fff2da; color: #8a4d00; }.score--low { background: #edf0f1; color: #526068; }
+    .idea-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }.idea-card { position: relative; padding: 20px; }.idea-score { position: absolute; top: 16px; right: 16px; border-radius: 999px; padding: 5px 8px; background: #e5f4ec; color: #126342; font-size: 11px; font-weight: 800; }.idea-card p { margin: 0 60px 8px 0; color: var(--cc-blue); font-size: 12px; font-weight: 750; }.idea-card h3 { margin: 0 0 10px; font-size: 18px; }.idea-card span { display: block; min-height: 38px; margin-bottom: 16px; color: var(--cc-muted); font-size: 13px; }
+    .competitor-list { padding: 0 20px 20px; }.competitor-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--cc-border); }.competitor-row span { color: var(--cc-muted); font-size: 13px; }.is-error { color: #a92e25 !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+    @media (max-width: 950px) { .seo-topbar { display: block; }.actions { margin-top: 18px; }.analysis-form { grid-template-columns: 1fr 1fr; }.analysis-submit { grid-column: 1 / -1; }.summary-grid { grid-template-columns: repeat(2, 1fr); }.idea-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 650px) { .seo-shell { padding: 28px 12px 60px; }.analysis-form, .summary-grid, .idea-grid { grid-template-columns: 1fr; }.analysis-submit { grid-column: auto; }.provider-note, .section-heading { align-items: stretch; flex-direction: column; }.section-heading input { width: 100%; }th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; } }
+  </style>
+</BaseLayout>
