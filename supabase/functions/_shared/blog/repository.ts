@@ -177,17 +177,11 @@ export async function deleteBlogArticle(actor: BlogActor, articleId: string): Pr
   const db = actor.db;
   const { data: article } = await db.from('blog_articles').select('status, current_slug').eq('id', articleId).maybeSingle();
   if (!article) throw new Error('Article introuvable');
-  if (article.status === 'draft' && !article.current_slug) {
-    const deleted = await db.from('blog_articles').delete().eq('id', articleId);
-    if (deleted.error) throw deleted.error;
-    return { hardDeleted: true };
-  }
   if (article.current_slug) await db.from('blog_tombstones').upsert({ slug: article.current_slug, reason: 'Article retiré' }, { onConflict: 'slug' });
-  const now = new Date().toISOString();
-  const updated = await db.from('blog_articles').update({ status: 'archived', archived_at: now, deleted_at: now }).eq('id', articleId);
-  if (updated.error) throw updated.error;
   await db.from('blog_audit_log').insert({ actor_id: actor.userId, api_key_id: actor.apiKeyId, article_id: articleId, action: 'article.deleted' });
-  return { hardDeleted: false };
+  const deleted = await db.from('blog_articles').delete().eq('id', articleId);
+  if (deleted.error) throw deleted.error;
+  return { hardDeleted: true };
 }
 
 export async function createPreviewToken(actor: BlogActor, revisionId: string): Promise<{ token: string; expiresAt: string }> {

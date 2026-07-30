@@ -97,6 +97,27 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
             <input id="revision-id" type="hidden" />
             <input id="featured-media-id" type="hidden" />
             <div class="admin-section-heading"><div><p class="eyebrow">Contenu</p><h2 id="editor-title">Nouvel article</h2></div><span id="article-state" class="admin-badge">Brouillon</span></div>
+            <details id="improvement-assistant" class="admin-details improvement-assistant">
+              <summary>
+                <span><span class="writing-assistant-icon" aria-hidden="true">✦</span> Relire et améliorer avec l’IA</span>
+                <small>Crée un nouveau brouillon prêt à publier</small>
+              </summary>
+              <div class="admin-details-content">
+                <p class="writing-assistant-intro">L’IA relit l’article complet, améliore sa clarté, sa structure et son SEO, puis enregistre une nouvelle révision. L’article actuel reste récupérable dans l’historique.</p>
+                <label>Consigne personnalisée
+                  <textarea id="improvement-prompt" rows="5" maxlength="4000" placeholder="Ex. Raccourcis l’introduction, rends les démarches plus concrètes et améliore les titres pour le SEO."></textarea>
+                </label>
+                <div class="prompt-presets" aria-label="Suggestions de consignes">
+                  <button type="button" class="prompt-preset">Améliore la clarté, la structure et le SEO sans changer le fond.</button>
+                  <button type="button" class="prompt-preset">Rends l’article plus concis, concret et facile à parcourir.</button>
+                  <button type="button" class="prompt-preset">Renforce les explications pratiques et les prochaines étapes pour le lecteur.</button>
+                </div>
+                <div class="admin-actions">
+                  <button id="improve-article" class="button button--primary" type="button">✦ Analyser et améliorer</button>
+                  <small class="admin-help">L’opération peut prendre jusqu’à une minute.</small>
+                </div>
+              </div>
+            </details>
             <label>Titre de l’article<input id="title" maxlength="240" required placeholder="Comment contester une hausse de loyer ?" /></label>
             <div class="admin-columns">
               <label>Slug <input id="slug" maxlength="90" placeholder="généré automatiquement" /></label>
@@ -301,6 +322,17 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
 
     async function adminCall(action, payload = {}) {
       const response = await fetch(`${supabaseUrl}/functions/v1/blog-admin`, { method: 'POST', headers: await authHeaders(), body: JSON.stringify({ action, ...payload }) });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
+      return body;
+    }
+
+    async function improveCall(payload) {
+      const response = await fetch(`${supabaseUrl}/functions/v1/blog-improve`, {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify(payload),
+      });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
       return body;
@@ -591,6 +623,35 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
       catch (_) { /* message déjà visible */ }
     }
 
+    async function improveArticle() {
+      const instruction = $('#improvement-prompt').value.trim();
+      if (!instruction) {
+        status('Ajoutez une consigne pour orienter la relecture.', true);
+        $('#improvement-assistant').open = true;
+        $('#improvement-prompt').focus();
+        return;
+      }
+      const button = $('#improve-article');
+      button.disabled = true;
+      button.textContent = 'Analyse de l’article…';
+      status('Enregistrement de la version actuelle…');
+      try {
+        const draft = await saveDraft();
+        status('L’IA relit et améliore l’article. Cette étape peut prendre jusqu’à une minute…');
+        button.textContent = 'Amélioration en cours…';
+        const result = await improveCall({ articleId: draft.articleId, instruction });
+        await loadArticle(draft.articleId);
+        $('#improvement-assistant').open = true;
+        status(`${result.summary || 'Article amélioré.'} Nouveau brouillon enregistré et prêt à être publié.`);
+        await refreshList();
+      } catch (error) {
+        status(error.message || 'L’amélioration a échoué.', true);
+      } finally {
+        button.disabled = false;
+        button.textContent = '✦ Analyser et améliorer';
+      }
+    }
+
     async function archiveArticle() {
       const id = $('#article-id').value; if (!id || !confirm('Archiver cet article ?')) return;
       try { await adminCall('archive', { articleId: id }); currentStatus = 'archived'; $('#article-state').textContent = 'Archivé'; status('Article archivé.'); await refreshList(); } catch (error) { status(error.message, true); }
@@ -788,6 +849,11 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     $('#clear-brief').addEventListener('click', () => { $('#brief-title').value = ''; $('#brief-content').value = ''; $('#brief-keywords').value = ''; $('#brief-sources').value = ''; $('#brief-source-error').hidden = true; });
     document.querySelectorAll('.source-preset').forEach((button) => button.addEventListener('click', () => addSourcePreset(button)));
     $('#format').addEventListener('change', updateFormat); $('#preview').addEventListener('click', previewArticle); $('#publish').addEventListener('click', publishArticle);
+    $('#improve-article').addEventListener('click', improveArticle);
+    document.querySelectorAll('.prompt-preset').forEach((button) => button.addEventListener('click', () => {
+      $('#improvement-prompt').value = button.textContent.trim();
+      $('#improvement-prompt').focus();
+    }));
     $('#archive').addEventListener('click', archiveArticle); $('#delete').addEventListener('click', deleteArticle);
     $('#import-file').addEventListener('change', (event) => event.target.files[0] && importFile(event.target.files[0]));
     $('#image-file').addEventListener('change', (event) => event.target.files[0] && uploadImage(event.target.files[0]));
@@ -853,6 +919,11 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .admin-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     .admin-actions--sticky { position: sticky; bottom: 12px; z-index: 10; margin: 0 -12px -12px; padding: 13px; border: 1px solid var(--cc-border); border-radius: 13px; background: rgba(255,255,255,.95); box-shadow: 0 10px 30px -20px rgba(18,48,63,.5); backdrop-filter: blur(8px); }
+    .improvement-assistant { border-color: rgba(40,105,93,.3); background: linear-gradient(135deg, #f4faf7, #fffaf2); }
+    .improvement-assistant summary { color: var(--cc-green); }
+    .prompt-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+    .prompt-preset { border: 1px solid #cbded7; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.8); color: var(--cc-blue); font: inherit; font-size: 12px; cursor: pointer; }
+    .prompt-preset:hover { border-color: var(--cc-green); background: #fff; }
     .button--ghost { border: 1px solid var(--cc-border); background: #fff; color: var(--cc-blue) !important; }
     .button--danger { background: #fff; color: #a92e25 !important; border: 1px solid #e8bbb6; }
     .admin-section-heading, .admin-source-bar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px; }

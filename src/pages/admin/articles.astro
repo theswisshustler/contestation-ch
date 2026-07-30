@@ -51,6 +51,20 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
         <p id="error" class="error" hidden></p>
       </section>
     </section>
+    <dialog id="delete-dialog" class="delete-dialog" aria-labelledby="delete-title">
+      <form method="dialog">
+        <button class="dialog-close" value="cancel" aria-label="Fermer">×</button>
+        <span class="danger-icon" aria-hidden="true">!</span>
+        <p class="eyebrow">Suppression définitive</p>
+        <h2 id="delete-title">Supprimer cet article ?</h2>
+        <p>L’article <strong id="delete-article-title"></strong>, ses brouillons et toutes ses révisions seront définitivement supprimés.</p>
+        <p class="delete-warning">Cette action est irréversible.</p>
+        <div class="dialog-actions">
+          <button class="button button--ghost" value="cancel">Annuler</button>
+          <button id="confirm-delete" class="button button--danger" value="confirm">Supprimer définitivement</button>
+        </div>
+      </form>
+    </dialog>
   </div>
 
   <script>
@@ -69,6 +83,8 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     };
     let articles = [];
     let activeStatus = 'all';
+    let adminRole = null;
+    let pendingDelete = null;
 
     async function adminCall(action, payload = {}) {
       const { data } = await supabase.auth.getSession();
@@ -139,13 +155,17 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
         const content = contentOf(article);
         const editUrl = `/admin?article=${encodeURIComponent(article.id)}`;
         const row = document.createElement('tr');
-        row.innerHTML = '<td><a class="article-title"></a><span class="excerpt"></span></td><td class="status-cell"></td><td></td><td></td><td><a class="edit">Modifier →</a></td>';
+        row.innerHTML = '<td><a class="article-title"></a><span class="excerpt"></span></td><td class="status-cell"></td><td></td><td></td><td><div class="row-actions"><a class="edit">Modifier</a><button class="delete-action" type="button">Supprimer</button></div></td>';
         const title = row.querySelector('.article-title'); title.href = editUrl; title.textContent = content.title || 'Sans titre';
         row.querySelector('.excerpt').textContent = content.excerpt || `/${content.slug || article.current_slug || ''}`;
         row.querySelector('.status-cell').append(statusBadge(article.status));
         row.children[2].textContent = formatDate(article.updated_at);
         row.children[3].textContent = formatDate(article.published_at);
         row.querySelector('.edit').href = editUrl;
+        const deleteButton = row.querySelector('.delete-action');
+        deleteButton.hidden = adminRole !== 'owner';
+        deleteButton.setAttribute('aria-label', `Supprimer ${content.title || 'cet article'}`);
+        deleteButton.addEventListener('click', () => openDeleteDialog(article));
         return row;
       }));
       $('#result-count').textContent = `${filtered.length} article${filtered.length > 1 ? 's' : ''} affiché${filtered.length > 1 ? 's' : ''}`;
@@ -164,49 +184,80 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
       } finally { $('#refresh').disabled = false; }
     }
 
+    function openDeleteDialog(article) {
+      pendingDelete = article;
+      $('#delete-article-title').textContent = contentOf(article).title || 'Sans titre';
+      $('#delete-dialog').showModal();
+    }
+
+    async function deleteArticle() {
+      if (!pendingDelete) return;
+      const article = pendingDelete;
+      const button = $('#confirm-delete');
+      button.disabled = true;
+      button.textContent = 'Suppression…';
+      try {
+        await adminCall('delete', { articleId: article.id });
+        articles = articles.filter((entry) => entry.id !== article.id);
+        pendingDelete = null;
+        $('#delete-dialog').close();
+        renderOverview();
+      } catch (error) {
+        $('#error').textContent = error.message;
+        $('#error').hidden = false;
+        $('#delete-dialog').close();
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Supprimer définitivement';
+      }
+    }
+
     $('#article-search').addEventListener('input', renderRows);
     $('#refresh').addEventListener('click', loadArticles);
+    $('#confirm-delete').addEventListener('click', (event) => { event.preventDefault(); deleteArticle(); });
+    $('#delete-dialog').addEventListener('close', () => { pendingDelete = null; });
     const { data } = await supabase.auth.getSession();
     $('#loading').hidden = true;
     if (!data.session) $('#denied').hidden = false;
     else {
-      try { await adminCall('me'); $('#panel').hidden = false; await loadArticles(); }
+      try { const me = await adminCall('me'); adminRole = me.role; $('#panel').hidden = false; await loadArticles(); }
       catch (_) { $('#denied').hidden = false; }
     }
   </script>
 
   <style>
-    #articles-admin { min-height: 72vh; background: #f7f8f6; }
-    .articles-shell { max-width: 1320px; margin: 0 auto; padding: 42px 24px 80px; }
+    #articles-admin { min-height: 72vh; background: radial-gradient(circle at 92% 4%, rgba(247,168,67,.10), transparent 24rem), #f5f7f5; }
+    .articles-shell { max-width: 1380px; margin: 0 auto; padding: 48px 28px 88px; }
     .message { width: min(520px, calc(100% - 36px)); margin: 72px auto; padding: 34px; border: 1px solid var(--cc-border); border-radius: 18px; background: #fff; }
     .message h1, .articles-topbar h1 { margin: 0 0 9px; }
-    .articles-topbar { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
-    .articles-topbar h1 { font-size: clamp(30px, 4vw, 44px); }
+    .articles-topbar { display: flex; justify-content: space-between; gap: 32px; margin-bottom: 32px; }
+    .articles-topbar h1 { font-size: clamp(36px, 4vw, 52px); letter-spacing: -.035em; }
     .articles-topbar p { margin: 0; color: var(--cc-muted); }
     .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
     .button--ghost { border: 1px solid var(--cc-border); background: #fff; color: var(--cc-blue) !important; }
     .status-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; }
-    .status-card { display: grid; grid-template-columns: auto 1fr auto; gap: 13px; align-items: center; padding: 18px; border: 1px solid var(--cc-border); border-radius: 15px; background: #fff; color: var(--cc-ink); text-align: left; cursor: pointer; }
-    .status-card:hover, .status-card.is-active { border-color: var(--cc-blue); box-shadow: 0 8px 25px -19px rgba(18,48,63,.7); }
+    .status-card { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 20px 22px; border: 1px solid rgba(18,48,63,.10); border-radius: 18px; background: rgba(255,255,255,.92); color: var(--cc-ink); text-align: left; cursor: pointer; box-shadow: 0 8px 30px rgba(18,48,63,.045); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .status-card:hover, .status-card.is-active { transform: translateY(-2px); border-color: var(--cc-blue); box-shadow: 0 14px 34px -20px rgba(18,48,63,.55); }
     .status-card i { font-style: normal; }.status-card strong, .status-card small { display: block; }.status-card small { margin-top: 2px; color: var(--cc-muted); }.status-card b { font-size: 28px; }
     .status-card--published i { color: #14805a; }.status-card--draft i { color: #b96b09; }.status-card--archived i { color: #687780; }
-    .articles-card { overflow: hidden; border: 1px solid var(--cc-border); border-radius: 16px; background: #fff; }
-    .toolbar { display: flex; align-items: center; gap: 14px; padding: 18px; border-bottom: 1px solid var(--cc-border); }
-    .search { flex: 1; }.search input { width: 100%; min-width: 220px; border: 1.5px solid #d4dde1; border-radius: 10px; padding: 11px 13px; font-size: 14px; }
+    .articles-card { overflow: hidden; border: 1px solid rgba(18,48,63,.10); border-radius: 20px; background: rgba(255,255,255,.96); box-shadow: 0 18px 50px rgba(18,48,63,.06); }
+    .toolbar { display: flex; align-items: center; gap: 14px; padding: 20px; border-bottom: 1px solid var(--cc-border); }
+    .search { position: relative; flex: 1; }.search::before { position: absolute; left: 15px; top: 50%; content: '⌕'; color: var(--cc-muted); font-size: 22px; transform: translateY(-52%); pointer-events: none; }.search input { width: 100%; min-width: 220px; border: 1.5px solid #d4dde1; border-radius: 12px; padding: 13px 15px 13px 43px; background: #fbfcfb; font-size: 14px; transition: border-color .15s, box-shadow .15s; }.search input:focus { outline: 0; border-color: var(--cc-blue); box-shadow: 0 0 0 3px rgba(18,48,63,.09); }
     .filters { display: flex; gap: 5px; padding: 4px; border-radius: 10px; background: #f0f3f3; }
     .filter { border: 0; border-radius: 7px; padding: 8px 11px; background: transparent; color: var(--cc-muted); font-weight: 700; cursor: pointer; }
     .filter.is-active { background: #fff; color: var(--cc-blue); box-shadow: 0 1px 4px rgba(18,48,63,.13); }
     .result-count { margin: 0; padding: 12px 18px 0; color: var(--cc-muted); font-size: 12px; font-weight: 650; }
     .table-wrap { overflow-x: auto; padding: 6px 18px 18px; }table { width: 100%; border-collapse: collapse; }
     th { padding: 13px 12px; border-bottom: 1px solid var(--cc-border); color: var(--cc-muted); font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; white-space: nowrap; }
-    td { padding: 16px 12px; border-bottom: 1px solid #edf0f1; color: var(--cc-muted); font-size: 13px; }tbody tr:hover { background: #fafbf9; }
+    td { padding: 18px 12px; border-bottom: 1px solid #edf0f1; color: var(--cc-muted); font-size: 13px; }tbody tr { transition: background .15s; }tbody tr:hover { background: #f8faf8; }
     .article-title { display: block; max-width: 480px; color: var(--cc-ink); font-weight: 780; text-decoration: none; }.article-title:hover { text-decoration: underline; }
     .excerpt { display: block; max-width: 480px; margin-top: 4px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
     .article-status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 9px; font-size: 11px; white-space: nowrap; }.article-status i { font-style: normal; }
     .article-status--published { background: #e5f4ec; color: #126342; }.article-status--draft { background: #fff2da; color: #8a4d00; }.article-status--archived { background: #edf0f1; color: #526068; }
-    .edit { color: var(--cc-blue); font-weight: 750; text-decoration: none; white-space: nowrap; }
+    .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }.edit, .delete-action { border: 0; border-radius: 8px; padding: 8px 10px; background: transparent; font: inherit; font-weight: 750; text-decoration: none; white-space: nowrap; cursor: pointer; }.edit { color: var(--cc-blue); background: #eef4f5; }.delete-action { color: #a9362c; }.delete-action:hover { background: #fff0ee; }
     .empty { padding: 60px 24px; text-align: center; }.empty h2 { margin: 0 0 5px; }.empty p { margin: 0; color: var(--cc-muted); }
     .error { margin: 18px; padding: 14px; border-radius: 10px; background: #fff0ee; color: #a92e25; }
+    .delete-dialog { width: min(480px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 22px; color: var(--cc-ink); box-shadow: 0 28px 80px rgba(9,31,42,.28); }.delete-dialog::backdrop { background: rgba(9,31,42,.58); backdrop-filter: blur(3px); }.delete-dialog form { position: relative; padding: 30px; }.delete-dialog h2 { margin: 5px 0 12px; font-size: 27px; }.delete-dialog p { color: var(--cc-muted); line-height: 1.55; }.delete-dialog p strong { color: var(--cc-ink); }.danger-icon { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 18px; border-radius: 13px; background: #fff0ee; color: #b0362d; font-size: 24px; font-weight: 850; }.dialog-close { position: absolute; top: 18px; right: 18px; border: 0; background: transparent; color: var(--cc-muted); font-size: 28px; cursor: pointer; }.delete-warning { font-weight: 750; color: #a9362c !important; }.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }.button--danger { border: 1px solid #a9362c; background: #a9362c; color: #fff !important; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
     @media (max-width: 900px) { .articles-topbar { display: block; }.actions { margin-top: 18px; }.toolbar { flex-wrap: wrap; }.search { flex-basis: 100%; }.filters { overflow-x: auto; } }
     @media (max-width: 680px) { .articles-shell { padding: 28px 12px 60px; }.status-cards { grid-template-columns: 1fr; }.actions .button { flex: 1; }th:nth-child(3), td:nth-child(3), th:nth-child(4), td:nth-child(4) { display: none; }.toolbar > .button { width: 100%; } }
