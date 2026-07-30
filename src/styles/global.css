@@ -23,6 +23,25 @@ a { color: var(--cc-blue); text-decoration-thickness: .08em; text-underline-offs
 a:hover { color: #a85f00; }
 img { max-width: 100%; height: auto; }
 button, input, textarea, select { font: inherit; }
+input, textarea, select {
+  color: var(--cc-ink);
+  accent-color: var(--cc-blue);
+}
+input::placeholder, textarea::placeholder { color: #87969d; opacity: 1; }
+select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--cc-blue) 50%),
+    linear-gradient(135deg, var(--cc-blue) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px);
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  padding-right: 42px !important;
+}
+textarea { scrollbar-color: #c7d3d7 transparent; scrollbar-width: thin; }
+:where(input, textarea, select):disabled { cursor: not-allowed; opacity: .62; }
 :focus-visible { outline: 3px solid rgba(27, 73, 101, .3); outline-offset: 3px; }
 
 .site-header { position: sticky; top: 0; z-index: 30; border-bottom: 1px solid rgba(223, 229, 231, .9); background: rgba(251, 250, 247, .94); backdrop-filter: blur(12px); }

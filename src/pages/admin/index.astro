@@ -78,16 +78,24 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
                 <label><input type="radio" name="assistant-mode" value="create" checked /><span><strong>Créer un article</strong><small>Partir d’un sujet et d’un brief</small></span></label>
                 <label><input type="radio" name="assistant-mode" value="improve" /><span><strong>Améliorer l’article ouvert</strong><small>Réécrire et renforcer le brouillon actuel</small></span></label>
               </div>
-              <label>Sujet ou titre de travail<input id="brief-title" maxlength="240" placeholder="Ex. Comment contester une hausse de loyer en Suisse" /></label>
-              <label>Consignes éditoriales<textarea id="brief-content" rows="5" maxlength="12000" placeholder="Public visé, problème à résoudre, points indispensables, ton, longueur et résultat attendu…"></textarea></label>
-              <div class="admin-columns">
-                <label>Mots-clés principaux<input id="brief-keywords" placeholder="hausse de loyer, délai, formule officielle" /></label>
-                <label>Objectif de l’article<select id="brief-intent"><option value="guide">Guide pratique</option><option value="answer">Réponse à une question</option><option value="checklist">Checklist</option><option value="news">Mise à jour juridique</option></select></label>
+              <section class="assistant-card" aria-labelledby="assistant-objective-title">
+                <div class="assistant-card-heading">
+                  <span class="assistant-card-number" aria-hidden="true">1</span>
+                  <div><h3 id="assistant-objective-title">Cadrez votre article</h3><p>Donnez à l’IA une direction claire. Vous pourrez toujours ajuster le résultat.</p></div>
+                </div>
+                <div class="assistant-fields">
+                  <label class="field field--wide"><span>Sujet ou titre de travail</span><input id="brief-title" maxlength="240" placeholder="Ex. Comment contester une hausse de loyer en Suisse" /></label>
+                  <label class="field field--wide"><span>Consignes éditoriales</span><textarea id="brief-content" rows="5" maxlength="12000" placeholder="Public visé, problème à résoudre, points indispensables, ton, longueur et résultat attendu…"></textarea><small>Décrivez le résultat attendu avec vos propres mots.</small></label>
+                  <label class="field"><span>Mots-clés principaux</span><input id="brief-keywords" placeholder="hausse de loyer, délai, formule officielle" /></label>
+                  <label class="field"><span>Objectif de l’article</span><select id="brief-intent"><option value="guide">Guide pratique</option><option value="answer">Réponse à une question</option><option value="checklist">Checklist</option><option value="news">Mise à jour juridique</option></select></label>
+                </div>
+              </section>
+              <div class="assistant-card assistant-card--compact">
+                <label class="admin-check assistant-research"><input id="assistant-research" type="checkbox" checked /><span><strong>Recherche documentaire suisse</strong><small>Rechercher et intégrer des sources fiables et récentes.</small></span></label>
               </div>
-              <label class="admin-check assistant-research"><input id="assistant-research" type="checkbox" checked /> Rechercher et intégrer des sources suisses fiables</label>
 
-              <fieldset class="link-builder">
-                <legend>Liens internes à intégrer</legend>
+              <fieldset class="link-builder assistant-card">
+                <legend><span class="assistant-card-number" aria-hidden="true">2</span> Liens internes à intégrer</legend>
                 <p>Sélectionnez les pages utiles. Les articles publiés sont proposés automatiquement.</p>
                 <div id="internal-link-options" class="link-options">
                   <label><input type="checkbox" value="/" data-label="Vérifier mon loyer" checked /> Vérifier mon loyer</label>
@@ -97,8 +105,8 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
                 <div id="article-link-options" class="article-link-options"></div>
               </fieldset>
 
-              <fieldset class="link-builder">
-                <legend>Sources externes suisses</legend>
+              <fieldset class="link-builder assistant-card">
+                <legend><span class="assistant-card-number" aria-hidden="true">3</span> Sources externes suisses</legend>
                 <p>Ajoutez une source par ligne au format <strong>Libellé | https://…</strong>. Seuls les domaines suisses en <code>.ch</code> sont acceptés.</p>
                 <textarea id="brief-sources" rows="4" placeholder="Office fédéral du logement | https://www.bwo.admin.ch/"></textarea>
                 <div class="source-presets">
@@ -891,16 +899,18 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .sidebar-empty, .sidebar-loading { display: grid; gap: 4px; padding: 34px 16px; color: var(--cc-muted); font-size: 12px; text-align: center; }.sidebar-empty strong { color: var(--cc-ink); }
     .sidebar-all-link { display: flex; flex: 0 0 auto; justify-content: space-between; padding: 13px 17px; border-top: 1px solid var(--cc-border); color: var(--cc-blue); font-size: 12px; font-weight: 800; text-decoration: none; }.sidebar-all-link:hover { background: var(--cc-soft); }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
-    .admin-editor { padding: 28px; }
+    .admin-editor { padding: 32px; box-shadow: 0 22px 60px -48px rgba(18,48,63,.45); }
     .admin-form { display: grid; gap: 18px; }
     .admin-form--compact { margin-top: 24px; }
     .admin-text-button { justify-self: start; border: 0; padding: 0; background: transparent; color: var(--cc-blue); font: inherit; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
     .admin-text-button:disabled { cursor: wait; opacity: .6; }
     .admin-actions .button:disabled { cursor: wait; opacity: .62; }
     .admin-help { display: block; margin-top: -10px; color: var(--cc-muted); line-height: 1.45; }
-    .admin-form label { display: grid; gap: 7px; color: var(--cc-ink); font-size: 13px; font-weight: 700; }
-    .admin-form input, .admin-form textarea, .admin-form select, .rich-editor { width: 100%; border: 1.5px solid #d4dde1; border-radius: 10px; padding: 12px 13px; background: #fff; color: var(--cc-ink); font-size: 15px; font-weight: 400; }
-    .admin-form textarea { resize: vertical; line-height: 1.55; }
+    .admin-form label, .admin-details-content > label, .field { display: grid; gap: 8px; color: var(--cc-ink); font-size: 13px; font-weight: 750; }
+    .admin-form input, .admin-form textarea, .admin-form select, .admin-details-content input, .admin-details-content textarea, .admin-details-content select, .rich-editor { width: 100%; min-height: 48px; border: 1px solid #cfdadd; border-radius: 12px; padding: 12px 14px; background-color: #fff; box-shadow: 0 1px 2px rgba(18,48,63,.03); color: var(--cc-ink); font-size: 15px; font-weight: 450; transition: border-color .16s, box-shadow .16s, background-color .16s; }
+    .admin-form textarea, .admin-details-content textarea { resize: vertical; line-height: 1.55; }
+    .admin-form :where(input, textarea, select):hover, .admin-details-content :where(input, textarea, select):hover { border-color: #9fb2ba; }
+    .admin-form :where(input, textarea, select):focus, .admin-details-content :where(input, textarea, select):focus, .rich-editor:focus { outline: 0; border-color: var(--cc-blue); background-color: #fff; box-shadow: 0 0 0 4px rgba(27,73,101,.09), 0 5px 18px rgba(18,48,63,.06); }
     .admin-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .admin-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     .admin-actions--sticky { position: sticky; bottom: 12px; z-index: 10; margin: 0 -12px -12px; padding: 13px; border: 1px solid var(--cc-border); border-radius: 13px; background: rgba(255,255,255,.95); box-shadow: 0 10px 30px -20px rgba(18,48,63,.5); backdrop-filter: blur(8px); }
@@ -912,11 +922,11 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-source-bar label:first-child { min-width: 200px; flex: 1; }
     .admin-file-button { display: inline-flex !important; width: auto !important; }
     .rich-editor { min-height: 420px; overflow-y: auto; line-height: 1.7; }
-    .admin-details { margin-top: 6px; border: 1px solid var(--cc-border); border-radius: 12px; }
-    .admin-details summary { padding: 15px; color: var(--cc-ink); font-weight: 750; cursor: pointer; }
-    .admin-details-content { display: grid; gap: 16px; padding: 0 16px 18px; }
-    .admin-check { display: flex !important; align-items: center; align-self: end; grid-template-columns: auto 1fr !important; min-height: 48px; }
-    .admin-check input { width: 18px !important; height: 18px; }
+    .admin-details { margin-top: 6px; overflow: hidden; border: 1px solid var(--cc-border); border-radius: 16px; background: #fff; }
+    .admin-details summary { padding: 17px 18px; color: var(--cc-ink); font-weight: 750; cursor: pointer; transition: background .15s; }
+    .admin-details summary:hover { background: #f7faf9; }
+    .admin-details[open] > summary { border-bottom: 1px solid #e8edef; }
+    .admin-details-content { display: grid; gap: 18px; padding: 20px; }
     .layout-controls { margin: 0; padding: 16px; border: 1px solid var(--cc-border); border-radius: 12px; }
     .layout-controls legend { padding: 0 6px; color: var(--cc-ink); font-weight: 750; }
     .layout-controls__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 22px; }
@@ -953,20 +963,32 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .theme-preview[data-theme="compact"] .theme-preview__header { padding-block: 18px 14px; }
     .theme-preview[data-theme="compact"] .theme-preview__content { line-height: 1.52; }
     .theme-preview[data-theme="accessible"] .theme-preview__content { line-height: 1.95; }
-    .writing-assistant { margin: 0 0 24px; border-color: #c6dce5; background: linear-gradient(145deg, #f7fbfc, #fff); }
-    .writing-assistant summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .writing-assistant { margin: 0 0 28px; border-color: #c9dbe2; background: linear-gradient(145deg, #f7fbfc, #fff 45%); box-shadow: 0 16px 45px -38px rgba(18,48,63,.65); }
+    .writing-assistant summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; }
     .writing-assistant summary small { color: var(--cc-muted); font-size: 12px; font-weight: 600; }
     .writing-assistant-icon { display: inline-grid; width: 26px; height: 26px; margin-right: 7px; place-items: center; border-radius: 8px; background: var(--cc-blue); color: #fff; }
-    .writing-assistant-intro { margin: -2px 0 2px; color: var(--cc-muted); }
+    .writing-assistant-intro { margin: -2px 0 2px; color: var(--cc-muted); line-height: 1.55; }
     .assistant-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }.assistant-steps span { display: flex; align-items: center; gap: 7px; color: var(--cc-muted); font-size: 11px; font-weight: 750; }.assistant-steps span::after { height: 2px; flex: 1; border-radius: 2px; background: #dbe4e6; content: ''; }.assistant-steps span:last-child::after { display: none; }.assistant-steps b { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 50%; background: #e7eef0; color: var(--cc-blue); }.assistant-steps .is-active b { background: var(--cc-blue); color: #fff; }
-    .assistant-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.assistant-modes label { display: flex; grid-template-columns: none; align-items: flex-start; gap: 10px; border: 1.5px solid #d5e0e3; border-radius: 12px; padding: 13px; background: #fff; cursor: pointer; }.assistant-modes label:has(input:checked) { border-color: var(--cc-blue); background: #f1f7f8; box-shadow: 0 0 0 3px rgba(18,48,63,.06); }.assistant-modes input { width: auto; margin-top: 3px; accent-color: var(--cc-blue); }.assistant-modes strong, .assistant-modes small { display: block; }.assistant-modes small { margin-top: 3px; color: var(--cc-muted); font-weight: 500; line-height: 1.35; }
-    .admin-check { display: flex !important; align-items: center; grid-template-columns: none !important; gap: 9px !important; }.admin-check input { width: 18px !important; height: 18px; accent-color: var(--cc-blue); }.assistant-research { width: fit-content; border-radius: 10px; padding: 10px 12px; background: #eef5f3; }
-    .link-builder { display: grid; gap: 11px; margin: 0; border: 1px solid var(--cc-border); border-radius: 12px; padding: 14px; background: #fff; }
-    .link-builder legend { padding: 0 7px; color: var(--cc-ink); font-size: 13px; font-weight: 800; }
+    .assistant-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }.assistant-modes label { position: relative; display: flex; grid-template-columns: none; align-items: flex-start; gap: 11px; border: 1px solid #d5e0e3; border-radius: 14px; padding: 15px; background: #fff; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; }.assistant-modes label:hover { transform: translateY(-1px); border-color: #9eb5be; box-shadow: 0 8px 22px -18px rgba(18,48,63,.6); }.assistant-modes label:has(input:checked) { border-color: var(--cc-blue); background: #f1f7f8; box-shadow: inset 0 0 0 1px var(--cc-blue), 0 7px 20px -17px rgba(18,48,63,.7); }.assistant-modes input { flex: 0 0 auto; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--cc-blue); }.assistant-modes strong, .assistant-modes small { display: block; }.assistant-modes small { margin-top: 3px; color: var(--cc-muted); font-weight: 500; line-height: 1.35; }
+    .assistant-card { display: grid; gap: 18px; margin: 0; border: 1px solid #dce5e8; border-radius: 16px; padding: 20px; background: rgba(255,255,255,.88); box-shadow: 0 12px 30px -28px rgba(18,48,63,.7); }
+    .assistant-card--compact { padding: 4px; }
+    .assistant-card-heading { display: flex; align-items: flex-start; gap: 12px; }
+    .assistant-card-heading h3 { margin: 1px 0 4px; font-size: 16px; }
+    .assistant-card-heading p { margin: 0; color: var(--cc-muted); font-size: 12px; line-height: 1.45; }
+    .assistant-card-number { display: inline-grid; flex: 0 0 auto; width: 27px; height: 27px; place-items: center; border-radius: 9px; background: #e8f0f3; color: var(--cc-blue); font-size: 12px; font-weight: 850; }
+    .assistant-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .assistant-fields .field--wide { grid-column: 1 / -1; }
+    .field > span { display: block; }
+    .field > small { color: var(--cc-muted); font-size: 11px; font-weight: 500; }
+    .admin-check { display: flex !important; align-items: center; grid-template-columns: none !important; gap: 11px !important; }.admin-check input { flex: 0 0 auto; width: 20px !important; height: 20px; margin: 0; accent-color: var(--cc-blue); }.admin-check span, .admin-check strong, .admin-check small { display: block; }.admin-check small { margin-top: 2px; color: var(--cc-muted); font-weight: 500; }.assistant-research { width: 100%; border-radius: 13px; padding: 13px 14px; background: #eef6f3; cursor: pointer; }
+    .link-builder { gap: 13px; }
+    .link-builder legend { margin-left: -4px; padding: 0 8px 0 4px; color: var(--cc-ink); font-size: 13px; font-weight: 800; }
+    .link-builder legend .assistant-card-number { display: inline-grid; margin-right: 7px; vertical-align: middle; }
     .link-builder > p { margin: 0; color: var(--cc-muted); font-size: 12px; }
     .link-options, .article-link-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
-    .link-options label, .article-link-options label { display: flex; grid-template-columns: none; align-items: flex-start; gap: 8px; min-width: 0; font-weight: 600; line-height: 1.35; }
-    .link-options input, .article-link-options input { flex: 0 0 auto; width: auto; margin-top: 2px; }
+    .link-options label, .article-link-options label { display: flex; grid-template-columns: none; align-items: flex-start; gap: 9px; min-width: 0; border-radius: 10px; padding: 9px 10px; background: #f7f9f9; font-weight: 600; line-height: 1.35; cursor: pointer; transition: background .15s; }
+    .link-options label:hover, .article-link-options label:hover { background: #edf3f4; }
+    .link-options input, .article-link-options input { flex: 0 0 auto; width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--cc-blue); }
     .source-presets { display: flex; flex-wrap: wrap; gap: 7px; }
     .source-preset { border: 1px solid var(--cc-border); border-radius: 999px; padding: 7px 10px; background: var(--cc-soft); color: var(--cc-blue); font-size: 12px; font-weight: 750; cursor: pointer; }
     .source-preset:hover { border-color: var(--cc-blue); background: #fff; }
@@ -976,6 +998,6 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .api-key-output { overflow-x: auto; padding: 14px; border-radius: 9px; background: #102a36; color: #fff; user-select: all; }
     .api-key-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--cc-border); font-size: 13px; }
     @media (max-width: 900px) { .admin-layout { grid-template-columns: 1fr; }.admin-list-panel { position: static; max-height: 460px; }.article-quick-actions { opacity: 1; transform: none; }.admin-topbar { display: block; }.admin-topbar .admin-actions { margin-top: 18px; } }
-    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns, .assistant-modes, .layout-controls__grid, .link-options, .article-link-options { grid-template-columns: 1fr; }.writing-assistant summary small { display: none; }.assistant-steps span { font-size: 0; }.assistant-steps b { font-size: 11px; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; }.theme-preview-toolbar { display: grid; }.theme-preview { margin-block: 10px; border-radius: 0; }.theme-preview__header, .theme-preview__layout { padding-inline: 18px; }.theme-preview__layout { grid-template-columns: minmax(0, 1fr); }.theme-preview__toc { display: none; } }
+    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns, .assistant-modes, .assistant-fields, .layout-controls__grid, .link-options, .article-link-options { grid-template-columns: 1fr; }.assistant-fields .field--wide { grid-column: auto; }.assistant-card { padding: 16px; }.writing-assistant summary small { display: none; }.assistant-steps span { font-size: 0; }.assistant-steps b { font-size: 11px; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; }.theme-preview-toolbar { display: grid; }.theme-preview { margin-block: 10px; border-radius: 0; }.theme-preview__header, .theme-preview__layout { padding-inline: 18px; }.theme-preview__layout { grid-template-columns: minmax(0, 1fr); }.theme-preview__toc { display: none; } }
   </style>
 </BaseLayout>
