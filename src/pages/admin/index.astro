@@ -43,24 +43,48 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
 
       <div class="admin-layout">
         <aside class="admin-list-panel">
-          <div class="admin-list-title"><h2>Articles</h2><button id="refresh-list" type="button" aria-label="Actualiser">↻</button></div>
+          <div class="admin-list-title">
+            <div><p class="eyebrow">Bibliothèque</p><h2>Articles <span id="sidebar-count"></span></h2></div>
+            <button id="refresh-list" class="sidebar-icon-button" type="button" aria-label="Actualiser la liste" title="Actualiser">↻</button>
+          </div>
+          <div class="sidebar-tools">
+            <label class="sidebar-search">
+              <span class="sr-only">Rechercher un article</span>
+              <input id="sidebar-search" type="search" placeholder="Rechercher…" />
+            </label>
+            <div id="sidebar-filters" class="sidebar-filters" aria-label="Filtrer les articles">
+              <button type="button" class="is-active" data-sidebar-status="all">Tous</button>
+              <button type="button" data-sidebar-status="published">Publiés</button>
+              <button type="button" data-sidebar-status="draft">Brouillons</button>
+              <button type="button" data-sidebar-status="archived">Archivés</button>
+            </div>
+          </div>
           <div id="article-list" class="admin-list"></div>
+          <a class="sidebar-all-link" href="/admin/articles">Gérer tous les articles <span>→</span></a>
         </aside>
 
         <main class="admin-editor">
           <details id="writing-assistant" class="admin-details writing-assistant" open>
             <summary>
-              <span><span class="writing-assistant-icon" aria-hidden="true">✦</span> Rédiger à partir d’un brief</span>
-              <small>Brief, mots-clés et maillage</small>
+              <span><span class="writing-assistant-icon" aria-hidden="true">✦</span> Assistant de rédaction IA</span>
+              <small>Créer ou améliorer en 3 étapes</small>
             </summary>
             <div class="admin-details-content">
-              <p class="writing-assistant-intro">Préparez un nouvel article et son maillage éditorial. Le contenu généré reste un brouillon à relire avant publication.</p>
+              <div class="assistant-steps" aria-label="Étapes de rédaction">
+                <span class="is-active"><b>1</b> Objectif</span><span><b>2</b> Sources</span><span><b>3</b> Génération</span>
+              </div>
+              <p class="writing-assistant-intro">Un seul assistant pour créer un nouvel article ou améliorer celui qui est ouvert. Le résultat est automatiquement enregistré comme brouillon.</p>
+              <div class="assistant-modes" role="radiogroup" aria-label="Type de rédaction">
+                <label><input type="radio" name="assistant-mode" value="create" checked /><span><strong>Créer un article</strong><small>Partir d’un sujet et d’un brief</small></span></label>
+                <label><input type="radio" name="assistant-mode" value="improve" /><span><strong>Améliorer l’article ouvert</strong><small>Réécrire et renforcer le brouillon actuel</small></span></label>
+              </div>
               <label>Sujet ou titre de travail<input id="brief-title" maxlength="240" placeholder="Ex. Comment contester une hausse de loyer en Suisse" /></label>
-              <label>Brief éditorial<textarea id="brief-content" rows="5" placeholder="Décrivez le public visé, le problème à résoudre, les points indispensables et le résultat attendu…"></textarea></label>
+              <label>Consignes éditoriales<textarea id="brief-content" rows="5" maxlength="12000" placeholder="Public visé, problème à résoudre, points indispensables, ton, longueur et résultat attendu…"></textarea></label>
               <div class="admin-columns">
                 <label>Mots-clés principaux<input id="brief-keywords" placeholder="hausse de loyer, délai, formule officielle" /></label>
                 <label>Objectif de l’article<select id="brief-intent"><option value="guide">Guide pratique</option><option value="answer">Réponse à une question</option><option value="checklist">Checklist</option><option value="news">Mise à jour juridique</option></select></label>
               </div>
+              <label class="admin-check assistant-research"><input id="assistant-research" type="checkbox" checked /> Rechercher et intégrer des sources suisses fiables</label>
 
               <fieldset class="link-builder">
                 <legend>Liens internes à intégrer</legend>
@@ -86,8 +110,9 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
               </fieldset>
 
               <div class="admin-actions">
-                <button id="prepare-draft" class="button button--primary" type="button">Créer le brouillon</button>
+                <button id="prepare-draft" class="button button--primary" type="button">✦ Générer et enregistrer le brouillon</button>
                 <button id="clear-brief" class="button button--ghost" type="button">Effacer le brief</button>
+                <span id="assistant-status" class="admin-status" aria-live="polite"></span>
               </div>
             </div>
           </details>
@@ -97,51 +122,12 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
             <input id="revision-id" type="hidden" />
             <input id="featured-media-id" type="hidden" />
             <div class="admin-section-heading"><div><p class="eyebrow">Contenu</p><h2 id="editor-title">Nouvel article</h2></div><span id="article-state" class="admin-badge">Brouillon</span></div>
-            <details id="improvement-assistant" class="admin-details improvement-assistant">
-              <summary>
-                <span><span class="writing-assistant-icon" aria-hidden="true">✦</span> Relire et améliorer avec l’IA</span>
-                <small>Crée un nouveau brouillon prêt à publier</small>
-              </summary>
-              <div class="admin-details-content">
-                <p class="writing-assistant-intro">L’IA relit l’article complet, améliore sa clarté, sa structure et son SEO, puis enregistre une nouvelle révision. L’article actuel reste récupérable dans l’historique.</p>
-                <label>Consigne personnalisée
-                  <textarea id="improvement-prompt" rows="5" maxlength="4000" placeholder="Ex. Raccourcis l’introduction, rends les démarches plus concrètes et améliore les titres pour le SEO."></textarea>
-                </label>
-                <div class="prompt-presets" aria-label="Suggestions de consignes">
-                  <button type="button" class="prompt-preset">Améliore la clarté, la structure et le SEO sans changer le fond.</button>
-                  <button type="button" class="prompt-preset">Rends l’article plus concis, concret et facile à parcourir.</button>
-                  <button type="button" class="prompt-preset">Renforce les explications pratiques et les prochaines étapes pour le lecteur.</button>
-                </div>
-                <div class="admin-actions">
-                  <button id="improve-article" class="button button--primary" type="button">✦ Analyser et améliorer</button>
-                  <small class="admin-help">L’opération peut prendre jusqu’à une minute.</small>
-                </div>
-              </div>
-            </details>
             <label>Titre de l’article<input id="title" maxlength="240" required placeholder="Comment contester une hausse de loyer ?" /></label>
             <div class="admin-columns">
               <label>Slug <input id="slug" maxlength="90" placeholder="généré automatiquement" /></label>
               <label>Thèmes <input id="topics" placeholder="Hausse de loyer, Délais" /></label>
             </div>
             <label>Introduction / extrait<textarea id="excerpt" rows="3" maxlength="320" placeholder="Généré automatiquement si ce champ reste vide"></textarea></label>
-
-            <details class="admin-details admin-ai">
-              <summary>✦ Rédiger avec OpenAI</summary>
-              <div class="admin-details-content">
-                <p class="admin-help">Crée un brouillon à relire, avec recherche web facultative, liens contextuels et liste de sources. Rien n’est publié automatiquement.</p>
-                <label>Brief éditorial<textarea id="ai-brief" rows="5" maxlength="12000" placeholder="Ex. Rédige un guide pratique sur la contestation du loyer initial à Genève, pour une personne qui vient de recevoir ses clés…"></textarea></label>
-                <label>Sources imposées <textarea id="ai-source-urls" rows="3" placeholder="Une URL par ligne, par exemple https://www.fedlex.admin.ch/…"></textarea></label>
-                <div class="admin-columns">
-                  <label>Action<select id="ai-mode"><option value="create">Créer un nouvel article</option><option value="improve">Améliorer le contenu actuel</option></select></label>
-                  <label class="admin-check"><input id="ai-research" type="checkbox" checked /> Rechercher des sources sur le web</label>
-                </div>
-                <div class="admin-actions">
-                  <button id="ai-generate" class="button button--secondary" type="button">✦ Générer le brouillon</button>
-                  <button id="ai-enrich-sources" class="button button--ghost" type="button">↗ Enrichir avec des sources</button>
-                  <span id="ai-status" class="admin-status" aria-live="polite"></span>
-                </div>
-              </div>
-            </details>
 
             <div class="admin-source-bar">
               <label>Format d’entrée<select id="format"><option value="markdown">Markdown</option><option value="html">HTML</option><option value="rich-text">Rich Text</option><option value="plain">Texte simple</option><option value="canonical-v1">JSON canonique v1</option><option value="tiptap">JSON Tiptap</option><option value="json">JSON auto-détecté</option></select></label>
@@ -263,6 +249,8 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     let currentStatus = 'draft';
     let currentMetadata = {};
     let availableArticles = [];
+    let sidebarStatus = 'all';
+    let selectedArticleId = null;
 
     function status(message, error = false, target = '#editor-status') {
       const node = $(target); node.textContent = message || ''; node.classList.toggle('is-error', error);
@@ -327,8 +315,8 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
       return body;
     }
 
-    async function improveCall(payload) {
-      const response = await fetch(`${supabaseUrl}/functions/v1/blog-improve`, {
+    async function aiCall(payload) {
+      const response = await fetch('/api/admin/blog-ai', {
         method: 'POST',
         headers: await authHeaders(),
         body: JSON.stringify(payload),
@@ -343,18 +331,6 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
         method: 'POST',
         headers: await authHeaders(),
         body: JSON.stringify({ ...payload, idempotencyKey: crypto.randomUUID() }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
-      return body;
-    }
-
-    async function aiCall(payload) {
-      const headers = await authHeaders();
-      const response = await fetch('/api/admin/blog-ai', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
@@ -440,29 +416,99 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     function resetEditor() {
       $('#article-form').reset(); $('#article-id').value = ''; $('#revision-id').value = ''; $('#featured-media-id').value = '';
       $('#source-content').value = ''; $('#rich-editor').innerHTML = ''; $('#editor-title').textContent = 'Nouvel article';
+      selectedArticleId = null;
+      if (availableArticles.length) renderSidebar();
       currentMetadata = {}; currentStatus = 'draft'; $('#article-state').textContent = 'Brouillon'; status(''); updateFormat(); updateThemePreview();
     }
 
-    function articleButton(article) {
-      const button = document.createElement('button'); button.type = 'button'; button.className = 'admin-list-item';
-      const draft = article.draft || article.published || {};
-      button.innerHTML = `<strong></strong><span></span><small></small>`;
-      button.querySelector('strong').textContent = draft.title || 'Sans titre';
-      button.querySelector('span').textContent = draft.excerpt || '';
-      button.querySelector('small').textContent = article.status === 'published' ? 'Publié' : article.status === 'archived' ? 'Archivé' : 'Brouillon';
-      button.addEventListener('click', () => loadArticle(article.id)); return button;
+    const sidebarStatusLabel = (value) => value === 'published' ? 'Publié' : value === 'archived' ? 'Archivé' : 'Brouillon';
+
+    function articleSidebarItem(article) {
+      const content = article.draft || article.published || {};
+      const item = document.createElement('article');
+      item.className = `admin-list-item admin-list-item--${article.status}`;
+      item.dataset.articleId = article.id;
+      item.classList.toggle('is-selected', article.id === selectedArticleId);
+      item.innerHTML = `
+        <button class="article-open" type="button">
+          <span class="article-item-top"><span class="sidebar-badge"></span><time></time></span>
+          <strong></strong><span class="article-item-excerpt"></span>
+        </button>
+        <div class="article-quick-actions">
+          <button type="button" data-action="preview" title="Prévisualiser">Aperçu</button>
+          <button type="button" data-action="publish">Publier</button>
+          <button type="button" data-action="archive">Archiver</button>
+          <button type="button" data-action="delete" class="quick-delete">Supprimer</button>
+        </div>`;
+      item.querySelector('.sidebar-badge').textContent = sidebarStatusLabel(article.status);
+      item.querySelector('time').textContent = article.updated_at
+        ? new Intl.DateTimeFormat('fr-CH', { day: '2-digit', month: 'short' }).format(new Date(article.updated_at))
+        : '';
+      item.querySelector('strong').textContent = content.title || 'Sans titre';
+      item.querySelector('.article-item-excerpt').textContent = content.excerpt || `/${article.current_slug || content.slug || ''}`;
+      item.querySelector('.article-open').addEventListener('click', () => loadArticle(article.id));
+      item.querySelector('[data-action="publish"]').hidden = article.status === 'published' || adminRole === 'editor';
+      item.querySelector('[data-action="archive"]').hidden = article.status === 'archived' || adminRole === 'editor';
+      item.querySelector('[data-action="delete"]').hidden = adminRole !== 'owner';
+      item.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => quickArticleAction(button.dataset.action, article)));
+      return item;
+    }
+
+    function renderSidebar() {
+      const query = $('#sidebar-search').value.trim().toLocaleLowerCase('fr');
+      const filtered = availableArticles.filter((article) => {
+        const content = article.draft || article.published || {};
+        const searchable = `${content.title || ''} ${content.excerpt || ''} ${article.current_slug || ''}`.toLocaleLowerCase('fr');
+        return (sidebarStatus === 'all' || article.status === sidebarStatus) && (!query || searchable.includes(query));
+      });
+      $('#sidebar-count').textContent = `(${filtered.length})`;
+      $('#article-list').replaceChildren(...filtered.map(articleSidebarItem));
+      if (!filtered.length) $('#article-list').innerHTML = '<div class="sidebar-empty"><strong>Aucun article</strong><span>Modifiez la recherche ou le filtre.</span></div>';
     }
 
     async function refreshList() {
-      const list = $('#article-list'); list.innerHTML = '<p>Chargement…</p>';
+      const list = $('#article-list'); list.innerHTML = '<div class="sidebar-loading">Actualisation…</div>';
+      $('#refresh-list').classList.add('is-loading');
       try {
         const data = await adminCall('list');
-        availableArticles = data.articles || [];
-        list.replaceChildren(...availableArticles.map(articleButton));
-        if (!availableArticles.length) list.innerHTML = '<p>Aucun article.</p>';
+        availableArticles = (data.articles || []).filter((article) => !article.deleted_at);
+        renderSidebar();
         renderArticleLinkOptions();
       }
       catch (error) { list.innerHTML = `<p class="is-error"></p>`; list.firstChild.textContent = error.message; }
+      finally { $('#refresh-list').classList.remove('is-loading'); }
+    }
+
+    async function quickArticleAction(action, article) {
+      try {
+        if (action === 'preview') {
+          if (article.status === 'published' && article.current_slug) {
+            window.open(`/blog/${encodeURIComponent(article.current_slug)}`, '_blank', 'noopener');
+          } else {
+            const revisionId = article.draft_revision_id || article.published_revision_id;
+            const preview = await adminCall('preview', { revisionId });
+            window.open(`/blog/apercu?token=${encodeURIComponent(preview.token)}`, '_blank', 'noopener');
+          }
+          return;
+        }
+        if (action === 'publish') {
+          if (!confirm(`Publier « ${(article.draft || article.published)?.title || 'cet article'} » ?`)) return;
+          await adminCall('publish', { articleId: article.id });
+          status('Article publié.');
+        }
+        if (action === 'archive') {
+          if (!confirm(`Archiver « ${(article.draft || article.published)?.title || 'cet article'} » ?`)) return;
+          await adminCall('archive', { articleId: article.id });
+          status('Article archivé.');
+        }
+        if (action === 'delete') {
+          if (!confirm(`Supprimer définitivement « ${(article.draft || article.published)?.title || 'cet article'} » et toutes ses révisions ?`)) return;
+          await adminCall('delete', { articleId: article.id });
+          if ($('#article-id').value === article.id) resetEditor();
+          status('Article supprimé définitivement.');
+        }
+        await refreshList();
+      } catch (error) { status(error.message, true); }
     }
 
     function renderArticleLinkOptions() {
@@ -509,51 +555,68 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
         .map((input) => ({ label: input.dataset.label, url: input.value }));
     }
 
-    function sentenceFromBrief(value) {
-      const text = value.trim().replace(/\s+/g, ' ');
-      if (!text) return '';
-      return /[.!?]$/.test(text) ? text : `${text}.`;
-    }
-
-    function draftTemplate({ title, brief, keywords, intent, links, sources }) {
-      const keywordLine = keywords.length ? `Cet article explique ${keywords.join(', ')} dans le contexte du droit du bail suisse.` : '';
-      const intro = [sentenceFromBrief(brief), keywordLine].filter(Boolean).join(' ');
-      const linkList = links.length ? links.map((link) => `- [${link.label}](${link.url})`).join('\n') : '- Ajoutez ici les pages du site qui aident le lecteur à passer à l’action.';
-      const sourceList = sources.length ? sources.map((source) => `- [${source.label}](${source.url})`).join('\n') : '- Ajoutez une source officielle suisse vérifiée.';
-      const structures = {
-        guide: `## L’essentiel en bref\n\nRésumez ici la réponse en trois à cinq points concrets.\n\n## Comprendre la situation\n\nExpliquez les règles applicables en Suisse et les éléments à vérifier.\n\n## Les démarches étape par étape\n\n1. Rassembler les documents utiles.\n2. Vérifier les délais et les conditions.\n3. Adresser la demande à la bonne autorité ou à la partie concernée.\n\n## Points d’attention\n\nPrésentez les exceptions, risques et différences cantonales utiles.\n\n## Questions fréquentes\n\n### Quelle est la première chose à vérifier ?\n\nApportez une réponse courte et directement exploitable.`,
-        answer: `## Réponse courte\n\nDonnez immédiatement la réponse principale.\n\n## Ce que prévoit le droit suisse\n\nPrésentez la règle, ses conditions et ses limites.\n\n## Que faire concrètement ?\n\nDécrivez les prochaines étapes dans leur ordre logique.\n\n## Questions fréquentes\n\n### Dans quel délai agir ?\n\nPrécisez le délai et son point de départ.`,
-        checklist: `## Checklist rapide\n\n- [ ] Vérifier le document reçu\n- [ ] Contrôler la date et le délai\n- [ ] Réunir les justificatifs\n- [ ] Préparer la demande\n- [ ] Conserver une preuve d’envoi\n\n## Comment utiliser cette checklist\n\nExpliquez chaque contrôle et les erreurs à éviter.\n\n## Si un point pose problème\n\nIndiquez les recours et interlocuteurs possibles.`,
-        news: `## Ce qui change\n\nRésumez la nouveauté et sa date d’entrée en vigueur.\n\n## Qui est concerné ?\n\nDécrivez les locataires, bailleurs ou situations visées.\n\n## Conséquences pratiques\n\nExpliquez les actions à entreprendre et les délais.\n\n## Base légale et vérification\n\nDistinguez les faits confirmés des points encore susceptibles d’évoluer.`,
-      };
-      return `# ${title}\n\n${intro}\n\n${structures[intent] || structures.guide}\n\n## Pour aller plus loin sur Contestation.ch\n\n${linkList}\n\n## Sources suisses\n\n${sourceList}\n`;
-    }
-
-    function prepareDraft() {
+    async function prepareDraft() {
       const title = $('#brief-title').value.trim();
       const brief = $('#brief-content').value.trim();
-      if (!title || !brief) {
-        status('Ajoutez un sujet et un brief avant de créer le brouillon.', true);
+      const mode = document.querySelector('input[name="assistant-mode"]:checked').value;
+      const existingContent = sourceValue().trim();
+      if (mode === 'create' && (!title || !brief)) {
+        status('Ajoutez un sujet et des consignes avant de générer le brouillon.', true, '#assistant-status');
         $('#writing-assistant').open = true;
         (!title ? $('#brief-title') : $('#brief-content')).focus();
+        return;
+      }
+      if (mode === 'improve' && !existingContent) {
+        status('Ouvrez ou rédigez d’abord un article à améliorer.', true, '#assistant-status');
         return;
       }
       const sources = parseSwissSources();
       if (!sources) return;
       const keywords = $('#brief-keywords').value.split(',').map((item) => item.trim()).filter(Boolean);
       const links = selectedInternalLinks();
-      resetEditor();
-      $('#title').value = title;
-      $('#topics').value = keywords.join(', ');
-      $('#excerpt').value = sentenceFromBrief(brief).slice(0, 320);
-      $('#format').value = 'markdown';
-      $('#source-content').value = draftTemplate({ title, brief, keywords, intent: $('#brief-intent').value, links, sources });
-      $('#sources').value = sources.map((source) => `${source.label} | ${source.url}`).join('\n');
-      $('#editor-title').textContent = title;
-      updateFormat();
-      $('#writing-assistant').open = false;
-      status('Brouillon préparé à partir du brief. Relisez et complétez le contenu avant de l’enregistrer.');
-      $('#article-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const button = $('#prepare-draft');
+      button.disabled = true;
+      button.textContent = mode === 'improve' ? 'Amélioration en cours…' : 'Rédaction en cours…';
+      status('Analyse du brief et recherche des sources… Cette étape peut prendre jusqu’à une minute.', false, '#assistant-status');
+      try {
+        const instruction = [
+          title ? `Sujet : ${title}` : '',
+          brief,
+          `Format éditorial : ${$('#brief-intent').selectedOptions[0].textContent}.`,
+          keywords.length ? `Mots-clés à intégrer naturellement : ${keywords.join(', ')}.` : '',
+          links.length ? `Liens internes pertinents à intégrer : ${links.map((link) => `${link.label} (${link.url})`).join(', ')}.` : '',
+        ].filter(Boolean).join('\n');
+        const data = await aiCall({
+          brief: instruction,
+          existingContent: mode === 'improve' ? existingContent : '',
+          mode,
+          research: $('#assistant-research').checked,
+          sourceUrls: sources.map((source) => source.url),
+        });
+        if (mode === 'create') resetEditor();
+        const article = data.article;
+        $('#title').value = article.title;
+        $('#excerpt').value = article.excerpt;
+        $('#seo-title').value = article.seoTitle;
+        $('#seo-description').value = article.seoDescription;
+        $('#topics').value = article.topics.join(', ');
+        $('#format').value = 'markdown';
+        $('#source-content').value = article.markdown;
+        const mergedSources = [...parseSources(), ...sources, ...(article.sources || [])];
+        const uniqueSources = [...new Map(mergedSources.map((source) => [source.url, source])).values()];
+        $('#sources').value = uniqueSources.map((source) => `${source.label} | ${source.url}`).join('\n');
+        updateFormat();
+        const saved = await saveDraft();
+        await loadArticle(saved.articleId);
+        $('#writing-assistant').open = false;
+        status(`Brouillon ${mode === 'improve' ? 'amélioré' : 'créé'} avec ${data.model} et enregistré. Vérifiez les faits et les sources avant publication.`);
+        $('#article-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        status(error.message, true, '#assistant-status');
+      } finally {
+        button.disabled = false;
+        button.textContent = '✦ Générer et enregistrer le brouillon';
+      }
     }
 
     function addSourcePreset(button) {
@@ -598,6 +661,7 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
         $('#format').value = revision.source_format || 'canonical-v1';
         const source = revision.source_content || JSON.stringify(revision.document, null, 2);
         $('#source-content').value = source; $('#rich-editor').innerHTML = $('#format').value === 'rich-text' ? source : '';
+        selectedArticleId = id; renderSidebar();
         currentStatus = data.article.status; $('#article-state').textContent = currentStatus === 'published' ? 'Publié' : currentStatus === 'archived' ? 'Archivé' : 'Brouillon';
         $('#editor-title').textContent = revision.title; updateFormat(); updateThemePreview(); status('Article chargé.');
       } catch (error) { status(error.message, true); }
@@ -623,35 +687,6 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
       catch (_) { /* message déjà visible */ }
     }
 
-    async function improveArticle() {
-      const instruction = $('#improvement-prompt').value.trim();
-      if (!instruction) {
-        status('Ajoutez une consigne pour orienter la relecture.', true);
-        $('#improvement-assistant').open = true;
-        $('#improvement-prompt').focus();
-        return;
-      }
-      const button = $('#improve-article');
-      button.disabled = true;
-      button.textContent = 'Analyse de l’article…';
-      status('Enregistrement de la version actuelle…');
-      try {
-        const draft = await saveDraft();
-        status('L’IA relit et améliore l’article. Cette étape peut prendre jusqu’à une minute…');
-        button.textContent = 'Amélioration en cours…';
-        const result = await improveCall({ articleId: draft.articleId, instruction });
-        await loadArticle(draft.articleId);
-        $('#improvement-assistant').open = true;
-        status(`${result.summary || 'Article amélioré.'} Nouveau brouillon enregistré et prêt à être publié.`);
-        await refreshList();
-      } catch (error) {
-        status(error.message || 'L’amélioration a échoué.', true);
-      } finally {
-        button.disabled = false;
-        button.textContent = '✦ Analyser et améliorer';
-      }
-    }
-
     async function archiveArticle() {
       const id = $('#article-id').value; if (!id || !confirm('Archiver cet article ?')) return;
       try { await adminCall('archive', { articleId: id }); currentStatus = 'archived'; $('#article-state').textContent = 'Archivé'; status('Article archivé.'); await refreshList(); } catch (error) { status(error.message, true); }
@@ -660,82 +695,6 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     async function deleteArticle() {
       const id = $('#article-id').value; if (!id || !confirm('Supprimer cet article ? Un article déjà publié sera retiré et son URL renverra 410.')) return;
       try { await adminCall('delete', { articleId: id }); resetEditor(); status('Article supprimé.'); await refreshList(); } catch (error) { status(error.message, true); }
-    }
-
-    async function generateWithAi() {
-      const button = $('#ai-generate');
-      const brief = $('#ai-brief').value.trim();
-      const existingContent = sourceValue().trim();
-      if (!brief && !existingContent) return status('Ajoutez un brief ou un contenu à améliorer.', true, '#ai-status');
-      if (existingContent && $('#ai-mode').value === 'create' && !confirm('Le brouillon généré remplacera le contenu actuel. Continuer ?')) return;
-      button.disabled = true;
-      status('Recherche et rédaction en cours… Cela peut prendre une minute.', false, '#ai-status');
-      try {
-        const data = await aiCall({
-          brief,
-          existingContent: $('#ai-mode').value === 'improve' ? existingContent : '',
-          mode: $('#ai-mode').value,
-          research: $('#ai-research').checked,
-          sourceUrls: $('#ai-source-urls').value.split('\n').map((url) => url.trim()).filter(Boolean),
-        });
-        const article = data.article;
-        $('#title').value = article.title;
-        $('#excerpt').value = article.excerpt;
-        $('#seo-title').value = article.seoTitle;
-        $('#seo-description').value = article.seoDescription;
-        $('#topics').value = article.topics.join(', ');
-        $('#format').value = 'markdown';
-        $('#source-content').value = article.markdown;
-        $('#sources').value = article.sources.map((source) => `${source.label} | ${source.url}`).join('\n');
-        updateFormat();
-        status(`Brouillon généré avec ${data.model}. Vérifiez les faits et les sources avant publication.`, false, '#ai-status');
-      } catch (error) {
-        status(error.message, true, '#ai-status');
-      } finally {
-        button.disabled = false;
-      }
-    }
-
-    function mergeSources(generatedSources) {
-      const merged = [...parseSources(), ...(generatedSources || [])];
-      return [...new Map(merged.map((source) => [source.url, source])).values()];
-    }
-
-    async function enrichWithSources() {
-      const content = sourceValue().trim();
-      if (!content) return status('Collez ou rédigez d’abord le texte à enrichir.', true, '#ai-status');
-      if (!confirm('L’article sera remplacé par une version enrichie. Le titre et les réglages éditoriaux seront conservés. Continuer ?')) return;
-      const button = $('#ai-enrich-sources');
-      button.disabled = true;
-      status('Recherche de sources fiables et ajout des liens…', false, '#ai-status');
-      try {
-        const currentSources = parseSources();
-        const data = await aiCall({
-          mode: 'enrich-sources',
-          research: true,
-          brief: `Titre actuel : ${$('#title').value.trim() || 'Article sans titre'}. Préserve le fond et enrichis uniquement avec des références pertinentes.`,
-          existingContent: content,
-          sourceUrls: [
-            ...currentSources.map((source) => source.url),
-            ...$('#ai-source-urls').value.split('\n').map((url) => url.trim()).filter(Boolean),
-          ],
-        });
-        const article = data.article;
-        $('#format').value = 'markdown';
-        $('#source-content').value = article.markdown;
-        const sources = mergeSources(article.sources);
-        $('#sources').value = sources.map((source) => `${source.label} | ${source.url}`).join('\n');
-        if (!$('#excerpt').value.trim()) $('#excerpt').value = article.excerpt;
-        if (!$('#seo-title').value.trim()) $('#seo-title').value = article.seoTitle;
-        if (!$('#seo-description').value.trim()) $('#seo-description').value = article.seoDescription;
-        if (!$('#topics').value.trim()) $('#topics').value = article.topics.join(', ');
-        updateFormat();
-        status(`${sources.length} source(s) intégrée(s). Vérifiez les liens avant d’enregistrer.`, false, '#ai-status');
-      } catch (error) {
-        status(error.message, true, '#ai-status');
-      } finally {
-        button.disabled = false;
-      }
     }
 
     async function importFile(file) {
@@ -845,21 +804,32 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     $('#article-form').addEventListener('submit', saveDraft);
     $('#new-article').addEventListener('click', () => { resetEditor(); $('#writing-assistant').open = true; $('#brief-title').focus(); });
     $('#refresh-list').addEventListener('click', refreshList);
+    $('#sidebar-search').addEventListener('input', renderSidebar);
+    document.querySelectorAll('[data-sidebar-status]').forEach((button) => button.addEventListener('click', () => {
+      sidebarStatus = button.dataset.sidebarStatus;
+      document.querySelectorAll('[data-sidebar-status]').forEach((item) => item.classList.toggle('is-active', item === button));
+      renderSidebar();
+    }));
+    let lastSidebarRefresh = 0;
+    window.addEventListener('focus', () => {
+      if (!$('#admin-panel').hidden && Date.now() - lastSidebarRefresh > 2_000) {
+        lastSidebarRefresh = Date.now();
+        refreshList();
+      }
+    });
     $('#prepare-draft').addEventListener('click', prepareDraft);
     $('#clear-brief').addEventListener('click', () => { $('#brief-title').value = ''; $('#brief-content').value = ''; $('#brief-keywords').value = ''; $('#brief-sources').value = ''; $('#brief-source-error').hidden = true; });
     document.querySelectorAll('.source-preset').forEach((button) => button.addEventListener('click', () => addSourcePreset(button)));
     $('#format').addEventListener('change', updateFormat); $('#preview').addEventListener('click', previewArticle); $('#publish').addEventListener('click', publishArticle);
-    $('#improve-article').addEventListener('click', improveArticle);
-    document.querySelectorAll('.prompt-preset').forEach((button) => button.addEventListener('click', () => {
-      $('#improvement-prompt').value = button.textContent.trim();
-      $('#improvement-prompt').focus();
+    document.querySelectorAll('input[name="assistant-mode"]').forEach((input) => input.addEventListener('change', () => {
+      const improving = input.checked && input.value === 'improve';
+      if (improving && !$('#article-id').value) status('Sélectionnez un article dans la barre latérale, puis indiquez vos consignes.', false, '#assistant-status');
+      $('#prepare-draft').textContent = improving ? '✦ Améliorer et enregistrer' : '✦ Générer et enregistrer le brouillon';
     }));
     $('#archive').addEventListener('click', archiveArticle); $('#delete').addEventListener('click', deleteArticle);
     $('#import-file').addEventListener('change', (event) => event.target.files[0] && importFile(event.target.files[0]));
     $('#image-file').addEventListener('change', (event) => event.target.files[0] && uploadImage(event.target.files[0]));
     $('#create-api-key').addEventListener('click', createApiKey);
-    $('#ai-generate').addEventListener('click', generateWithAi);
-    $('#ai-enrich-sources').addEventListener('click', enrichWithSources);
     $('#article-theme').addEventListener('change', updateThemePreview);
     $('#article-accent').addEventListener('input', updateThemePreview);
     $('#article-hero-style').addEventListener('change', updateThemePreview);
@@ -893,19 +863,34 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-shell { max-width: 1440px; margin: 0 auto; padding: 38px 24px 80px; }
     .admin-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
     .admin-topbar p { margin: 0; color: var(--cc-muted); }
-    .admin-layout { display: grid; grid-template-columns: 310px minmax(0, 850px); align-items: start; gap: 26px; }
+    .admin-layout { display: grid; grid-template-columns: 340px minmax(0, 850px); align-items: start; gap: 26px; }
     .admin-list-panel, .admin-editor, .admin-api { border: 1px solid var(--cc-border); border-radius: 16px; background: #fff; }
-    .admin-list-panel { position: sticky; top: 82px; max-height: calc(100vh - 110px); overflow: auto; }
-    .admin-list-title { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--cc-border); background: #fff; }
-    .admin-list-title h2 { margin: 0; font-size: 18px; }
-    .admin-list-title button { border: 0; background: none; color: var(--cc-blue); font-size: 22px; cursor: pointer; }
-    .admin-list { padding: 8px; }
-    .admin-list-item { display: block; width: 100%; padding: 13px 12px; border: 0; border-bottom: 1px solid #edf0f1; background: transparent; color: var(--cc-text); text-align: left; cursor: pointer; }
-    .admin-list-item:hover { border-radius: 9px; background: var(--cc-soft); }
-    .admin-list-item strong, .admin-list-item span, .admin-list-item small { display: block; }
-    .admin-list-item strong { color: var(--cc-ink); }
-    .admin-list-item span { margin: 4px 0; overflow: hidden; color: var(--cc-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-    .admin-list-item small { color: var(--cc-green); font-weight: 700; }
+    .admin-list-panel { position: sticky; top: 82px; display: flex; max-height: calc(100vh - 104px); overflow: hidden; flex-direction: column; border-radius: 20px; box-shadow: 0 14px 40px rgba(18,48,63,.07); }
+    .admin-list-title { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 18px 18px 14px; }
+    .admin-list-title .eyebrow { margin: 0 0 3px; font-size: 10px; }
+    .admin-list-title h2 { margin: 0; color: var(--cc-ink); font-size: 21px; }
+    .admin-list-title h2 span { color: var(--cc-muted); font-size: 13px; font-weight: 650; }
+    .sidebar-icon-button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--cc-border); border-radius: 11px; background: #fff; color: var(--cc-blue); font-size: 20px; cursor: pointer; }
+    .sidebar-icon-button:hover { background: var(--cc-soft); }.sidebar-icon-button.is-loading { animation: sidebar-spin .7s linear infinite; }
+    @keyframes sidebar-spin { to { transform: rotate(360deg); } }
+    .sidebar-tools { flex: 0 0 auto; padding: 0 14px 13px; border-bottom: 1px solid var(--cc-border); }
+    .sidebar-search { display: block; }.sidebar-search input { width: 100%; border: 1px solid #d4dde1; border-radius: 10px; padding: 10px 12px; background: #f8faf9; color: var(--cc-ink); font: inherit; font-size: 13px; }.sidebar-search input:focus { outline: 0; border-color: var(--cc-blue); box-shadow: 0 0 0 3px rgba(18,48,63,.08); }
+    .sidebar-filters { display: flex; gap: 4px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }.sidebar-filters::-webkit-scrollbar { display: none; }.sidebar-filters button { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 6px 9px; background: transparent; color: var(--cc-muted); font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; }.sidebar-filters button.is-active { background: var(--cc-blue); color: #fff; }
+    .admin-list { flex: 1 1 auto; overflow-y: auto; padding: 8px; scrollbar-color: #cbd5d8 transparent; scrollbar-width: thin; }
+    .admin-list-item { margin-bottom: 6px; overflow: hidden; border: 1px solid transparent; border-radius: 13px; background: #fff; transition: border-color .15s, box-shadow .15s, background .15s; }
+    .admin-list-item:hover { border-color: #d8e1e3; background: #fbfcfb; }.admin-list-item.is-selected { border-color: var(--cc-blue); background: #f3f8f8; box-shadow: 0 5px 18px rgba(18,48,63,.08); }
+    .article-open { display: block; width: 100%; border: 0; padding: 12px 12px 9px; background: transparent; color: var(--cc-text); text-align: left; cursor: pointer; }
+    .article-item-top { display: flex !important; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 7px !important; overflow: visible !important; white-space: normal !important; }
+    .article-item-top time { color: var(--cc-muted); font-size: 10px; }
+    .sidebar-badge { display: inline-flex !important; width: fit-content; margin: 0 !important; overflow: visible !important; border-radius: 999px; padding: 4px 7px; background: #fff1d7; color: #8a4d00 !important; font-size: 9px !important; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+    .admin-list-item--published .sidebar-badge { background: #e5f4ec; color: #126342 !important; }.admin-list-item--archived .sidebar-badge { background: #edf0f1; color: #526068 !important; }
+    .article-open strong { display: -webkit-box; overflow: hidden; color: var(--cc-ink); font-size: 13px; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .article-item-excerpt { display: -webkit-box !important; margin: 5px 0 0 !important; overflow: hidden !important; color: var(--cc-muted) !important; font-size: 11px !important; line-height: 1.35; white-space: normal !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .article-quick-actions { display: flex; gap: 3px; padding: 0 8px 8px; opacity: 0; transform: translateY(3px); transition: opacity .15s, transform .15s; }.admin-list-item:hover .article-quick-actions, .admin-list-item.is-selected .article-quick-actions, .article-quick-actions:focus-within { opacity: 1; transform: none; }
+    .article-quick-actions button { border: 0; border-radius: 7px; padding: 5px 7px; background: #edf3f3; color: var(--cc-blue); font: inherit; font-size: 10px; font-weight: 750; cursor: pointer; }.article-quick-actions button:hover { background: #dfeaea; }.article-quick-actions .quick-delete { margin-left: auto; background: transparent; color: #a92e25; }.article-quick-actions .quick-delete:hover { background: #fff0ee; }
+    .sidebar-empty, .sidebar-loading { display: grid; gap: 4px; padding: 34px 16px; color: var(--cc-muted); font-size: 12px; text-align: center; }.sidebar-empty strong { color: var(--cc-ink); }
+    .sidebar-all-link { display: flex; flex: 0 0 auto; justify-content: space-between; padding: 13px 17px; border-top: 1px solid var(--cc-border); color: var(--cc-blue); font-size: 12px; font-weight: 800; text-decoration: none; }.sidebar-all-link:hover { background: var(--cc-soft); }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
     .admin-editor { padding: 28px; }
     .admin-form { display: grid; gap: 18px; }
     .admin-form--compact { margin-top: 24px; }
@@ -919,11 +904,6 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .admin-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     .admin-actions--sticky { position: sticky; bottom: 12px; z-index: 10; margin: 0 -12px -12px; padding: 13px; border: 1px solid var(--cc-border); border-radius: 13px; background: rgba(255,255,255,.95); box-shadow: 0 10px 30px -20px rgba(18,48,63,.5); backdrop-filter: blur(8px); }
-    .improvement-assistant { border-color: rgba(40,105,93,.3); background: linear-gradient(135deg, #f4faf7, #fffaf2); }
-    .improvement-assistant summary { color: var(--cc-green); }
-    .prompt-presets { display: flex; flex-wrap: wrap; gap: 8px; }
-    .prompt-preset { border: 1px solid #cbded7; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.8); color: var(--cc-blue); font: inherit; font-size: 12px; cursor: pointer; }
-    .prompt-preset:hover { border-color: var(--cc-green); background: #fff; }
     .button--ghost { border: 1px solid var(--cc-border); background: #fff; color: var(--cc-blue) !important; }
     .button--danger { background: #fff; color: #a92e25 !important; border: 1px solid #e8bbb6; }
     .admin-section-heading, .admin-source-bar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
@@ -935,8 +915,6 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-details { margin-top: 6px; border: 1px solid var(--cc-border); border-radius: 12px; }
     .admin-details summary { padding: 15px; color: var(--cc-ink); font-weight: 750; cursor: pointer; }
     .admin-details-content { display: grid; gap: 16px; padding: 0 16px 18px; }
-    .admin-ai { border-color: #b8cbd4; background: linear-gradient(145deg, #f4f8fa, #fff); }
-    .admin-ai summary { color: var(--cc-blue); }
     .admin-check { display: flex !important; align-items: center; align-self: end; grid-template-columns: auto 1fr !important; min-height: 48px; }
     .admin-check input { width: 18px !important; height: 18px; }
     .layout-controls { margin: 0; padding: 16px; border: 1px solid var(--cc-border); border-radius: 12px; }
@@ -980,6 +958,9 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .writing-assistant summary small { color: var(--cc-muted); font-size: 12px; font-weight: 600; }
     .writing-assistant-icon { display: inline-grid; width: 26px; height: 26px; margin-right: 7px; place-items: center; border-radius: 8px; background: var(--cc-blue); color: #fff; }
     .writing-assistant-intro { margin: -2px 0 2px; color: var(--cc-muted); }
+    .assistant-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }.assistant-steps span { display: flex; align-items: center; gap: 7px; color: var(--cc-muted); font-size: 11px; font-weight: 750; }.assistant-steps span::after { height: 2px; flex: 1; border-radius: 2px; background: #dbe4e6; content: ''; }.assistant-steps span:last-child::after { display: none; }.assistant-steps b { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 50%; background: #e7eef0; color: var(--cc-blue); }.assistant-steps .is-active b { background: var(--cc-blue); color: #fff; }
+    .assistant-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.assistant-modes label { display: flex; grid-template-columns: none; align-items: flex-start; gap: 10px; border: 1.5px solid #d5e0e3; border-radius: 12px; padding: 13px; background: #fff; cursor: pointer; }.assistant-modes label:has(input:checked) { border-color: var(--cc-blue); background: #f1f7f8; box-shadow: 0 0 0 3px rgba(18,48,63,.06); }.assistant-modes input { width: auto; margin-top: 3px; accent-color: var(--cc-blue); }.assistant-modes strong, .assistant-modes small { display: block; }.assistant-modes small { margin-top: 3px; color: var(--cc-muted); font-weight: 500; line-height: 1.35; }
+    .admin-check { display: flex !important; align-items: center; grid-template-columns: none !important; gap: 9px !important; }.admin-check input { width: 18px !important; height: 18px; accent-color: var(--cc-blue); }.assistant-research { width: fit-content; border-radius: 10px; padding: 10px 12px; background: #eef5f3; }
     .link-builder { display: grid; gap: 11px; margin: 0; border: 1px solid var(--cc-border); border-radius: 12px; padding: 14px; background: #fff; }
     .link-builder legend { padding: 0 7px; color: var(--cc-ink); font-size: 13px; font-weight: 800; }
     .link-builder > p { margin: 0; color: var(--cc-muted); font-size: 12px; }
@@ -994,7 +975,7 @@ const recoveryUrl = new URL('/admin?mode=recovery', Astro.site || Astro.url.orig
     .admin-api { margin-top: 24px; }
     .api-key-output { overflow-x: auto; padding: 14px; border-radius: 9px; background: #102a36; color: #fff; user-select: all; }
     .api-key-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--cc-border); font-size: 13px; }
-    @media (max-width: 900px) { .admin-layout { grid-template-columns: 1fr; }.admin-list-panel { position: static; max-height: 320px; }.admin-topbar { display: block; }.admin-topbar .admin-actions { margin-top: 18px; } }
-    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns, .layout-controls__grid, .link-options, .article-link-options { grid-template-columns: 1fr; }.writing-assistant summary small { display: none; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; }.theme-preview-toolbar { display: grid; }.theme-preview { margin-block: 10px; border-radius: 0; }.theme-preview__header, .theme-preview__layout { padding-inline: 18px; }.theme-preview__layout { grid-template-columns: minmax(0, 1fr); }.theme-preview__toc { display: none; } }
+    @media (max-width: 900px) { .admin-layout { grid-template-columns: 1fr; }.admin-list-panel { position: static; max-height: 460px; }.article-quick-actions { opacity: 1; transform: none; }.admin-topbar { display: block; }.admin-topbar .admin-actions { margin-top: 18px; } }
+    @media (max-width: 620px) { .admin-shell { padding: 24px 12px 60px; }.admin-editor { padding: 18px 14px; }.admin-columns, .assistant-modes, .layout-controls__grid, .link-options, .article-link-options { grid-template-columns: 1fr; }.writing-assistant summary small { display: none; }.assistant-steps span { font-size: 0; }.assistant-steps b { font-size: 11px; }.admin-actions--sticky { position: static; }.admin-actions--sticky .button { flex: 1; }.theme-preview-toolbar { display: grid; }.theme-preview { margin-block: 10px; border-radius: 0; }.theme-preview__header, .theme-preview__layout { padding-inline: 18px; }.theme-preview__layout { grid-template-columns: minmax(0, 1fr); }.theme-preview__toc { display: none; } }
   </style>
 </BaseLayout>

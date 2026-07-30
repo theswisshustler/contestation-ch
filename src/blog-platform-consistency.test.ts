@@ -13,6 +13,10 @@ describe('plateforme de publication', () => {
   const ai = readFileSync('src/pages/api/admin/blog-ai.ts', 'utf8');
   const seoAdmin = readFileSync('src/pages/admin/seo.astro', 'utf8');
   const seoAnalyzer = readFileSync('supabase/functions/seo-analyzer/index.ts', 'utf8');
+  const blogData = readFileSync('src/lib/blog.ts', 'utf8');
+  const blogAdmin = readFileSync('supabase/functions/blog-admin/index.ts', 'utf8');
+  const supabaseConfig = readFileSync('supabase/config.toml', 'utf8');
+  const blogAi = readFileSync('src/pages/api/admin/blog-ai.ts', 'utf8');
 
   it('sépare révision de brouillon et révision publiée', () => {
     expect(migration).toContain('published_revision_id uuid');
@@ -80,10 +84,7 @@ describe('plateforme de publication', () => {
     expect(ai).toContain("type: 'web_search'");
     expect(ai).toContain("type: 'json_schema'");
     expect(ai).toContain('requiresHumanReview: true');
-    expect(ai).toContain("'enrich-sources'");
     expect(admin).toContain('/api/admin/blog-ai');
-    expect(admin).toContain('Enrichir avec des sources');
-    expect(admin).toContain('mergeSources(article.sources)');
   });
 
   it('conserve un thème éditorial par révision sans injecter de design dans le document', () => {
@@ -106,5 +107,30 @@ describe('plateforme de publication', () => {
     expect(seoAnalyzer).toContain("host.endsWith('.ch')");
     expect(seoAnalyzer).toContain("source: metric ? 'dataforseo' : 'heuristic'");
     expect(seoAnalyzer).toContain('BRAVE_SEARCH_API_KEY');
+  });
+
+  it('utilise blog_articles comme source de vérité unique pour les statuts et suppressions', () => {
+    expect(blogData).toContain("from('blog_public_articles')");
+    expect(blogData).not.toContain('const articles = [');
+    expect(blogAdmin).toContain("from('blog_articles')");
+    expect(blogAdmin).toContain(".is('deleted_at', null)");
+    expect(migration).toContain("where a.status = 'published'");
+    expect(migration).toContain('a.deleted_at is null');
+  });
+
+  it('laisse passer le preflight SEO tout en authentifiant chaque analyse', () => {
+    expect(supabaseConfig).toMatch(/\[functions\.seo-analyzer\][\s\S]*?verify_jwt = false/);
+    expect(seoAnalyzer).toContain('const pf = preflight(req)');
+    expect(seoAnalyzer).toContain('requireBlogAdmin(req)');
+  });
+
+  it('unifie la création et l’amélioration dans un seul assistant IA', () => {
+    expect(admin).toContain('Assistant de rédaction IA');
+    expect(admin).toContain('name="assistant-mode"');
+    expect(admin).not.toContain('Rédiger avec OpenAI');
+    expect(admin).not.toContain('Relire et améliorer avec l’IA');
+    expect(admin).not.toContain('draftTemplate');
+    expect(blogAi).toContain("body.mode === 'improve'");
+    expect(blogAi).toContain("fetch('https://api.openai.com/v1/responses'");
   });
 });

@@ -71,11 +71,17 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     async function seoCall(payload) {
       const { data } = await supabase.auth.getSession();
       if (!data.session) throw new Error('Session expirée');
-      const response = await fetch(`${supabaseUrl}/functions/v1/seo-analyzer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: publishableKey, Authorization: `Bearer ${data.session.access_token}` },
-        body: JSON.stringify(payload),
-      });
+      let response;
+      try {
+        response = await fetch(`${supabaseUrl}/functions/v1/seo-analyzer`, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json', apikey: publishableKey, Authorization: `Bearer ${data.session.access_token}` },
+          body: JSON.stringify(payload),
+        });
+      } catch (_) {
+        throw new Error('Le service d’analyse SEO est momentanément inaccessible. Réessayez dans quelques instants.');
+      }
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || `Erreur ${response.status}`);
       return body;

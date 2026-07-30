@@ -19,7 +19,6 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.seo-analyzer]
-verify_jwt = true
-
-[functions.blog-improve]
-verify_jwt = true
+# Le preflight OPTIONS ne porte pas de JWT. L'authentification reste imposée
+# dans la fonction par requireBlogAdmin(req).
+verify_jwt = false
