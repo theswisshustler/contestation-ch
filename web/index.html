@@ -462,24 +462,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- ===================== MODE LOYER INITIAL ===================== -->
     <sc-if value="{{ isMode }}" hint-placeholder-val="{{ false }}">
-    <div class="cc-scroll cc-screen" data-screen-label="mode-loyer-initial" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+    <div class="cc-scroll cc-screen" data-screen-label="mode-document-ou-manuel" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
         <button onClick="{{ backToFlows }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button>
-        <span style="font-weight:700;color:#12303F;font-size:16px;">Contester mon loyer initial</span>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">{{ modeHeader }}</span>
       </div>
       <div style="padding:26px 22px;flex:1;">
-        <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">Importez vos documents ou répondez aux questions. Nous vérifions les éléments et délais propres au loyer initial.</p>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">{{ modeIntro }}</p>
 
         <button onClick="{{ goImport }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:20px;padding:22px;margin-bottom:16px;cursor:pointer;box-shadow:0 8px 22px -16px rgba(18,48,63,.4);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="width:46px;height:46px;border-radius:14px;background:#EAF1F5;color:#1B4965;display:flex;align-items:center;justify-content:center;font-size:22px;">📄</span><span style="background:#E3F3EB;color:#0C5638;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">LE PLUS RAPIDE</span></div>
-          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">Importer mon bail</div>
-          <div style="font-size:14px;color:#5A6A70;line-height:1.45;">On lit tout automatiquement (bail + formule officielle). Vous n'avez plus qu'à vérifier.</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="width:46px;height:46px;border-radius:14px;background:#EAF1F5;color:#1B4965;display:flex;align-items:center;justify-content:center;font-size:22px;">📄</span><span style="background:#E3F3EB;color:#0C5638;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">{{ modeImportBadge }}</span></div>
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">{{ modeImportTitle }}</div>
+          <div style="font-size:14px;color:#5A6A70;line-height:1.45;">{{ modeImportText }}</div>
         </button>
 
         <button onClick="{{ goManuel }}" style="width:100%;text-align:left;background:#fff;border:1.5px solid #E4E2DB;border-radius:20px;padding:22px;cursor:pointer;box-shadow:0 8px 22px -16px rgba(18,48,63,.4);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="width:46px;height:46px;border-radius:14px;background:#FFF3DF;color:#7A5406;display:flex;align-items:center;justify-content:center;font-size:22px;">✍️</span><span style="background:#EAF1F5;color:#1B4965;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;">≈ 5 MIN</span></div>
           <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#12303F;margin-bottom:6px;">Répondre à quelques questions</div>
-          <div style="font-size:14px;color:#5A6A70;line-height:1.45;">Pas de document sous la main&nbsp;? On vous guide, une question à la fois.</div>
+          <div style="font-size:14px;color:#5A6A70;line-height:1.45;">{{ modeManualText }}</div>
         </button>
 
         <sc-if value="{{ testModeAvailable }}" hint-placeholder-val="{{ false }}">
@@ -775,11 +775,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="cc-scroll cc-screen" data-screen-label="import-upload" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #EEEBE3;">
         <button onClick="{{ goChoix }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #E4E2DB;background:#fff;color:#12303F;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;">←</button>
-        <span style="font-weight:700;color:#12303F;font-size:16px;">Importer vos documents</span>
+        <span style="font-weight:700;color:#12303F;font-size:16px;">{{ importHeader }}</span>
       </div>
       <div style="padding:26px 22px;flex:1;">
-        <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">Ajoutez votre bail et, si vous l'avez, la formule officielle. Les documents sont réellement analysés puis chaque information doit être vérifiée avant le diagnostic.</p>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#4A5A60;">{{ importIntro }}</p>
 
+        <sc-if value="{{ isHausseFlow }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#E3F3EB;border:1px solid #B7E0CB;border-radius:14px;padding:14px 15px;margin-bottom:16px;color:#0C5638;font-size:13px;line-height:1.5;"><strong>Pourquoi privilégier l’import&nbsp;?</strong><br>La lettre reçue contient les raisons exactes utilisées par le bailleur. Leur analyse permet une contestation plus précise, juste et pertinente qu’un simple questionnaire.</div>
+        <div onClick="{{ uploadNotification }}" style="border:2px dashed #9FC8B5;border-radius:18px;padding:28px 20px;text-align:center;cursor:pointer;margin-bottom:14px;background:#F7FCF9;">
+          <sc-if value="{{ notificationFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:700;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>{{ notificationName }}</div></sc-if>
+          <sc-if value="{{ notificationNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-size:30px;margin-bottom:8px;">📨</div><div style="font-weight:800;color:#12303F;font-size:16px;">Votre notification de hausse</div><div style="font-size:13px;color:#5A6A70;margin-top:5px;">Document principal requis · PDF</div></div></sc-if>
+        </div>
+        <div onClick="{{ uploadBail }}" style="border:2px dashed #D5DDE0;border-radius:18px;padding:22px 20px;text-align:center;cursor:pointer;margin-bottom:12px;background:#fff;">
+          <sc-if value="{{ bailFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:30px;height:30px;border-radius:9px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>{{ bailName }}</div></sc-if>
+          <sc-if value="{{ bailNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-weight:700;color:#12303F;font-size:14px;">Ajouter aussi votre bail <span style="color:#8A979C;font-weight:500;">(facultatif)</span></div><div style="font-size:12px;color:#8A979C;margin-top:4px;">Utile pour comparer les données de départ</div></div></sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isInitialFlow }}" hint-placeholder-val="{{ true }}">
         <div onClick="{{ uploadBail }}" style="border:2px dashed #C9D5DB;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;margin-bottom:14px;background:#fff;">
           <sc-if value="{{ bailFilled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#0C5638;font-weight:600;"><span style="width:34px;height:34px;border-radius:10px;background:#E3F3EB;display:flex;align-items:center;justify-content:center;">✓</span>{{ bailName }}</div></sc-if>
           <sc-if value="{{ bailNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-size:30px;margin-bottom:8px;">📄</div><div style="font-weight:700;color:#12303F;font-size:15px;">Votre contrat de bail</div><div style="font-size:13px;color:#8A979C;margin-top:4px;">Déposer ou choisir · PDF</div></div></sc-if>
@@ -790,6 +803,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <sc-if value="{{ formuleNotFilled }}" hint-placeholder-val="{{ true }}"><div><div style="font-size:30px;margin-bottom:8px;">🟢</div><div style="font-weight:700;color:#12303F;font-size:15px;">La formule officielle</div><div style="font-size:13px;color:#8A979C;margin-top:4px;">Le formulaire (souvent vert) de fixation du loyer</div></div></sc-if>
         </div>
         <div style="background:#FFF3DF;border-radius:12px;padding:12px 14px;font-size:13px;color:#7A5406;line-height:1.4;">La formule officielle est nécessaire pour détecter une hausse par rapport à l'ancien locataire. Vous ne l'avez pas&nbsp;? C'est justement un motif fort — indiquez-le dans le questionnaire.</div>
+        </sc-if>
       </div>
       <div class="cc-cta-bar" style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">
         <button onClick="{{ startAnalyse }}" style="width:100%;background:#F4A73B;color:#3A2A06;font-weight:700;font-size:17px;padding:16px;border:none;border-radius:14px;box-shadow:0 8px 18px -8px rgba(244,167,59,.9);cursor:pointer;">Lancer l'analyse</button>
@@ -801,13 +815,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <sc-if value="{{ importAnalyse }}" hint-placeholder-val="{{ false }}">
     <div class="cc-screen" data-screen-label="import-analyse" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;text-align:center;">
       <span style="width:56px;height:56px;border:4px solid #EAF1F5;border-top-color:#1B4965;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;margin-bottom:24px;"></span>
-      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;margin-bottom:8px;">On lit votre bail…</div>
-      <p style="margin:0 0 28px;font-size:15px;color:#5A6A70;line-height:1.5;">Quelques secondes. On repère les montants, les dates et la formule officielle.</p>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;color:#12303F;margin-bottom:8px;">{{ importAnalysisTitle }}</div>
+      <p style="margin:0 0 28px;font-size:15px;color:#5A6A70;line-height:1.5;">{{ importAnalysisText }}</p>
       <div style="width:100%;max-width:280px;text-align:left;display:flex;flex-direction:column;gap:14px;">
         <div style="display:flex;align-items:center;gap:12px;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Documents reçus</span></div>
         <sc-if value="{{ an0 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Adresse et parties identifiées</span></div></sc-if>
-        <sc-if value="{{ an1 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Loyer et charges extraits</span></div></sc-if>
-        <sc-if value="{{ an2 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Vérification de la formule officielle</span></div></sc-if>
+        <sc-if value="{{ an1 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Montants et dates extraits</span></div></sc-if>
+        <sc-if value="{{ an2 }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:12px;animation:fadeUp .3s ease;"><span style="width:24px;height:24px;border-radius:50%;background:#E3F3EB;color:#178A5B;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="font-size:14px;color:#12303F;">Forme et motifs juridiques analysés</span></div></sc-if>
       </div>
     </div>
     </sc-if>
@@ -822,6 +836,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div style="background:#E3F3EB;border-radius:14px;padding:14px 16px;font-size:14px;color:#0C5638;line-height:1.45;margin-bottom:20px;">✓ Lecture terminée. Vérifiez les champs ci-dessous — surtout ceux marqués <strong>à vérifier</strong> — puis lancez le diagnostic.</div>
         <sc-if value="{{ extractionHasUncertain }}" hint-placeholder-val="false"><div style="background:#FFF3DF;border:1px solid #F0C77A;border-radius:12px;padding:12px 14px;font-size:13px;color:#7A5406;line-height:1.45;margin-bottom:18px;"><strong>Champs signalés comme incertains par l'analyse&nbsp;:</strong> {{ extractionUncertainText }}</div></sc-if>
 
+        <sc-if value="{{ isHausseFlow }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Notification analysée</div>
+        <div style="background:#F1F8F5;border:1px solid #B7DCCB;border-radius:15px;padding:16px;margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px;"><strong style="color:#12303F;">Motifs invoqués par le bailleur</strong><span style="background:#178A5B;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;border-radius:999px;">ANALYSÉS</span></div>
+          <sc-if value="{{ hasExtractedHausseMotifs }}" hint-placeholder-val="{{ false }}"><p style="margin:0;color:#31594A;font-size:13px;line-height:1.55;">{{ extractedHausseMotifs }}</p></sc-if>
+          <sc-if value="{{ noExtractedHausseMotifs }}" hint-placeholder-val="{{ true }}"><p style="margin:0;color:#7A5406;font-size:13px;line-height:1.55;">Aucun motif suffisamment lisible n’a été extrait. Vérifiez la zone de motivation sur la notification.</p></sc-if>
+        </div>
+
+        <div style="font-size:12px;font-weight:800;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Dates et montants</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Date de réception</label><input type="date" value="{{ d.dateHausse }}" onChange="{{ onDateHausse }}" style="width:100%;box-sizing:border-box;border:1.5px solid #F0C77A;border-radius:12px;padding:13px;font-size:15px;background:#FFFDF8;"></div>
+          <div><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Date d’effet</label><input type="date" value="{{ d.dateEffetHausse }}" onChange="{{ onDateEffetHausse }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:15px;background:#fff;"></div>
+          <div><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Loyer net avant</label><input type="text" inputmode="decimal" value="{{ d.loyerAvantHausse }}" onChange="{{ onLoyerAvantHausse }}" style="width:100%;box-sizing:border-box;border:1.5px solid #F0C77A;border-radius:12px;padding:13px;font-size:15px;background:#FFFDF8;"></div>
+          <div><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Nouveau loyer net</label><input type="text" inputmode="decimal" value="{{ d.loyerApresHausse }}" onChange="{{ onLoyerApresHausse }}" style="width:100%;box-sizing:border-box;border:1.5px solid #F0C77A;border-radius:12px;padding:13px;font-size:15px;background:#FFFDF8;"></div>
+          <div><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Ancien taux</label><input type="text" inputmode="decimal" value="{{ d.tauxRef }}" onChange="{{ onTauxRef }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:15px;background:#fff;"></div>
+          <div><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Nouveau taux</label><input type="text" inputmode="decimal" value="{{ d.tauxRefNouveau }}" onChange="{{ onTauxRefNouveau }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:15px;background:#fff;"></div>
+        </div>
+
+        <div style="font-size:12px;font-weight:800;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin:20px 0 12px;">Logement et parties</div>
+        <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:10px;"><select value="{{ d.canton }}" onChange="{{ onCanton }}" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"><option value="">Canton</option><option value="VD">VD</option><option value="GE">GE</option></select><input type="text" value="{{ d.npa }}" onChange="{{ onNpa }}" placeholder="NPA" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"></div>
+        <input type="text" value="{{ d.commune }}" onChange="{{ onCommune }}" placeholder="Commune" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;margin-bottom:10px;">
+        <input type="text" value="{{ d.adresse }}" onChange="{{ onAdresseSimple }}" placeholder="Adresse du logement" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;margin-bottom:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;"><input type="text" value="{{ d.locPrenom }}" onChange="{{ onLocPrenom }}" placeholder="Prénom du locataire" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"><input type="text" value="{{ d.locNom }}" onChange="{{ onLocNom }}" placeholder="Nom du locataire" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"></div>
+        <input type="text" value="{{ d.locAdresse }}" onChange="{{ onLocAdresse }}" placeholder="Adresse actuelle du locataire" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;margin-bottom:10px;">
+        <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:16px;"><input type="text" value="{{ d.locNpa }}" onChange="{{ onLocNpa }}" placeholder="NPA" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"><input type="text" value="{{ d.locVille }}" onChange="{{ onLocVille }}" placeholder="Ville" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"></div>
+        <input type="text" value="{{ d.regNom }}" onChange="{{ onRegNom }}" placeholder="Régie ou propriétaire" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;margin-bottom:10px;">
+        <input type="text" value="{{ d.regAdresse }}" onChange="{{ onRegAdresse }}" placeholder="Adresse de la régie" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;margin-bottom:10px;">
+        <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;"><input type="text" value="{{ d.regNpa }}" onChange="{{ onRegNpa }}" placeholder="NPA" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"><input type="text" value="{{ d.regVille }}" onChange="{{ onRegVille }}" placeholder="Ville" style="width:100%;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;background:#fff;"></div>
+        </sc-if>
+
+        <sc-if value="{{ isInitialFlow }}" hint-placeholder-val="{{ true }}">
         <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8A979C;text-transform:uppercase;margin-bottom:12px;">Le logement</div>
         <div style="display:flex;gap:10px;margin-bottom:12px;">
           <div style="width:120px;"><label style="display:block;font-size:13px;font-weight:600;color:#5A6A70;margin-bottom:6px;">Canton</label><select value="{{ d.canton }}" onChange="{{ onCanton }}" style="width:100%;box-sizing:border-box;border:1.5px solid #D8DEE1;border-radius:12px;padding:13px;font-size:16px;color:#12303F;background:#fff;"><option value="">—</option><option value="VD">VD</option><option value="GE">GE</option></select></div>
@@ -866,6 +911,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <button type="button" aria-pressed="{{ importFormuleInconnue }}" onClick="{{ setImportFormuleInconnue }}" style="{{ importFormuleInconnueStyle }}"><sc-if value="{{ importFormuleInconnue }}" hint-placeholder-val="true">✓&nbsp; </sc-if>Je ne sais pas</button>
             </div>
           </div>
+        </sc-if>
         </sc-if>
       </div>
       <div class="cc-cta-bar" style="padding:16px 22px;border-top:1px solid #EEEBE3;background:#FBFAF7;">

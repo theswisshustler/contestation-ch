@@ -22,7 +22,10 @@
     return c;
   }
 
-  function base() { return config().SUPABASE_URL.replace(/\/+$/, ''); }
+  function endpoint(fn) {
+    var local = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+    return local ? '/api/edge/' + fn : config().SUPABASE_URL.replace(/\/+$/, '') + '/functions/v1/' + fn;
+  }
 
   async function call(fn, body, options) {
     var c = config();
@@ -35,7 +38,7 @@
       controller.abort();
     }, timeoutMs);
     try {
-      res = await fetch(base() + '/functions/v1/' + fn, {
+      res = await fetch(endpoint(fn), {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -91,6 +94,8 @@
     evaluateBaisse: function (b) { return call('evaluate-baisse', b); },
     /** { bailB64, formuleB64? } -> { extracted } */
     extractBail: function (b) { return call('extract-bail', b, { timeoutMs: 120_000 }); },
+    /** { notificationB64, bailB64? } -> { extracted } */
+    extractHausse: function (b) { return call('extract-hausse', b, { timeoutMs: 120_000 }); },
     /** DossierContestation -> { dossierId, evaluation } */
     evaluate: function (dossier) { return call('evaluate', { dossier: dossier }); },
     /** dossierId -> { letterId, previews: [url] } */

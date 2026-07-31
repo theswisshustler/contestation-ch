@@ -76,6 +76,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     const publishableKey = root.dataset.supabaseKey;
     const supabase = createClient(supabaseUrl, publishableKey);
     const $ = (selector) => document.querySelector(selector);
+    const edgeUrl = (name) => import.meta.env.DEV ? `/api/admin/edge/${name}` : `${supabaseUrl}/functions/v1/${name}`;
     const statuses = {
       published: { label: 'Publié', help: 'En ligne' },
       draft: { label: 'Brouillon', help: 'À finaliser' },
@@ -89,7 +90,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     async function adminCall(action, payload = {}) {
       const { data } = await supabase.auth.getSession();
       if (!data.session) throw new Error('Session expirée');
-      const response = await fetch(`${supabaseUrl}/functions/v1/blog-admin`, {
+      const response = await fetch(edgeUrl('blog-admin'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: publishableKey, Authorization: `Bearer ${data.session.access_token}` },
         body: JSON.stringify({ action, ...payload }),
@@ -225,7 +226,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     }
   </script>
 
-  <style>
+  <style is:global>
     #articles-admin { min-height: 72vh; background: radial-gradient(circle at 92% 4%, rgba(247,168,67,.10), transparent 24rem), #f5f7f5; }
     .articles-shell { max-width: 1380px; margin: 0 auto; padding: 48px 28px 88px; }
     .message { width: min(520px, calc(100% - 36px)); margin: 72px auto; padding: 34px; border: 1px solid var(--cc-border); border-radius: 18px; background: #fff; }
@@ -244,17 +245,18 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     .toolbar { display: flex; align-items: center; gap: 14px; padding: 20px; border-bottom: 1px solid var(--cc-border); }
     .search { position: relative; flex: 1; }.search::before { position: absolute; left: 15px; top: 50%; content: '⌕'; color: var(--cc-muted); font-size: 22px; transform: translateY(-52%); pointer-events: none; }.search input { width: 100%; min-width: 220px; border: 1.5px solid #d4dde1; border-radius: 12px; padding: 13px 15px 13px 43px; background: #fbfcfb; font-size: 14px; transition: border-color .15s, box-shadow .15s; }.search input:focus { outline: 0; border-color: var(--cc-blue); box-shadow: 0 0 0 3px rgba(18,48,63,.09); }
     .filters { display: flex; gap: 5px; padding: 4px; border-radius: 10px; background: #f0f3f3; }
-    .filter { border: 0; border-radius: 7px; padding: 8px 11px; background: transparent; color: var(--cc-muted); font-weight: 700; cursor: pointer; }
-    .filter.is-active { background: #fff; color: var(--cc-blue); box-shadow: 0 1px 4px rgba(18,48,63,.13); }
+    .filter { border: 1px solid transparent; border-radius: 8px; padding: 8px 12px; background: transparent; color: var(--cc-muted); font-size: 12px; font-weight: 750; cursor: pointer; transition: border-color .15s, background .15s, color .15s, box-shadow .15s, transform .15s; }
+    .filter:hover { border-color: #d6e1e3; background: rgba(255,255,255,.72); color: var(--cc-ink); }
+    .filter.is-active { border-color: #d8e2e4; background: #fff; color: var(--cc-blue); box-shadow: 0 2px 7px rgba(18,48,63,.12); }
     .result-count { margin: 0; padding: 12px 18px 0; color: var(--cc-muted); font-size: 12px; font-weight: 650; }
     .table-wrap { overflow-x: auto; padding: 6px 18px 18px; }table { width: 100%; border-collapse: collapse; }
     th { padding: 13px 12px; border-bottom: 1px solid var(--cc-border); color: var(--cc-muted); font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; white-space: nowrap; }
-    td { padding: 18px 12px; border-bottom: 1px solid #edf0f1; color: var(--cc-muted); font-size: 13px; }tbody tr { transition: background .15s; }tbody tr:hover { background: #f8faf8; }
+    td { padding: 19px 12px; border-bottom: 1px solid #edf0f1; color: var(--cc-muted); font-size: 13px; vertical-align: middle; }tbody tr { transition: background .15s, box-shadow .15s; }tbody tr:hover { background: #f6f9f9; box-shadow: inset 3px 0 var(--cc-blue); }
     .article-title { display: block; max-width: 480px; color: var(--cc-ink); font-weight: 780; text-decoration: none; }.article-title:hover { text-decoration: underline; }
     .excerpt { display: block; max-width: 480px; margin-top: 4px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
     .article-status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 9px; font-size: 11px; white-space: nowrap; }.article-status i { font-style: normal; }
     .article-status--published { background: #e5f4ec; color: #126342; }.article-status--draft { background: #fff2da; color: #8a4d00; }.article-status--archived { background: #edf0f1; color: #526068; }
-    .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }.edit, .delete-action { border: 0; border-radius: 8px; padding: 8px 10px; background: transparent; font: inherit; font-weight: 750; text-decoration: none; white-space: nowrap; cursor: pointer; }.edit { color: var(--cc-blue); background: #eef4f5; }.delete-action { color: #a9362c; }.delete-action:hover { background: #fff0ee; }
+    .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }.edit, .delete-action { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; border: 1px solid #d5e0e2; border-radius: 9px; padding: 7px 11px; background: #fff; font: inherit; font-size: 11.5px; font-weight: 780; line-height: 1; text-decoration: none; white-space: nowrap; cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s, transform .15s; }.edit { color: var(--cc-blue); }.edit:hover { border-color: #aebfc3; background: #eef5f5; box-shadow: 0 2px 7px rgba(18,48,63,.08); transform: translateY(-1px); }.delete-action { border-color: transparent; color: #a9362c; }.delete-action:hover { border-color: #efc8c3; background: #fff0ee; transform: translateY(-1px); }.edit:focus-visible, .delete-action:focus-visible, .filter:focus-visible, .status-card:focus-visible { outline: 3px solid rgba(27,73,101,.16); outline-offset: 2px; }
     .empty { padding: 60px 24px; text-align: center; }.empty h2 { margin: 0 0 5px; }.empty p { margin: 0; color: var(--cc-muted); }
     .error { margin: 18px; padding: 14px; border-radius: 10px; background: #fff0ee; color: #a92e25; }
     .delete-dialog { width: min(480px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 22px; color: var(--cc-ink); box-shadow: 0 28px 80px rgba(9,31,42,.28); }.delete-dialog::backdrop { background: rgba(9,31,42,.58); backdrop-filter: blur(3px); }.delete-dialog form { position: relative; padding: 30px; }.delete-dialog h2 { margin: 5px 0 12px; font-size: 27px; }.delete-dialog p { color: var(--cc-muted); line-height: 1.55; }.delete-dialog p strong { color: var(--cc-ink); }.danger-icon { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 18px; border-radius: 13px; background: #fff0ee; color: #b0362d; font-size: 24px; font-weight: 850; }.dialog-close { position: absolute; top: 18px; right: 18px; border: 0; background: transparent; color: var(--cc-muted); font-size: 28px; cursor: pointer; }.delete-warning { font-weight: 750; color: #a9362c !important; }.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }.button--danger { border: 1px solid #a9362c; background: #a9362c; color: #fff !important; }

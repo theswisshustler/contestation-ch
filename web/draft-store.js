@@ -86,7 +86,7 @@
   }
 
   function saveFile(kind, file) {
-    if (kind !== 'bail' && kind !== 'formule') return Promise.reject(new Error('Type de document invalide'));
+    if (!['bail', 'formule', 'notification'].includes(kind)) return Promise.reject(new Error('Type de document invalide'));
     return withStore('readwrite', function (store) {
       return store.put({
         name: file.name || (kind + '.pdf'),
@@ -99,13 +99,13 @@
 
   async function loadFiles() {
     try {
-      var entries = await Promise.all(['bail', 'formule'].map(async function (kind) {
+      var entries = await Promise.all(['bail', 'formule', 'notification'].map(async function (kind) {
         var value = await withStore('readonly', function (store) { return store.get(kind); });
         return [kind, value || null];
       }));
       return Object.fromEntries(entries);
     } catch (_) {
-      return { bail: null, formule: null };
+      return { bail: null, formule: null, notification: null };
     }
   }
 

@@ -70,6 +70,7 @@ export interface DossierContestation {
   formuleHausseRecue?: TriState;
   motifHausse?: 'taux_reference' | 'renchérissement' | 'couts' | 'travaux' | 'loyers_usuels' | 'multiple' | 'inconnu';
   tauxReferenceNouveau?: number | null;
+  motifsHausseDetail?: string[];
 }
 
 export type ForceMotif = 'tres_forte' | 'forte' | 'moyenne' | 'faible';
@@ -574,6 +575,20 @@ export function evaluateHausseLoyer(
   }
   if (!d.motifHausse || d.motifHausse === 'inconnu') {
     res.motifs.push({ code: 'hausse_motivation', libelle: 'Motivation à contrôler', force: 'forte', explication: "Une hausse doit indiquer ses motifs de manière compréhensible. Une motivation absente ou insuffisante peut affecter sa validité." });
+  }
+  if (Array.isArray(d.motifsHausseDetail) && d.motifsHausseDetail.length) {
+    const details = d.motifsHausseDetail
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    if (details.length) {
+      res.motifs.push({
+        code: 'hausse_motifs_invoques',
+        libelle: 'Justifications du bailleur analysées',
+        force: 'moyenne',
+        explication: `La notification invoque notamment : ${details.join(' ; ')}. Ces justifications doivent être contrôlées individuellement, avec leurs dates de référence, leurs bases chiffrées et les éventuels facteurs de baisse à compenser.`,
+      });
+    }
   }
   if (d.loyerAvantHausse && d.loyerApresHausse && d.loyerApresHausse > d.loyerAvantHausse) {
     const pct = round2(((d.loyerApresHausse - d.loyerAvantHausse) / d.loyerAvantHausse) * 100);

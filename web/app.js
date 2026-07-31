@@ -24,13 +24,14 @@ class Component extends DCLogic {
       signatureData: null,
       typeBail: 'ordinaire', dateHausse: '', dateEffetHausse: '',
       loyerAvantHausse: '', loyerApresHausse: '', formuleHausse: 'inconnu',
-      motifHausse: 'inconnu', tauxRefNouveau: '',
+      motifHausse: 'inconnu', tauxRefNouveau: '', motifsHausseDetail: [],
     },
     // dossier serveur
     dossierId: null, letterId: null, previewUrl: '', previewSavedAt: 0, result: null,
     // upload import
     bailB64: null, formuleB64: null, bailName: '', formuleName: '',
     bailFilled: false, formuleFilled: false, analyseStep: 0,
+    notificationB64: null, notificationName: '', notificationFilled: false,
     // offre / paiement
     offre: null, payLoading: false, sigDrawn: false,
     // UI transverse
@@ -76,7 +77,7 @@ class Component extends DCLogic {
       'loyer', 'taux', 'calcRes', 'tauxActuel', 'baisseSimRes', 'parcours',
       'flowKind', 'step', 'importState', 'dossierId', 'letterId', 'previewUrl',
       'previewSavedAt', 'result', 'bailName', 'formuleName', 'bailFilled',
-      'formuleFilled', 'offre', 'sigDrawn', 'extractionUncertain',
+      'formuleFilled', 'notificationName', 'notificationFilled', 'offre', 'sigDrawn', 'extractionUncertain',
       'extractionProvider', 'extractionFormuleDetected', 'extractionFormuleSource',
     ];
     const restored = {};
@@ -138,6 +139,8 @@ class Component extends DCLogic {
       formuleName: st.formuleName,
       bailFilled: !!st.bailFilled,
       formuleFilled: !!st.formuleFilled,
+      notificationName: st.notificationName,
+      notificationFilled: !!st.notificationFilled,
       offre: st.offre,
       sigDrawn: !!st.sigDrawn,
       extractionUncertain: st.extractionUncertain,
@@ -183,7 +186,7 @@ class Component extends DCLogic {
 
   async restoreDraftFiles() {
     const store = window.ContestationDraftStore;
-    if (!store || (!this.state.bailFilled && !this.state.formuleFilled)) return;
+    if (!store || (!this.state.bailFilled && !this.state.formuleFilled && !this.state.notificationFilled)) return;
     const files = await store.loadFiles();
     const patch = {};
     if (this.state.bailFilled && files.bail?.blob) {
@@ -209,6 +212,18 @@ class Component extends DCLogic {
     } else if (this.state.formuleFilled) {
       patch.formuleFilled = false;
       patch.formuleName = '';
+    }
+    if (this.state.notificationFilled && files.notification?.blob) {
+      try {
+        patch.notificationB64 = await this.fileToBase64(files.notification.blob);
+        patch.notificationName = files.notification.name || this.state.notificationName;
+      } catch (_) {
+        patch.notificationFilled = false;
+        patch.notificationName = '';
+      }
+    } else if (this.state.notificationFilled) {
+      patch.notificationFilled = false;
+      patch.notificationName = '';
     }
     if (Object.keys(patch).length) this.setState(patch);
   }
@@ -271,7 +286,7 @@ class Component extends DCLogic {
     this.state.parcours = flow;
     if (flow === 'loyer_initial') this.state.screen = 'mode';
     else if (flow === 'demande_baisse') this.state.screen = 'baisseSim';
-    else this.state.screen = 'altForm';
+    else this.state.screen = 'mode';
   }
 
   go(screen) { this.setState({ screen }); }
@@ -395,6 +410,7 @@ class Component extends DCLogic {
       formuleHausseRecue: d.formuleHausse || 'inconnu',
       motifHausse: d.motifHausse || 'inconnu',
       tauxReferenceNouveau: n(d.tauxRefNouveau),
+      motifsHausseDetail: Array.isArray(d.motifsHausseDetail) ? d.motifsHausseDetail : [],
     };
   }
 
@@ -409,7 +425,7 @@ class Component extends DCLogic {
         result: null, dossierId: null, letterId: null,
       });
     } else {
-      this.setState({ flowKind: kind, parcours: kind, screen: 'altForm', stepErrors: {}, result: null, dossierId: null, letterId: null });
+      this.setState({ flowKind: kind, parcours: kind, screen: 'mode', stepErrors: {}, result: null, dossierId: null, letterId: null });
     }
   }
 
@@ -763,6 +779,7 @@ class Component extends DCLogic {
       reader.onload = () => {
         const b64 = String(reader.result).split(',')[1] || '';
         if (kind === 'bail') this.setState({ bailFilled: true, bailName: f.name, bailB64: b64 });
+        else if (kind === 'notification') this.setState({ notificationFilled: true, notificationName: f.name, notificationB64: b64 });
         else this.setState({ formuleFilled: true, formuleName: f.name, formuleB64: b64 });
       };
       if (window.ContestationDraftStore) {
@@ -776,6 +793,10 @@ class Component extends DCLogic {
   }
   async startAnalyse() {
     if (this.state.importState === 'analyse') return;
+    if (this.state.flowKind === 'hausse_loyer') {
+      await this.startHausseAnalyse();
+      return;
+    }
     if (!this.state.bailB64) { this.setState({ errorMsg: 'Ajoutez au moins votre contrat de bail (PDF).' }); return; }
     this.track('import_started', { formule_jointe: !!this.state.formuleB64 });
     this.setState({ importState: 'analyse', analyseStep: 1, errorMsg: '' });
@@ -797,6 +818,72 @@ class Component extends DCLogic {
       this.setState({ importState: 'upload' });
       this.fail(e);
     }
+  }
+  async startHausseAnalyse() {
+    if (!this.state.notificationB64) {
+      this.setState({ errorMsg: 'Ajoutez la notification de hausse reçue (PDF).' });
+      return;
+    }
+    this.track('rent_increase_import_started', { bail_joint: !!this.state.bailB64 });
+    this.setState({ importState: 'analyse', analyseStep: 1, errorMsg: '' });
+    try {
+      const { extracted, extraction } = await API.extractHausse({
+        notificationB64: this.state.notificationB64,
+        bailB64: this.state.bailB64 || undefined,
+      });
+      this.setState({ analyseStep: 3 });
+      this.applyHausseExtraction(extracted);
+      this.setState({
+        importState: 'validation',
+        extractionUncertain: Array.isArray(extracted.champs_incertains) ? extracted.champs_incertains : [],
+        extractionProvider: extraction?.provider || '',
+      });
+      this.track('rent_increase_import_completed', {
+        motifs: Array.isArray(extracted.motifsInvoques) ? extracted.motifsInvoques.length : 0,
+        champs_incertains: Array.isArray(extracted.champs_incertains) ? extracted.champs_incertains.length : 0,
+      });
+    } catch (e) {
+      this.track('rent_increase_import_failed', { status: e?.status || 0 });
+      this.setState({ importState: 'upload' });
+      this.fail(e);
+    }
+  }
+  applyHausseExtraction(x) {
+    if (!x) return;
+    const d = {
+      ...this.state.data,
+      canton: '', commune: '', npa: '', adresse: '', dateHausse: '', dateEffetHausse: '',
+      loyerAvantHausse: '', loyerApresHausse: '', charges: '', formuleHausse: 'inconnu',
+      motifHausse: 'inconnu', tauxRef: '', tauxRefNouveau: '', motifsHausseDetail: [],
+      locNom: '', locPrenom: '', locAdresse: '', locNpa: '', locVille: '',
+      regNom: '', regAdresse: '', regNpa: '', regVille: '',
+    };
+    const set = (key, value) => { if (value !== null && value !== undefined && value !== '') d[key] = value; };
+    set('canton', x.canton); set('commune', x.commune); set('npa', x.npa); set('adresse', x.adresseImmeuble);
+    set('dateHausse', x.dateNotificationHausse); set('dateEffetHausse', x.dateEffetHausse);
+    if (x.loyerAvantHausse != null) d.loyerAvantHausse = String(x.loyerAvantHausse);
+    if (x.loyerApresHausse != null) d.loyerApresHausse = String(x.loyerApresHausse);
+    if (x.chargesMensuelles != null) d.charges = String(x.chargesMensuelles);
+    d.formuleHausse = x.formuleHausseRecue || 'inconnu';
+    if (x.tauxReferenceBail != null) d.tauxRef = String(x.tauxReferenceBail);
+    if (x.tauxReferenceNouveau != null) d.tauxRefNouveau = String(x.tauxReferenceNouveau);
+    const details = Array.isArray(x.motifsInvoques) ? x.motifsInvoques.filter(Boolean) : [];
+    d.motifsHausseDetail = details;
+    const joined = details.join(' ').toLocaleLowerCase('fr');
+    const categories = [
+      /taux de r[ée]f[ée]rence/.test(joined) && 'taux_reference',
+      /rench[ée]rissement|ipc|indice des prix/.test(joined) && 'renchérissement',
+      /co[uû]ts|charges|entretien/.test(joined) && 'couts',
+      /travaux|plus-value/.test(joined) && 'travaux',
+      /loyers? usuels?/.test(joined) && 'loyers_usuels',
+    ].filter(Boolean);
+    d.motifHausse = categories.length > 1 ? 'multiple' : categories[0] || (x.motifHausse === 'non' ? 'inconnu' : 'multiple');
+    if (x.locataire) { set('locNom', x.locataire.nom); set('locPrenom', x.locataire.prenom); set('locAdresse', x.locataire.adresse); set('locNpa', x.locataire.npa); set('locVille', x.locataire.ville); }
+    if (x.bailleur) { set('regNom', x.bailleur.nom); set('regAdresse', x.bailleur.adresse); set('regNpa', x.bailleur.npa); set('regVille', x.bailleur.ville); }
+    if (!d.locAdresse) d.locAdresse = d.adresse;
+    if (!d.locNpa) d.locNpa = d.npa;
+    if (!d.locVille) d.locVille = d.commune;
+    this.setState({ data: d });
   }
   applyExtraction(x) {
     if (!x) return;
@@ -848,10 +935,16 @@ class Component extends DCLogic {
     if (!d.npa) missing.push('NPA');
     if (!d.commune) missing.push('commune');
     if (!d.adresse) missing.push('adresse du logement');
-    if (!d.dateCles) missing.push('date de remise des clés');
-    if (!d.loyerNet || !this.num(d.loyerNet)) missing.push('loyer net');
+    if (this.state.flowKind === 'hausse_loyer') {
+      if (!d.dateHausse) missing.push('date de réception de la hausse');
+      if (!this.num(d.loyerAvantHausse)) missing.push('loyer avant la hausse');
+      if (!this.num(d.loyerApresHausse)) missing.push('nouveau loyer');
+    } else {
+      if (!d.dateCles) missing.push('date de remise des clés');
+      if (!d.loyerNet || !this.num(d.loyerNet)) missing.push('loyer net');
+    }
     if (!d.locNom || !d.locPrenom) missing.push('nom et prénom du locataire');
-    if (!d.regNom) missing.push('régie ou propriétaire');
+    if (!d.regNom || !d.regAdresse || !d.regNpa || !d.regVille) missing.push('coordonnées complètes de la régie ou du propriétaire');
     if (missing.length) {
       this.setState({ errorMsg: `Complétez les champs manquants avant le diagnostic : ${missing.join(', ')}.` });
       return;
@@ -1136,11 +1229,23 @@ class Component extends DCLogic {
       isInitialFlow,
       altTitle: isHausseFlow ? 'Contester une hausse de loyer' : 'Demander une baisse de loyer',
       altIntro: isHausseFlow ? 'Renseignez la notification reçue et vos coordonnées. Nous vérifierons le délai, la forme et les bases du calcul.' : 'Votre baisse paraît possible. Complétez maintenant les informations nécessaires pour préparer la demande à votre bailleur.',
+      modeHeader: isHausseFlow ? 'Contester une hausse de loyer' : 'Contester mon loyer initial',
+      modeIntro: isHausseFlow
+        ? 'Choisissez comment nous transmettre les informations de la hausse. L’analyse du document reçu est fortement recommandée.'
+        : 'Importez vos documents ou répondez aux questions. Nous vérifions les éléments et délais propres au loyer initial.',
+      modeImportTitle: isHausseFlow ? 'Importer la notification de hausse' : 'Importer mon bail',
+      modeImportBadge: isHausseFlow ? 'OPTION RECOMMANDÉE' : 'LE PLUS RAPIDE',
+      modeImportText: isHausseFlow
+        ? 'Nous analysons les montants, les dates et les motifs exacts invoqués par le bailleur pour préparer une contestation précise.'
+        : "On lit tout automatiquement (bail + formule officielle). Vous n'avez plus qu'à vérifier.",
+      modeManualText: isHausseFlow
+        ? 'Si vous ne pouvez pas importer la notification, vous pouvez toujours compléter le parcours manuellement.'
+        : 'Pas de document sous la main ? On vous guide, une question à la fois.',
       chooseInitialFlow: () => this.selectFlow('loyer_initial'),
       chooseHausseFlow: () => this.selectFlow('hausse_loyer'),
       chooseBaisseFlow: () => this.selectFlow('demande_baisse'),
       backToFlows: () => this.go('choix'),
-      backFromAltForm: () => this.go(isBaisseFlow ? 'baisseSim' : 'choix'),
+      backFromAltForm: () => this.go(isBaisseFlow ? 'baisseSim' : 'mode'),
       submitAltForm: () => this.submitAltForm(),
       altError: st.stepErrors && st.stepErrors.alt || '',
       runBaisseSimulation: () => this.runBaisseSimulation(),
@@ -1178,8 +1283,9 @@ class Component extends DCLogic {
         this.go('choix');
       },
       goManuel: () => {
-        this.track('path_selected', { parcours: 'manuel' });
-        this.setState({ screen: 'manuel', parcours: 'manuel', flowKind: 'loyer_initial', step: 0, testScenarioName: '' });
+        const kind = st.flowKind || 'loyer_initial';
+        this.track('path_selected', { parcours: 'manuel', kind });
+        this.setState({ screen: kind === 'hausse_loyer' ? 'altForm' : 'manuel', parcours: 'manuel', flowKind: kind, step: 0, testScenarioName: '' });
       },
       testModeAvailable: this.isLocalTestMode(),
       loadTestScenario: () => this.loadRandomTestScenario(),
@@ -1187,8 +1293,9 @@ class Component extends DCLogic {
       testScenarioName: st.testScenarioName || '',
       hasTestScenario: !!st.testScenarioName,
       goImport: () => {
-        this.track('path_selected', { parcours: 'import' });
-        this.setState({ screen: 'import', parcours: 'import', flowKind: 'loyer_initial', importState: 'upload' });
+        const kind = st.flowKind || 'loyer_initial';
+        this.track('path_selected', { parcours: 'import', kind });
+        this.setState({ screen: 'import', parcours: 'import', flowKind: kind, importState: 'upload', errorMsg: '' });
       },
       // import flow
       importUpload: st.screen === 'import' && st.importState === 'upload',
@@ -1196,12 +1303,16 @@ class Component extends DCLogic {
       importValidation: st.screen === 'import' && st.importState === 'validation',
       bailFilled: !!st.bailFilled,
       formuleFilled: !!st.formuleFilled,
+      notificationFilled: !!st.notificationFilled,
       bailNotFilled: !st.bailFilled,
       formuleNotFilled: !st.formuleFilled,
+      notificationNotFilled: !st.notificationFilled,
       bailName: st.bailName || 'bail.pdf',
       formuleName: st.formuleName || 'formule.pdf',
+      notificationName: st.notificationName || 'notification-hausse.pdf',
       uploadBail: () => this.pickFile('bail'),
       uploadFormule: () => this.pickFile('formule'),
+      uploadNotification: () => this.pickFile('notification'),
       startAnalyse: () => this.startAnalyse(),
       an0: (st.analyseStep || 0) >= 1, an1: (st.analyseStep || 0) >= 2, an2: (st.analyseStep || 0) >= 3,
       submitImportedDossier: () => this.submitImportedDossier(),
@@ -1219,6 +1330,17 @@ class Component extends DCLogic {
       importFormuleOuiStyle: this.importFormuleChoiceStyle(st.data.formule === 'oui', '#178A5B'),
       importFormuleNonStyle: this.importFormuleChoiceStyle(st.data.formule === 'non', '#C43D2E'),
       importFormuleInconnueStyle: this.importFormuleChoiceStyle(st.data.formule !== 'oui' && st.data.formule !== 'non', '#B97912'),
+      importHeader: isHausseFlow ? 'Analyser ma notification de hausse' : 'Importer vos documents',
+      importIntro: isHausseFlow
+        ? 'Importez en priorité la lettre ou la formule officielle de hausse reçue. C’est le meilleur moyen de vérifier précisément les motifs invoqués par le bailleur et de rédiger une contestation juste et pertinente.'
+        : "Ajoutez votre bail et, si vous l'avez, la formule officielle. Les documents sont réellement analysés puis chaque information doit être vérifiée avant le diagnostic.",
+      importAnalysisTitle: isHausseFlow ? 'On analyse votre hausse…' : 'On lit votre bail…',
+      importAnalysisText: isHausseFlow
+        ? 'Nous relevons les montants, les dates, la forme officielle et surtout les raisons invoquées par le bailleur.'
+        : 'Quelques secondes. On repère les montants, les dates et la formule officielle.',
+      extractedHausseMotifs: Array.isArray(st.data.motifsHausseDetail) ? st.data.motifsHausseDetail.join(' · ') : '',
+      hasExtractedHausseMotifs: Array.isArray(st.data.motifsHausseDetail) && st.data.motifsHausseDetail.length > 0,
+      noExtractedHausseMotifs: !Array.isArray(st.data.motifsHausseDetail) || st.data.motifsHausseDetail.length === 0,
       setImportFormuleOui: () => this.setImportFormule('oui'),
       setImportFormuleNon: () => this.setImportFormule('non'),
       setImportFormuleInconnue: () => this.setImportFormule('inconnu'),
